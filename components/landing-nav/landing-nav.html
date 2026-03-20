@@ -1,0 +1,15 @@
+<!-- ══ LANDING NAV ════════════════════════════════════════ -->
+<nav id="landing-nav">
+  <div class="l-logo">IBlog</div>
+  <ul class="l-nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#trending">Trending</a></li>
+    <li><a href="#" onclick="IBlog.Auth.showSignup()">Premium</a></li>
+  </ul>
+  <div class="l-nav-btns">
+    <span class="nav-weather" id="nav-weather">22° ☀️</span>
+    <div class="nav-dark-pill" id="landing-dark-pill" onclick="IBlog.Dashboard.toggleLandingDark()" title="Toggle dark">🌙</div>
+    <button class="nav-ghost-btn" onclick="IBlog.Auth.showSignin()">Sign in</button>
+    <button class="nav-cta-btn" onclick="IBlog.Auth.showSignup()">Get started</button>
+  </div>
+</nav>

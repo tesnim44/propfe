@@ -1,0 +1,61 @@
+<!-- ══ AUTH MODALS ════════════════════════════════════════ -->
+
+<!-- Signup -->
+<div class="modal-overlay" id="modal-signup">
+  <div class="modal">
+    <button class="modal-close" onclick="IBlog.Auth.closeAll()">✕</button>
+    <h2 class="modal-title">Join IBlog</h2>
+    <p class="modal-subtitle">Choose your plan to get started.</p>
+    <div class="plan-picker">
+      <div class="plan-opt selected" onclick="IBlog.Auth.selectPlan(this,'free')">
+        <div class="plan-icon">📖</div><strong>Free</strong><small>Read & write, basic tools</small>
+      </div>
+      <div class="plan-opt premium-plan" onclick="IBlog.Auth.selectPlan(this,'premium')">
+        <div class="plan-icon">⭐</div><strong>Premium</strong><small>Templates · Map · Priority</small>
+        <div class="plan-price">$9 / mo</div>
+      </div>
+    </div>
+    <div class="form-group"><label>Full Name</label><input type="text" placeholder="Amara Diallo" id="su-name"></div>
+    <div class="form-group"><label>Email</label><input type="email" placeholder="you@iblog.com" id="su-email"></div>
+    <div class="form-group"><label>Password</label><input type="password" placeholder="••••••••" id="su-pass"></div>
+    <button class="btn btn-primary btn-full" onclick="IBlog.Auth.doSignup()">Create Account</button>
+    <div class="modal-switch">Already have an account? <a onclick="IBlog.Auth.showSignin()">Sign in</a></div>
+  </div>
+</div>
+
+<!-- Signin -->
+<div class="modal-overlay" id="modal-signin">
+  <div class="modal">
+    <button class="modal-close" onclick="IBlog.Auth.closeAll()">✕</button>
+    <h2 class="modal-title">Welcome back</h2>
+    <p class="modal-subtitle">Continue your knowledge journey.</p>
+    <div class="form-group"><label>Email</label><input type="email" placeholder="you@iblog.com" id="si-email"></div>
+    <div class="form-group"><label>Password</label><input type="password" placeholder="••••••••" id="si-pass"></div>
+    <button class="btn btn-primary btn-full" onclick="IBlog.Auth.doSignin()">Sign In</button>
+    <div class="modal-switch">
+      New? <a onclick="IBlog.Auth.showSignup()">Create account</a> &nbsp;·&nbsp;
+      <a onclick="IBlog.Auth.demoLogin('free')">Demo Free</a> &nbsp;·&nbsp;
+      <a onclick="IBlog.Auth.demoLogin('premium')" class="link-premium">Demo Premium ⭐</a>
+    </div>
+  </div>
+</div>
+
+<!-- Premium upsell -->
+<div class="modal-overlay" id="modal-premium">
+  <div class="modal modal-center">
+    <button class="modal-close" onclick="IBlog.Auth.closeAll()">✕</button>
+    <div style="font-size:56px;margin-bottom:16px">⭐</div>
+    <h2 class="modal-title">Upgrade to Premium</h2>
+    <p class="modal-subtitle">Unlock the full IBlog experience</p>
+    <ul class="perk-list">
+      <li>Article templates — 9 professional layouts</li>
+      <li>Global Trend Map — explore any country</li>
+      <li>Priority feed — your articles shown first</li>
+      <li>Premium badge on your profile &amp; articles</li>
+      <li>Advanced analytics &amp; audience insights</li>
+      <li>Edit published articles anytime</li>
+    </ul>
+    <button class="btn btn-premium btn-full" onclick="IBlog.Auth.upgradeToPremium()">Upgrade — $9/month</button>
+    <p class="modal-footnote">Cancel anytime. No commitment.</p>
+  </div>
+</div>

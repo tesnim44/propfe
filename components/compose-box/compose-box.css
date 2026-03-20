@@ -1,0 +1,21 @@
+/* ── Compose Box ─────────────────────────────────────────── */
+.compose-box{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:18px;margin-bottom:22px;box-shadow:var(--shadow);}
+.compose-row{display:flex;gap:11px;align-items:flex-start;}
+.compose-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0;}
+.compose-input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);resize:none;min-height:42px;padding-top:6px;line-height:1.6;width:100%;}
+.compose-input::placeholder{color:var(--text3);}
+.compose-tools{display:none;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap;}
+.compose-tools.visible{display:flex;}
+.tool-btn{background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif;}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent);}
+.publish-btn{margin-left:auto;padding:9px 22px;border-radius:99px;background:var(--accent);border:none;color:#fff;font-weight:600;font-size:13px;cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif;}
+.publish-btn:hover{opacity:.88;}
+.load-more-btn{width:100%;padding:14px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;color:var(--text2);font-size:14px;cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif;margin-bottom:24px;box-shadow:var(--shadow);}
+.load-more-btn:hover{border-color:var(--accent);color:var(--accent);}
+/* Feed tabs */
+.feed-tabs{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1.5px solid var(--border);margin:-24px -28px 24px;padding:14px 28px 0;display:flex;gap:0;}
+.feed-tab{padding:11px 22px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;transition:.2s;white-space:nowrap;}
+.feed-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.feed-tab:hover{color:var(--text);}
+.center-feed{overflow-y:auto;padding:24px 28px;background:var(--bg);}
+.center-feed::-webkit-scrollbar{width:4px;}

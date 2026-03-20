@@ -1,0 +1,8 @@
+/* ── Notifications View ──────────────────────────────────── */
+.notif-item{display:flex;gap:11px;padding:13px 0;border-bottom:1px solid var(--border);}
+.notif-item:last-child{border-bottom:none;}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;}
+.notif-dot.read{background:var(--border);}
+.notif-text{font-size:13px;line-height:1.6;color:var(--text);}
+.notif-text strong{color:var(--accent);}
+.notif-time{font-size:11px;color:var(--text2);margin-top:3px;}

@@ -1,0 +1,8 @@
+/* ── Activity Tracker ────────────────────────────────────── */
+.activity-grid{display:flex;flex-wrap:wrap;gap:3px;overflow-x:auto;padding-bottom:6px;}
+.activity-cell{width:13px;height:13px;border-radius:3px;background:var(--bg3);transition:.15s;cursor:pointer;flex-shrink:0;}
+.activity-cell.l1{background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),.2);}
+.activity-cell.l2{background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),.45);}
+.activity-cell.l3{background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),.7);}
+.activity-cell.l4{background:var(--accent);}
+.activity-cell:hover{transform:scale(1.4);}

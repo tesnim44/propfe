@@ -1,0 +1,13 @@
+/* ── Global Map View ─────────────────────────────────────── */
+#world-map{height:460px;border-radius:16px;overflow:hidden;border:1.5px solid var(--border);margin-bottom:20px;background:var(--bg2);}
+.country-feed{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow);}
+.country-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:10px;}
+.country-topic-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;}
+.country-articles{display:flex;flex-direction:column;gap:12px;}
+.country-article-card{display:flex;gap:14px;background:var(--bg2);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;cursor:pointer;transition:.2s;}
+.country-article-card:hover{border-color:var(--accent);transform:translateX(3px);}
+.country-article-img{width:100px;min-height:80px;flex-shrink:0;background-size:cover;background-position:center;background-color:var(--bg3);}
+.country-article-info{padding:12px 14px 12px 0;flex:1;}
+.country-article-rank{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.country-article-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;line-height:1.3;color:var(--text);margin-bottom:5px;}
+.country-article-meta{font-size:11px;color:var(--text2);}

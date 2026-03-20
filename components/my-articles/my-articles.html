@@ -1,0 +1,40 @@
+<!-- ══ MY ARTICLES VIEW ══════════════════════════════════ -->
+<div class="view-panel" id="view-articles">
+  <div class="view-header flex-between">
+    <div><h1>📄 My Articles</h1></div>
+    <button class="btn btn-primary" style="padding:10px 20px"
+      onclick="IBlog.Dashboard.navigateTo('write')">+ New Article</button>
+  </div>
+  <div id="my-articles-list"></div>
+</div>
+
+<!-- ══ SETTINGS VIEW ═════════════════════════════════════ -->
+<div class="view-panel" id="view-settings">
+  <div class="view-header"><h1>⚙️ Settings</h1></div>
+  <div class="section-card">
+    <h3 style="margin-bottom:18px">Account</h3>
+    <div class="form-group"><label>Display Name</label><input type="text" id="settings-name"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="settings-email"></div>
+    <div class="form-group"><label>Bio</label><textarea style="resize:vertical" rows="3" placeholder="Tell your story…"></textarea></div>
+    <button class="btn btn-primary" style="padding:11px 26px"
+      onclick="IBlog.utils.toast('Settings saved! ✓','success')">Save Changes</button>
+  </div>
+  <div class="section-card">
+    <div class="flex-between">
+      <div>
+        <h3>Premium Plan</h3>
+        <p style="font-size:13px;color:var(--text2);margin-top:4px" id="premium-status-text">You are on the Free plan.</p>
+      </div>
+      <button class="btn btn-premium" style="padding:10px 20px" id="premium-settings-btn"
+        onclick="IBlog.Auth.showPremium()">⭐ Upgrade</button>
+    </div>
+  </div>
+  <div class="section-card">
+    <h3 style="margin-bottom:14px">Notifications</h3>
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div class="flex-between"><span style="font-size:14px">New followers</span><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div></label></div>
+      <div class="flex-between"><span style="font-size:14px">Article likes</span><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div></label></div>
+      <div class="flex-between"><span style="font-size:14px">Weekly digest</span><label class="toggle-switch"><input type="checkbox" checked><div class="toggle-track"></div></label></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,63 @@
+<!-- ══ ARTICLE WRITER VIEW ═══════════════════════════════ -->
+<div class="view-panel writer-view" id="view-write">
+  <div class="view-header"><h1>✏️ Write an Article</h1><p>Share your knowledge with the IBlog community</p></div>
+
+  <!-- Templates (Premium) -->
+  <div style="margin-bottom:22px">
+    <div class="flex-between" style="margin-bottom:14px">
+      <div><strong style="font-size:15px">Article Templates</strong> <span class="badge badge-premium" style="margin-left:8px">⭐ Premium</span></div>
+      <span style="font-size:12px;color:var(--text2)" id="template-subtitle">Upgrade to access 9 professional templates</span>
+    </div>
+    <div class="premium-gate" style="min-height:180px">
+      <div class="template-grid" id="template-grid" style="pointer-events:none;opacity:.35"></div>
+      <div class="premium-overlay" id="template-overlay">
+        <div style="font-size:40px">✍️🔒</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:20px;color:var(--text)">Premium Templates</h3>
+        <p style="font-size:13px;color:var(--text2);text-align:center;max-width:280px">9 professional article layouts for any content type.</p>
+        <button class="premium-upgrade-btn" onclick="IBlog.Auth.showPremium()">⭐ Upgrade to Unlock</button>
+      </div>
+    </div>
+    <div class="template-preview" id="template-preview">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace">Template Structure</div>
+      <div class="template-structure" id="template-structure"></div>
+    </div>
+  </div>
+
+  <input class="writer-title-input" id="article-title" placeholder="Your article title…">
+  <div class="writer-toolbar">
+    <button class="tb-btn"><b>B</b></button>
+    <button class="tb-btn"><i>I</i></button>
+    <button class="tb-btn">H1</button>
+    <button class="tb-btn">H2</button>
+    <button class="tb-btn">""</button>
+    <button class="tb-btn">Code</button>
+    <button class="tb-btn">Link</button>
+    <button class="tb-btn">📷</button>
+  </div>
+  <textarea class="writer-editor" id="article-editor"
+    placeholder="Start writing your article…" oninput="IBlog.Views.analyzeQuality()"></textarea>
+
+  <div class="writer-meta">
+    <select id="article-cat"><option>Select Category</option></select>
+    <input type="text" id="article-tags" placeholder="Tags: AI, machine learning…">
+    <input type="text" id="article-img" class="full-width" placeholder="Cover image URL (optional) — https://images.unsplash.com/…">
+  </div>
+
+  <div class="quality-analyzer">
+    <div class="flex-between"><strong>📊 Article Quality</strong><div class="ai-pill"><span class="ai-dot"></span>Live AI</div></div>
+    <div class="quality-scores">
+      <div class="quality-score"><div class="q-val" id="q-read">—</div><div class="q-lbl">Readability</div><div class="score-bar"><div class="score-fill" id="qb-read" style="width:0%"></div></div></div>
+      <div class="quality-score"><div class="q-val" id="q-orig">—</div><div class="q-lbl">Originality</div><div class="score-bar"><div class="score-fill" id="qb-orig" style="width:0%"></div></div></div>
+      <div class="quality-score"><div class="q-val" id="q-kw">—</div><div class="q-lbl">Keywords</div><div class="score-bar"><div class="score-fill" id="qb-kw" style="width:0%"></div></div></div>
+      <div class="quality-score"><div class="q-val" id="q-eng">—</div><div class="q-lbl">Engagement</div><div class="score-bar"><div class="score-fill" id="qb-eng" style="width:0%"></div></div></div>
+    </div>
+    <div id="quality-feedback" style="margin-top:11px;font-size:13px;color:var(--text2)"></div>
+  </div>
+
+  <div style="display:flex;gap:11px;margin-top:18px">
+    <button class="btn btn-ghost" style="flex:1;padding:13px;justify-content:center"
+      onclick="IBlog.utils.toast('Draft saved! 📝','success')">Save Draft</button>
+    <button class="btn btn-primary" style="flex:2;padding:13px;justify-content:center"
+      onclick="IBlog.Views.publishArticle()">Publish Article 🚀</button>
+  </div>
+</div>

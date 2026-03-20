@@ -1,0 +1,12 @@
+/* ── My Articles View ────────────────────────────────────── */
+.my-article-row{display:flex;gap:14px;align-items:center;padding:14px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;margin-bottom:12px;box-shadow:var(--shadow);transition:.2s;}
+.my-article-row:hover{border-color:var(--border2);}
+.my-article-thumb{width:64px;height:64px;border-radius:10px;flex-shrink:0;background-size:cover;background-position:center;background-color:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.my-article-info{flex:1;min-width:0;}
+.my-article-title{font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
+.my-article-meta{font-size:12px;color:var(--text2);}
+.my-article-actions{display:flex;gap:8px;flex-shrink:0;}
+.edit-btn-small{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:none;color:var(--text2);transition:.2s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;}
+.edit-btn-small:hover{border-color:var(--accent);color:var(--accent);}
+.delete-btn-small{padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;border:1.5px solid var(--red);background:none;color:var(--red);transition:.2s;font-family:'DM Sans',sans-serif;}
+.delete-btn-small:hover{background:var(--red);color:#fff;}

@@ -1,0 +1,6 @@
+/* ── Dashboard Layout ────────────────────────────────────── */
+#dashboard{display:none;min-height:100vh;}
+.dash-layout{display:grid;grid-template-columns:272px 1fr 312px;min-height:100vh;}
+@media(max-width:1200px){.dash-layout{grid-template-columns:246px 1fr 280px;}}
+@media(max-width:1000px){.right-rail{display:none;}.dash-layout{grid-template-columns:246px 1fr;}}
+@media(max-width:700px){.left-rail{display:none;}.dash-layout{grid-template-columns:1fr;}}

@@ -1,0 +1,7 @@
+/* ── Landing CTA ─────────────────────────────────────────── */
+.cta-section{padding:90px 72px;text-align:center;}
+.cta-box{max-width:680px;margin:0 auto;background:var(--premium-bg);border:1.5px solid var(--premium-border);border-radius:28px;padding:72px 56px;}
+.cta-box h2{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;margin-bottom:18px;color:var(--text);}
+.cta-box p{color:var(--text2);margin-bottom:36px;font-size:16px;}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+@media(max-width:640px){.cta-box{padding:40px 28px;}.cta-box h2{font-size:32px;}}

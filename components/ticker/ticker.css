@@ -1,0 +1,6 @@
+/* ── Ticker ──────────────────────────────────────────────── */
+.ticker{overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 0;}
+.ticker-inner{display:flex;gap:48px;animation:tickerAnim 30s linear infinite;white-space:nowrap;}
+.ticker-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+.ticker-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);}
+@keyframes tickerAnim{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}

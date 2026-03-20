@@ -1,0 +1,8 @@
+/* ── Analytics View ──────────────────────────────────────── */
+.analytics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.analytics-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow);}
+.chart-area{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px;box-shadow:var(--shadow);}
+.chart-bars{display:flex;gap:5px;align-items:flex-end;height:120px;margin-top:14px;}
+.chart-bar{flex:1;border-radius:5px 5px 0 0;background:var(--accent);opacity:.6;transition:.2s;cursor:pointer;min-width:8px;}
+.chart-bar:hover{opacity:1;}
+@media(max-width:800px){.analytics-grid{grid-template-columns:1fr 1fr;}}
