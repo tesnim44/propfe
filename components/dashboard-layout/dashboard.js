@@ -1,8 +1,10 @@
 IBlog.Dashboard = (() => {
   /* ── Enter Dashboard ──────────────────────────────────── */
   function enter() {
-    document.getElementById('landing').style.display    = 'none';
-    document.getElementById('dashboard').style.display  = 'block';
+  const landing = document.getElementById('landing-page'); // was 'landing'
+  const dash = document.getElementById('dashboard');
+  if (landing) landing.style.display = 'none';
+  if (dash) dash.style.display = 'block';
     updateUserUI();
     IBlog.Views.buildAccentPicker();
     IBlog.Views.buildCategorySelect();
@@ -19,6 +21,7 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildTemplates();
     refreshGates();
     navigateTo('home');
+
   }
 
   /* ── User UI ──────────────────────────────────────────── */
@@ -102,7 +105,7 @@ IBlog.Dashboard = (() => {
 
   function gateMap() {
     if (IBlog.state.currentUser?.plan === 'premium') navigateTo('map');
-    else IBlog.Auth.showPremium();
+    else showPremium();
   }
 
   function _buildSavedView() {
@@ -145,13 +148,17 @@ IBlog.Dashboard = (() => {
 
   /* ── Sign out ─────────────────────────────────────────── */
   function signout() {
-    IBlog.state.currentUser = null;
-    IBlog.state.savedArticles = [];
-    IBlog.state.joinedCommunities.clear();
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('landing').style.display   = 'block';
-    IBlog.utils.toast('Signed out.');
-  }
+  IBlog.state.currentUser = null;
+  IBlog.state.savedArticles = [];
+  IBlog.state.joinedCommunities.clear();
+  localStorage.removeItem('user');  // ← critical: clear storage
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('landing-page').style.display = 'block';
+  IBlog.Dashboard.initHero();
+  IBlog.Dashboard.buildTicker();
+  IBlog.Dashboard.buildLandingCarousel();
+  IBlog.utils.toast('Signed out.');
+}
 
   /* ── Feed tab switch ──────────────────────────────────── */
   function switchFeedTab(el, tab) {
@@ -257,7 +264,7 @@ IBlog.Dashboard = (() => {
     if (!track) return;
     const cards = [...IBlog.SEED_ARTICLES, ...IBlog.SEED_ARTICLES.slice(0, 6)];
     track.innerHTML = (cards.concat(cards)).map((a, gi) => `
-<div class="c-card" onclick="IBlog.Auth.demoLogin('free')">
+<div class="c-card" onclick="demoLogin('free')">
   <div class="c-img" style="${a.img ? `background-image:url('${a.img}')` : `background:linear-gradient(135deg,hsl(${gi*44%360},45%,88%),hsl(${gi*80%360},50%,82%))`}"></div>
   <div class="c-body">
     <div class="c-cat">${a.cat}</div>

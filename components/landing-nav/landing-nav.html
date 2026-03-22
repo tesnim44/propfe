@@ -1,15 +1,25 @@
 <!-- ══ LANDING NAV ════════════════════════════════════════ -->
 <nav id="landing-nav">
-  <div class="l-logo">IBlog</div>
+  <div class="l-logo">I<em>Blog</em></div>
   <ul class="l-nav-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#trending">Trending</a></li>
-    <li><a href="#" onclick="IBlog.Auth.showSignup()">Premium</a></li>
+    <li><a href="#authors">Authors</a></li>
+    <li><a href="#" onclick="showPremium()">Premium ⭐</a></li>
   </ul>
   <div class="l-nav-btns">
-    <span class="nav-weather" id="nav-weather">22° ☀️</span>
-    <div class="nav-dark-pill" id="landing-dark-pill" onclick="IBlog.Dashboard.toggleLandingDark()" title="Toggle dark">🌙</div>
-    <button class="nav-ghost-btn" onclick="IBlog.Auth.showSignin()">Sign in</button>
-    <button class="nav-cta-btn" onclick="IBlog.Auth.showSignup()">Get started</button>
+    <div class="nav-weather" id="nav-weather">⛅ 24°C</div>
+    <div class="nav-dark-pill" id="landing-dark-pill" onclick="toggleDark()" title="Toggle dark">🌙</div>
+   <button class="nav-ghost-btn" onclick="showSignin()"><a href="http://marcel-pirnay.be/" class="btn">
+  <svg width="277" height="62">
+    <defs>
+        <linearGradient id="grad1">
+            <stop offset="0%" stop-color="#FF8282"/>
+            <stop offset="100%" stop-color="#E178ED" />
+        </linearGradient>
+    </defs>
+     <rect x="5" y="5" rx="25" fill="none" stroke="url(#grad1)" width="266" height="50"></rect>
+  </svg><span>Sign In</span></button>
+    <button class="nav-cta-btn" onclick="showSignup()">Get started</button>
   </div>
-</nav>
+</nav> 

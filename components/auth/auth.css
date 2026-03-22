@@ -31,3 +31,102 @@ body.dark .premium-overlay{background:rgba(17,17,9,.88);}
 .perk-list li{padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text);}
 .perk-list li:last-child{border-bottom:none;}
 .perk-list li::before{content:'✦ ';color:var(--premium);}
+.pay-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.pay-tab {
+  flex: 1;
+  padding: 9px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .2s;
+}
+.pay-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* Form row (expiry + cvv side by side) */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Promo */
+.promo-row {
+  display: flex;
+  gap: 8px;
+}
+.promo-row input { flex: 1; }
+.promo-apply-btn {
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s;
+}
+.promo-apply-btn:hover { background: var(--border); }
+.promo-msg {
+  font-size: .78rem;
+  margin-top: 6px;
+  min-height: 16px;
+}
+.promo-msg.ok { color: var(--green); }
+.promo-msg.err { color: var(--red); }
+
+/* Summary bar */
+.pay-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 16px 0;
+  font-size: .9rem;
+  color: var(--text2);
+}
+.pay-summary strong { color: var(--text); font-size: 1rem; }
+
+/* PayPal button */
+.btn-paypal {
+  background: #FFC439;
+  color: #111;
+  border: none;
+  font-weight: 700;
+}
+.btn-paypal:hover { opacity: .88; }
+
+/* Back link */
+.back-btn {
+  display: block;
+  margin: 14px auto 0;
+  background: none;
+  border: none;
+  font-size: .82rem;
+  color: var(--text2);
+  cursor: pointer;
+  transition: color .2s;
+}
+.back-btn:hover { color: var(--text); }
+
+/* Label optional */
+.label-opt {
+  font-size: .75rem;
+  color: var(--text2);
+  font-weight: 400;
+}
