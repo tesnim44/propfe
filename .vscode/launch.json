@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "Open index.html",
-      "type": "chrome",
+      "type": "vscode-edge-devtools.debug",
       "request": "launch",
       "file": "${workspaceFolder}/index.html"
+      
     }
   ]
 }
