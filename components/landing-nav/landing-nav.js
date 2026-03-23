@@ -3,6 +3,8 @@ function loadComponent(id, file, fallbackHTML) {
   if (el) el.innerHTML = fallbackHTML;
 }
 
+
+
 document.addEventListener("DOMContentLoaded", () => {
   loadComponent(
     "landing-root",
