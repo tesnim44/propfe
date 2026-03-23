@@ -77,132 +77,48 @@
     <div id="landing-page">
       <div id="landing-root"></div>
 
-      <!-- components/hero/hero.html -->
-      <section class="hero" id="hero-section">
-        <div class="hero-slide active" id="slide-0"></div>
-        <div class="hero-slide" id="slide-1"></div>
-        <div class="hero-slide" id="slide-2"></div>
-        <div class="hero-slide" id="slide-3"></div>
-        <div class="hero-slide" id="slide-4"></div>
-        <div class="hero-content">
-          <div class="hero-cat-badge">
-            <span class="hero-cat-dot"></span
-            ><span id="hero-cat">Art &amp; Science</span>
-          </div>
-          <div class="hero-slide-counter" id="hero-counter">— 01 / 05</div>
-          <h1 class="hero-title" id="hero-title">
-            How Did van Gogh's <em>Turbulent Mind</em> Depict One of Physics'
-            Most Complex Concepts?
-          </h1>
-          <div class="hero-byline" id="hero-byline"></div>
-          <div class="hero-btns">
-            <button class="hero-btn-white" onclick="demoLogin('free')">
-              Read Article →
-            </button>
-            <button class="hero-btn-outline" onclick="showSignup()">
-              Get Started Free
-            </button>
-          </div>
-        </div>
-        <div
-          class="hero-arrow hero-arrow-left"
-          onclick="IBlog.Dashboard.heroPrev()"
-        >
-          ‹
-        </div>
-        <div
-          class="hero-arrow hero-arrow-right"
-          onclick="IBlog.Dashboard.heroNext()"
-        >
-          ›
-        </div>
-        <div class="hero-thumbs" id="hero-thumbs"></div>
-        <div class="hero-dots" id="hero-dots"></div>
-        <div class="hero-counter-br" id="hero-counter-br">1 / 5</div>
-      </section>
+  <!-- components/hero/hero.html -->
+  <section class="hero" id="hero-section">
+    <div class="hero-slide active" id="slide-0"></div>
+    <div class="hero-slide" id="slide-1"></div>
+    <div class="hero-slide" id="slide-2"></div>
+    <div class="hero-slide" id="slide-3"></div>
+    <div class="hero-slide" id="slide-4"></div>
+    <div class="hero-content">
+      <div class="hero-cat-badge"><span class="hero-cat-dot"></span><span id="hero-cat">Art &amp; Science</span></div>
+      <div class="hero-slide-counter" id="hero-counter">— 01 / 05</div>
+      <h1 class="hero-title" id="hero-title">How Did van Gogh's <em>Turbulent Mind</em> Depict One of Physics' Most Complex Concepts?</h1>
+      <div class="hero-byline" id="hero-byline"></div>
+      <div class="hero-btns">
+        <button class="hero-btn-white" onclick="showSignup()">Read Article →</button>
+        <button class="hero-btn-outline" onclick="showSignup()">Get Started Free</button>
+      </div>
+    </div>
+    <div class="hero-arrow hero-arrow-left" onclick="IBlog.Dashboard.heroPrev()">‹</div>
+    <div class="hero-arrow hero-arrow-right" onclick="IBlog.Dashboard.heroNext()">›</div>
+    <div class="hero-thumbs" id="hero-thumbs"></div>
+    <div class="hero-dots" id="hero-dots"></div>
+    <div class="hero-counter-br" id="hero-counter-br">1 / 5</div>
+  </section>
 
       <!-- components/ticker/ticker.html -->
       <div class="ticker">
         <div class="ticker-inner" id="ticker-inner"></div>
       </div>
 
-      <!-- components/features/features.html -->
-      <section class="features-section" id="features">
-        <div class="section-eyebrow">Why IBlog</div>
-        <h2 class="section-headline">
-          A platform built for<br /><span style="color: var(--accent)"
-            >curious minds</span
-          >
-        </h2>
-        <div class="feat-grid">
-          <div class="feat-card" onclick="demoLogin('free')">
-            <div class="feat-icon" style="background: rgba(184, 150, 12, 0.12)">
-              🤖
-            </div>
-            <h3>AI Recommendations</h3>
-            <p>
-              Personalized feeds based on your reading patterns and interests
-              across 27 categories.
-            </p>
-          </div>
-          <div class="feat-card" onclick="demoLogin('free')">
-            <div class="feat-icon" style="background: rgba(232, 93, 58, 0.1)">
-              🎙️
-            </div>
-            <h3>Article → Podcast</h3>
-            <p>
-              Convert any article to a podcast instantly. Choose male, female,
-              or auto AI voice.
-            </p>
-          </div>
-          <div class="feat-card premium-feat" onclick="demoLogin('premium')">
-            <div class="feat-icon" style="background: rgba(212, 160, 23, 0.15)">
-              🌍
-            </div>
-            <h3>
-              Global Trend Map
-              <span class="badge badge-premium">⭐ Premium</span>
-            </h3>
-            <p>
-              Explore what 19 countries are reading. Click any nation for local
-              trends.
-            </p>
-          </div>
-          <div class="feat-card" onclick="demoLogin('free')">
-            <div class="feat-icon" style="background: rgba(76, 175, 125, 0.1)">
-              🏘️
-            </div>
-            <h3>Community Spaces</h3>
-            <p>
-              Join topic-based communities with live chat, threads, and curated
-              resources.
-            </p>
-          </div>
-          <div class="feat-card" onclick="demoLogin('free')">
-            <div class="feat-icon" style="background: rgba(184, 150, 12, 0.12)">
-              📊
-            </div>
-            <h3>Activity Tracker</h3>
-            <p>
-              GitHub-style calendar tracking your reading days, comments, and
-              posts.
-            </p>
-          </div>
-          <div class="feat-card premium-feat" onclick="demoLogin('premium')">
-            <div class="feat-icon" style="background: rgba(212, 160, 23, 0.15)">
-              ✍️
-            </div>
-            <h3>
-              Article Templates
-              <span class="badge badge-premium">⭐ Premium</span>
-            </h3>
-            <p>
-              9 professional article templates. Edit your published articles
-              anytime.
-            </p>
-          </div>
-        </div>
-      </section>
+  <!-- components/features/features.html -->
+  <section class="features-section" id="features">
+    <div class="section-eyebrow">Why IBlog</div>
+    <h2 class="section-headline">A platform built for<br><span style="color:var(--accent)">curious minds</span></h2>
+    <div class="feat-grid">
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(184,150,12,.12)">🤖</div><h3>AI Recommendations</h3><p>Personalized feeds based on your reading patterns and interests across 27 categories.</p></div>
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(232,93,58,.1)">🎙️</div><h3>Article → Podcast</h3><p>Convert any article to a podcast instantly. Choose male, female, or auto AI voice.</p></div>
+      <div class="feat-card premium-feat" onclick="showPremium()"><div class="feat-icon" style="background:rgba(212,160,23,.15)">🌍</div><h3>Global Trend Map <span class="badge badge-premium">⭐ Premium</span></h3><p>Explore what 19 countries are reading. Click any nation for local trends.</p></div>
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(76,175,125,.1)">🏘️</div><h3>Community Spaces</h3><p>Join topic-based communities with live chat, threads, and curated resources.</p></div>
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(184,150,12,.12)">📊</div><h3>Activity Tracker</h3><p>GitHub-style calendar tracking your reading days, comments, and posts.</p></div>
+      <div class="feat-card premium-feat" onclick="showPremium()"><div class="feat-icon" style="background:rgba(212,160,23,.15)">✍️</div><h3>Article Templates <span class="badge badge-premium">⭐ Premium</span></h3><p>9 professional article templates. Edit your published articles anytime.</p></div>
+    </div>
+  </section>
 
       <!-- components/carousel/carousel.html -->
       <section class="carousel-section" id="trending">

@@ -38,17 +38,47 @@
 
   window.closeAllModals = function() {
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+
+    // Always reset premium modal back to step 1 (perks)
+    const s1 = document.getElementById('premium-step-perks');
+    const s2 = document.getElementById('premium-step-payment');
+    const s3 = document.getElementById('premium-step-success');
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'none';
+    if (s3) s3.style.display = 'none';
+
+    // Always clear plan selection so signup form reopens with nothing selected
+    localStorage.removeItem('selectedPlan');
+    document.querySelectorAll('.plan-opt').forEach(p => p.classList.remove('selected'));
+
+    // Clear signup fields
+    ['su-name', 'su-email', 'su-pass'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+    // Clear signin fields
+    ['si-email', 'si-pass'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+    // If no logged-in user, wipe any pending premium signup and show landing
+    if (!sessionStorage.getItem('user')) {
+      sessionStorage.removeItem('pendingUser');
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('landing-page').style.display = 'block';
+    }
   };
 
- window.showSignup = function() {
-  closeAllModals();
-  localStorage.setItem('selectedPlan', 'free'); // reset plan on open
-  injectModalsIfNeeded();
-  setTimeout(() => {
-    document.getElementById('modal-signup')?.classList.add('active');
-  }, 0);
-};
-
+  window.showSignup = function() {
+    closeAllModals();
+    localStorage.removeItem('selectedPlan'); // no default — user must pick
+    injectModalsIfNeeded();
+    setTimeout(() => {
+      document.getElementById('modal-signup')?.classList.add('active');
+    }, 0);
+  };
 
   window.showSignin = function() {
     closeAllModals();
@@ -59,16 +89,22 @@
     }, 0);
   };
 
+  // Track where premium modal was opened from
+  let _premiumFromLanding = false;
+
   window.showPremium = function() {
-    const savedUser = localStorage.getItem('user');
+    const savedUser = sessionStorage.getItem('user');
 
     if (!savedUser) {
-      // Not logged in — show signup first
+      // Force landing visible, dashboard hidden BEFORE opening modal
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('landing-page').style.display = 'block';
+
       closeAllModals();
       injectModalsIfNeeded();
       setTimeout(() => {
-        const modal = document.getElementById('modal-signup');
-        if (modal) modal.classList.add('active');
+        showPerks();
+        document.getElementById('modal-premium')?.classList.add('active');
       }, 0);
       return;
     }
@@ -79,13 +115,11 @@
       return;
     }
 
-    // Logged in but not premium — show premium modal
     closeAllModals();
     injectModalsIfNeeded();
     setTimeout(() => {
       showPerks();
-      const modal = document.getElementById('modal-premium');
-      if (modal) modal.classList.add('active');
+      document.getElementById('modal-premium')?.classList.add('active');
     }, 0);
   };
 
@@ -111,72 +145,81 @@
 
   // ── Plan Selection ────────────────────────────────────────
 
-window.selectPlan = function(el, plan) {
-  document.querySelectorAll('.plan-opt').forEach(p => p.classList.remove('selected'));
-  if (el) el.classList.add('selected');
-  localStorage.setItem('selectedPlan', plan); // ← overwrites previous
-};
+  window.selectPlan = function(el, plan) {
+    document.querySelectorAll('.plan-opt').forEach(p => p.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+    localStorage.setItem('selectedPlan', plan);
+  };
 
   // ── Auth Actions ──────────────────────────────────────────
-window.doSignup = function() {
-  const name     = document.getElementById('su-name')?.value.trim();
-  const email    = document.getElementById('su-email')?.value.trim();
-  const password = document.getElementById('su-pass')?.value;
-  const plan     = localStorage.getItem('selectedPlan') || 'free';
 
-  if (!name || !email || !password) { alert('Please fill in all fields.'); return; }
-  if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  window.doSignup = function() {
+    const name     = document.getElementById('su-name')?.value.trim();
+    const email    = document.getElementById('su-email')?.value.trim();
+    const password = document.getElementById('su-pass')?.value;
+    const plan     = localStorage.getItem('selectedPlan') || null;
 
-  const user = { name, email, plan, isPremium: plan === 'premium' };
-  localStorage.setItem('user', JSON.stringify(user));
-  IBlog.state.currentUser = user; // ← critical line
-  closeAllModals();
+    if (!plan) { alert('Please select a plan to continue.'); return; }
+    if (!name || !email || !password) { alert('Please fill in all fields.'); return; }
+    if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
 
-  if (plan === 'premium') {
-    setTimeout(() => {
-      showPerks();
-      document.getElementById('modal-premium')?.classList.add('active');
-    }, 0);
-  } 
-    goToDashboard();
-  }
-;
- window.doSignin = function() {
-  const email    = document.getElementById('si-email')?.value.trim();
-  const password = document.getElementById('si-pass')?.value;
+    const user = { name, email, plan, isPremium: plan === 'premium' };
 
-  if (!email || !password) { alert('Please fill in all fields.'); return; }
-
-  let user;
-  const savedUser = localStorage.getItem('user');
-  if (savedUser) {
-    const parsed = JSON.parse(savedUser);
-    if (parsed.email === email) {
-      user = parsed;
+    if (plan === 'premium') {
+      // Store as pending — only promoted to real session after payment succeeds
+      sessionStorage.setItem('pendingUser', JSON.stringify(user));
+      closeAllModals();
+      setTimeout(() => {
+        showPerks();
+        document.getElementById('modal-premium')?.classList.add('active');
+      }, 0);
+    } else {
+      sessionStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(user));
+      IBlog.state.currentUser = user;
+      closeAllModals();
+      goToDashboard();
     }
-  }
-  if (!user) {
-    user = { name: email.split('@')[0], email, plan: 'free', isPremium: false };
-  }
-
-  localStorage.setItem('user', JSON.stringify(user));
-  IBlog.state.currentUser = user; // ← critical line
-  closeAllModals();
-  goToDashboard();
-};
-
-window.demoLogin = function(plan = 'free') {
-  const user = {
-    name: plan === 'premium' ? 'Demo Premium' : 'Demo Free',
-    email: plan === 'premium' ? 'demo.premium@iblog.com' : 'demo@iblog.com',
-    plan,
-    isPremium: plan === 'premium',
   };
-  localStorage.setItem('user', JSON.stringify(user));
-  IBlog.state.currentUser = user; // ← critical line
-  closeAllModals();
-  goToDashboard();
-};
+
+  window.doSignin = function() {
+    const email    = document.getElementById('si-email')?.value.trim();
+    const password = document.getElementById('si-pass')?.value;
+
+    if (!email || !password) { alert('Please fill in all fields.'); return; }
+
+    let user;
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      if (parsed.email === email) {
+        user = parsed;
+      }
+    }
+    if (!user) {
+      user = { name: email.split('@')[0], email, plan: 'free', isPremium: false };
+    }
+
+    sessionStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify(user));
+    IBlog.state.currentUser = user;
+    closeAllModals();
+    goToDashboard();
+  };
+
+  window.demoLogin = function(plan = 'free') {
+    const user = {
+      name: plan === 'premium' ? 'Demo Premium' : 'Demo Free',
+      email: plan === 'premium' ? 'demo.premium@iblog.com' : 'demo@iblog.com',
+      plan,
+      isPremium: plan === 'premium',
+    };
+    sessionStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify(user));
+    IBlog.state.currentUser = user;
+    closeAllModals();
+    goToDashboard();
+  };
 
   // ── Payment ───────────────────────────────────────────────
 
@@ -220,99 +263,109 @@ window.demoLogin = function(plan = 'free') {
       if (msg)   { msg.textContent = '✗ Invalid promo code.'; msg.className = 'promo-msg err'; }
     }
   };
-window.doPayment = function() {
-  const paypalVisible = document.getElementById('pay-paypal')?.style.display === 'block';
 
-  if (paypalVisible) {
-    const s2 = document.getElementById('premium-step-payment');
-    if (s2) s2.innerHTML = `
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:40px;margin-bottom:8px">🅿</div>
-        <h2 class="modal-title" style="margin-bottom:4px">Pay with PayPal</h2>
-        <p class="modal-subtitle">Enter your PayPal credentials to complete the payment.</p>
-      </div>
+  window.doPayment = function() {
+    const paypalVisible = document.getElementById('pay-paypal')?.style.display === 'block';
 
-      <div class="form-group">
-        <label>PayPal Email</label>
-        <input type="email" placeholder="you@paypal.com" id="pp-email">
-      </div>
-      <div class="form-group">
-        <label>PayPal Password</label>
-        <input type="password" placeholder="••••••••" id="pp-pass">
-      </div>
+    if (paypalVisible) {
+      const s2 = document.getElementById('premium-step-payment');
+      if (s2) s2.innerHTML = `
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:40px;margin-bottom:8px">🅿</div>
+          <h2 class="modal-title" style="margin-bottom:4px">Pay with PayPal</h2>
+          <p class="modal-subtitle">Enter your PayPal credentials to complete the payment.</p>
+        </div>
 
-      <div class="pay-summary">
-        <span>Total</span>
-        <strong id="pp-final-total">$9.00 / month</strong>
-      </div>
+        <div class="form-group">
+          <label>PayPal Email</label>
+          <input type="email" placeholder="you@paypal.com" id="pp-email">
+        </div>
+        <div class="form-group">
+          <label>PayPal Password</label>
+          <input type="password" placeholder="••••••••" id="pp-pass">
+        </div>
 
-      <button class="btn btn-paypal btn-full" onclick="confirmPaypalPayment()" style="margin-bottom:12px">
-        Pay with 🅿 PayPal
-      </button>
-      <button class="back-btn" onclick="showPayment()">← Back</button>
-    `;
-    return;
-  }
+        <div class="pay-summary">
+          <span>Total</span>
+          <strong id="pp-final-total">$9.00 / month</strong>
+        </div>
 
-  // Card validation
-  const name   = document.getElementById('pay-name')?.value.trim();
-  const number = document.getElementById('pay-number')?.value.trim();
-  const expiry = document.getElementById('pay-expiry')?.value.trim();
-  const cvv    = document.getElementById('pay-cvv')?.value.trim();
+        <button class="btn btn-paypal btn-full" onclick="confirmPaypalPayment()" style="margin-bottom:12px">
+          Pay with 🅿 PayPal
+        </button>
+        <button class="back-btn" onclick="showPayment()">← Back</button>
+      `;
+      return;
+    }
 
-  if (!name || !number || !expiry || !cvv) {
-    alert('Please fill in all payment fields.');
-    return;
-  }
+    // Card validation
+    const name   = document.getElementById('pay-name')?.value.trim();
+    const number = document.getElementById('pay-number')?.value.trim();
+    const expiry = document.getElementById('pay-expiry')?.value.trim();
+    const cvv    = document.getElementById('pay-cvv')?.value.trim();
 
-  processSuccess();
-};
+    if (!name || !number || !expiry || !cvv) {
+      alert('Please fill in all payment fields.');
+      return;
+    }
 
-window.confirmPaypalPayment = function() {
-  const email = document.getElementById('pp-email')?.value.trim();
-  const pass  = document.getElementById('pp-pass')?.value;
+    processSuccess();
+  };
 
-  if (!email || !pass) {
-    alert('Please enter your PayPal email and password.');
-    return;
-  }
+  window.confirmPaypalPayment = function() {
+    const email = document.getElementById('pp-email')?.value.trim();
+    const pass  = document.getElementById('pp-pass')?.value;
 
-  if (!email.includes('@')) {
-    alert('Please enter a valid PayPal email.');
-    return;
-  }
+    if (!email || !pass) {
+      alert('Please enter your PayPal email and password.');
+      return;
+    }
 
-  processSuccess();
-};
+    if (!email.includes('@')) {
+      alert('Please enter a valid PayPal email.');
+      return;
+    }
 
-function processSuccess() {
-  const savedUser = localStorage.getItem('user');
-  if (savedUser) {
-    const user = JSON.parse(savedUser);
+    processSuccess();
+  };
+
+  function processSuccess() {
+    // Prefer pendingUser (came from signup flow), fall back to logged-in user
+    const raw = sessionStorage.getItem('pendingUser') || sessionStorage.getItem('user');
+    let user = raw
+      ? JSON.parse(raw)
+      : { name: 'New Member', email: 'member@iblog.com' };
+
     user.isPremium = true;
     user.plan = 'premium';
+
+    // Promote to real session and clear pending
+    sessionStorage.removeItem('pendingUser');
+    sessionStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('user', JSON.stringify(user));
+    IBlog.state.currentUser = user;
+
+    const s2 = document.getElementById('premium-step-payment');
+    const s3 = document.getElementById('premium-step-success');
+    if (s2) s2.style.display = 'none';
+    if (s3) s3.style.display = 'block';
+
+    _premiumFromLanding = false;
+    window.dispatchEvent(new CustomEvent('auth:premium', { detail: { success: true } }));
+
+    setTimeout(() => {
+      closeAllModals();
+      goToDashboard();
+    }, 1500);
   }
 
-  const s2 = document.getElementById('premium-step-payment');
-  const s3 = document.getElementById('premium-step-success');
-  if (s2) s2.style.display = 'none';
-  if (s3) s3.style.display = 'block';
-
-  window.dispatchEvent(new CustomEvent('auth:premium', { detail: { success: true } }));
-
-  setTimeout(() => {
+  function goToDashboard() {
     closeAllModals();
-    goToDashboard();
-  }, 1000);
-}
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    IBlog.Dashboard.enter();
+  }
 
-function goToDashboard() {
-  closeAllModals();
-  document.getElementById('landing-page').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  IBlog.Dashboard.enter();
-}
   // ── HTML Template ─────────────────────────────────────────
 
   function getModalsHTML() {
@@ -323,7 +376,7 @@ function goToDashboard() {
         <h2 class="modal-title">Join IBlog</h2>
         <p class="modal-subtitle">Choose your plan to get started.</p>
         <div class="plan-picker">
-          <div class="plan-opt selected" onclick="selectPlan(this,'free')">
+          <div class="plan-opt" onclick="selectPlan(this,'free')">
             <div class="plan-icon">📖</div><strong>Free</strong><small>Read &amp; write, basic tools</small>
           </div>
           <div class="plan-opt premium-plan" onclick="selectPlan(this,'premium')">
@@ -350,7 +403,7 @@ function goToDashboard() {
         <div class="modal-switch">
           New? <a onclick="showSignup()">Create account</a> &nbsp;·&nbsp;
           <a onclick="demoLogin('free')">Demo Free</a> &nbsp;·&nbsp;
-          <a onclick="demoLogin('premium')" class="link-premium">Demo Premium ⭐</a>
+          <a onclick="showPremium()" class="link-premium">Demo Premium ⭐</a>
         </div>
       </div>
     </div>
