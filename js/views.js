@@ -90,13 +90,11 @@ IBlog.Views = (() => {
     ).join('');
 
     const articlesHTML = data.articles.map((a, i) => {
-      // Try to find the article in the global state first (to use openReader with id)
       const existing = IBlog.state.articles.find(x =>
         x.title === a.title || x.title.startsWith(a.title.substring(0, 40))
       );
 
       if (existing) {
-        // Article exists in state — open full reader
         return `
 <div class="country-article-card" onclick="IBlog.Feed.openReader(${existing.id})">
   <div class="country-article-img" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${i*80%360},35%,${document.body.classList.contains('dark')?'18%':'85%'})`}"></div>
@@ -107,7 +105,6 @@ IBlog.Views = (() => {
   </div>
 </div>`;
       } else {
-        // Country-specific article not in state — open inline modal with its content
         const tempId = 'map_' + i + '_' + country.replace(/\s/g, '_');
         const safeTitle = a.title.replace(/'/g, "\\'");
         const safeAuthor = a.author.replace(/'/g, "\\'");
@@ -130,7 +127,6 @@ IBlog.Views = (() => {
   }
 
   function openMapArticle(id, title, author, readTime, img, country) {
-    // Build a temporary article object and inject into state temporarily
     const tempArticle = {
       id: id,
       title: title,
@@ -153,7 +149,6 @@ IBlog.Views = (() => {
       date: 'Trending now',
     };
 
-    // Temporarily add to state so openReader can find it
     const existing = IBlog.state.articles.find(x => x.id === id);
     if (!existing) IBlog.state.articles.push(tempArticle);
 
@@ -192,58 +187,6 @@ IBlog.Views = (() => {
   <span class="trend-spike">↗ ${a.likes}</span>
 </div>`).join('');
     }
-  }
-
-  /* ── Communities ─────────────────────────────────────── */
-  function buildCommunities() {
-    const grid = document.getElementById('comm-grid');
-    if (!grid) return;
-    grid.innerHTML = IBlog.COMMUNITIES.map((c, idx) => `
-<div class="comm-card" id="comm-card-${idx}">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-    <div class="comm-icon-big">${c.icon}</div>
-    <div>
-      <h3>${c.name}</h3>
-      <span class="topic-chip active" style="display:inline-block;">${c.members} members</span>
-    </div>
-  </div>
-  <p>${c.desc}</p>
-  <div class="comm-stats">
-    <span>💬 ${c.threads.length} active threads</span>
-    <span>🟢 ${Math.floor(Math.random()*40+8)} online</span>
-  </div>
-  <div class="comm-join-row">
-    <button class="comm-join-btn${IBlog.state.joinedCommunities.has(idx) ? ' joined' : ''}" id="comm-join-${idx}" onclick="IBlog.Views.toggleCommJoin(${idx},this)">
-      ${IBlog.state.joinedCommunities.has(idx) ? '✓ Joined' : 'Join Community'}
-    </button>
-    <button class="comm-enter-btn${IBlog.state.joinedCommunities.has(idx) ? ' visible' : ''}" id="comm-enter-${idx}" onclick="IBlog.Chat.open(${idx})">
-      💬 Enter →
-    </button>
-  </div>
-  <div class="comm-threads">
-    ${c.threads.map(t => `
-    <div class="thread-item" onclick="IBlog.Chat.open(${idx})">
-      <div style="flex:1">
-        <div class="thread-title">${t.title}</div>
-        <div class="thread-meta">${t.meta}</div>
-      </div>
-      <span style="color:var(--text3)">→</span>
-    </div>`).join('')}
-  </div>
-</div>`).join('');
-  }
-
-  function toggleCommJoin(idx, btn) {
-    const joined = !IBlog.state.joinedCommunities.has(idx);
-    if (joined) IBlog.state.joinedCommunities.add(idx);
-    else IBlog.state.joinedCommunities.delete(idx);
-    btn.classList.toggle('joined', joined);
-    btn.textContent = joined ? '✓ Joined' : 'Join Community';
-    const enterBtn = document.getElementById('comm-enter-' + idx);
-    if (enterBtn) enterBtn.classList.toggle('visible', joined);
-    IBlog.utils.toast(joined ? `✅ Joined ${IBlog.COMMUNITIES[idx].name}!` : 'Left community');
-    // Update rail communities
-    buildRailCommunities();
   }
 
   /* ── Trends ──────────────────────────────────────────── */
@@ -325,7 +268,7 @@ IBlog.Views = (() => {
     if (inp) { inp.value = t; doSearch(); }
   }
 
-  /* ── Writer / Article editor ─────────────────────────── */
+  /* ── Writer ──────────────────────────────────────────── */
   function buildTemplates() {
     const grid = document.getElementById('template-grid');
     if (!grid) return;
@@ -489,8 +432,6 @@ IBlog.Views = (() => {
       el.innerHTML = '<div class="empty-state"><div class="emoji">🔖</div><p>No saved articles. Bookmark from the feed.</p></div>';
       return;
     }
-    el.innerHTML = IBlog.state.savedArticles.map(a => IBlog.Feed.build.__proto__).join('');
-    // Re-render properly
     const tmp = document.createElement('div');
     IBlog.state.savedArticles.forEach(a => {
       const card = document.createElement('div');
@@ -539,8 +480,8 @@ IBlog.Views = (() => {
     <strong>${c.name}</strong>
     <small>${c.members} members</small>
   </div>
-  <button class="join-btn${IBlog.state.joinedCommunities.has(i) ? ' joined' : ''}" 
-    id="rail-join-${i}" onclick="IBlog.Views.toggleCommJoin(${i},this)">
+  <button class="join-btn${IBlog.state.joinedCommunities.has(i) ? ' joined' : ''}"
+    id="rail-join-${i}" onclick="IBlog.Communities.toggle(${i}, this)">
     ${IBlog.state.joinedCommunities.has(i) ? 'Joined' : 'Join'}
   </button>
 </div>`).join('');
@@ -590,7 +531,7 @@ IBlog.Views = (() => {
     ).join('');
   }
 
-  /* ── Category select options ─────────────────────────── */
+  /* ── Category Select ─────────────────────────────────── */
   function buildCategorySelect() {
     const sel = document.getElementById('article-cat');
     if (!sel) return;
@@ -598,10 +539,10 @@ IBlog.Views = (() => {
       IBlog.CATEGORIES.map(c => `<option>${c}</option>`).join('');
   }
 
+  /* ── Public API ──────────────────────────────────────── */
   return {
     initMap, selectCountry, openMapArticle,
     buildActivity, buildAnalytics,
-    buildCommunities, toggleCommJoin,
     buildTrends,
     doSearch, searchTopic,
     buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle,
@@ -610,8 +551,3 @@ IBlog.Views = (() => {
     buildProfile, buildAccentPicker, buildCategorySelect,
   };
 })();
-
-/* ============================================================
-   Chat Component — community chat panel with tabs
-   ============================================================ */
-
