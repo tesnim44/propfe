@@ -14,7 +14,7 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildTopAuthors();
     IBlog.Views.buildActivity();
     IBlog.Views.buildAnalytics();
-    IBlog.Views.buildCommunities();
+    IBlog.Communities.init();
     IBlog.Views.buildTrends();
     IBlog.Views.buildNotifications();
     IBlog.Views.buildMyArticles();
@@ -59,7 +59,7 @@ IBlog.Dashboard = (() => {
 
     const sBtn = document.getElementById('premium-settings-btn');
     const sTxt = document.getElementById('premium-status-text');
-    if (sBtn) { sBtn.textContent = isPrem ? '✓ Active' : '⭐ Upgrade'; sBtn.onclick = isPrem ? () => IBlog.utils.toast('You already have Premium! 🎉', 'success') : IBlog.Auth.showPremium; }
+    if (sBtn) { sBtn.textContent = isPrem ? '✓ Active' : '⭐ Upgrade'; sBtn.onclick = isPrem ? () => IBlog.utils.toast('You already have Premium! 🎉', 'success') : showPremium;}
     if (sTxt) sTxt.textContent = isPrem ? 'You are on the Premium plan. ✓' : 'You are on the Free plan.';
 
     // Profile
@@ -101,6 +101,8 @@ IBlog.Dashboard = (() => {
     if (view === 'saved') _buildSavedView();
     // My articles
     if (view === 'articles') IBlog.Views.buildMyArticles();
+    //communities
+    if (view === 'communities') IBlog.Communities.init();
   }
 
   function gateMap() {
