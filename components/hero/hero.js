@@ -1,4 +1,15 @@
-<section class="hero-shell">
+function loadComponent(id, file, fallbackHTML) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = fallbackHTML;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  loadComponent(
+    "hero-root",
+    "components/hero/hero.html",
+    `
+    <section class="hero-shell">
 
   <div class="hero-prog-bar" id="heroProgBar"></div>
 
@@ -134,5 +145,84 @@
 
   <div class="hero-counter"><strong id="hero-cur">1</strong> / 9</div>
 
+  
 
 </section>
+    `
+  );
+
+  // ── Hero slideshow ─────────────────────────────────────
+  const SLIDES    = document.querySelectorAll('.hslide');
+  const TRACK     = document.getElementById('heroSlides');
+  const DOTS      = document.querySelectorAll('.h-dot');
+  const THUMBS    = document.querySelectorAll('.h-thumb');
+  const PROG      = document.getElementById('heroProgBar');
+  const CUR_LABEL = document.getElementById('hero-cur');
+  const PREV_BTN  = document.getElementById('heroPrev');
+  const NEXT_BTN  = document.getElementById('heroNext');
+
+  if (!TRACK) return;
+
+  const AUTO_DELAY = 6000;
+  let current = 0, timer = null;
+
+  function goTo(idx) {
+    const prev = current;
+    current = (idx + SLIDES.length) % SLIDES.length;
+    TRACK.style.transform = `translateX(-${current * 100}%)`;
+    SLIDES[prev].classList.remove('active');
+    SLIDES[current].classList.add('active');
+    DOTS[prev]?.classList.remove('active');
+    DOTS[current]?.classList.add('active');
+    THUMBS[prev]?.classList.remove('active');
+    THUMBS[current]?.classList.add('active');
+    if (CUR_LABEL) CUR_LABEL.textContent = current + 1;
+    startAuto();
+  }
+
+  function startProg() {
+    if (!PROG) return;
+    PROG.style.transition = 'none';
+    PROG.style.width = '0%';
+    requestAnimationFrame(() => {
+      PROG.style.transition = `width ${AUTO_DELAY}ms linear`;
+      PROG.style.width = '100%';
+    });
+  }
+
+  function startAuto() {
+    clearTimeout(timer);
+    startProg();
+    timer = setTimeout(() => goTo(current + 1), AUTO_DELAY);
+  }
+
+  function stopAuto() {
+    clearTimeout(timer);
+    if (PROG) { PROG.style.transition = 'none'; PROG.style.width = getComputedStyle(PROG).width; }
+  }
+
+  PREV_BTN?.addEventListener('click', () => goTo(current - 1));
+  NEXT_BTN?.addEventListener('click', () => goTo(current + 1));
+  DOTS.forEach((d, i) => d.addEventListener('click', () => goTo(i)));
+  THUMBS.forEach((t, i) => t.addEventListener('click', () => goTo(i)));
+
+  const shell = TRACK.closest('.hero-shell');
+  shell?.addEventListener('mouseenter', stopAuto);
+  shell?.addEventListener('mouseleave', startAuto);
+
+  let tx = 0;
+  shell?.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  shell?.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 40) goTo(dx < 0 ? current + 1 : current - 1);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('landing-page')?.style.display === 'none') return;
+    if (e.key === 'ArrowLeft')  goTo(current - 1);
+    if (e.key === 'ArrowRight') goTo(current + 1);
+  });
+
+  goTo(0);
+
+});

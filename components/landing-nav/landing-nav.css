@@ -29,7 +29,7 @@
   color:var(--accent);
   letter-spacing:-2px;
 }
-#landing-nav.light-nav .l-logo { color: var(--text); }
+#landing-nav.light-nav .l-logo { color: var(--accent); }
 .l-logo em { font-style: italic; color: var(--accent); }
 
 /* Nav Links */
