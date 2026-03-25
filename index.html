@@ -147,6 +147,7 @@
     <!-- ════════════════════════════════════════════════════════
      DASHBOARD
      ════════════════════════════════════════════════════════ -->
+Updated upstream
     <div id="dashboard">
       <div class="dash-layout">
         <!-- components/left-rail/left-rail.html -->
@@ -157,6 +158,237 @@
             <div class="user-info">
               <strong id="dash-name">Amara Diallo</strong
               ><small id="dash-plan-label">Free Member</small>
+
+<div id="dashboard">
+  <div class="dash-layout">
+
+     <!-- components/left-rail/left-rail.html -->
+    <div class="left-rail">
+      <div class="iblog-brand">IBlog</div>
+      <div class="user-card">
+        <div class="dash-avatar" id="dash-avatar">A</div>
+        <div class="user-info"><strong id="dash-name">Amara Diallo</strong><small id="dash-plan-label">Free Member</small></div>
+      </div>
+      <button class="write-btn" onclick="IBlog.Dashboard.navigateTo('write')">✏️ Write Article</button>
+      <div class="nav-section">
+        <div class="nav-label">Main</div>
+        <div class="nav-item" data-view="home" onclick="IBlog.Dashboard.navigateTo('home')"><span class="nav-icon">🏠</span>Home</div>
+        <div class="nav-item" data-view="explore" onclick="IBlog.Dashboard.navigateTo('explore')"><span class="nav-icon">🧭</span>Explore</div>
+        <div class="nav-item" data-view="notifications" onclick="IBlog.Dashboard.navigateTo('notifications')"><span class="nav-icon">🔔</span>Notifications<span class="nav-badge">3</span></div>
+        <div class="nav-item" data-view="messages" onclick="IBlog.Dashboard.navigateTo('messages')"><span class="nav-icon">💬</span>Messages<span class="nav-badge">1</span></div>
+        <div class="nav-item" data-view="saved" onclick="IBlog.Dashboard.navigateTo('saved')"><span class="nav-icon">🔖</span>Saved</div>
+        <div class="nav-item" id="nav-map" onclick="IBlog.Dashboard.gateMap()"><span class="nav-icon">🌍</span>Global Map<span class="nav-lock" id="map-lock">🔒</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Dashboard</div>
+        <div class="nav-item" data-view="articles" onclick="IBlog.Dashboard.navigateTo('articles')"><span class="nav-icon">📄</span>My Articles</div>
+        <div class="nav-item" data-view="analytics" onclick="IBlog.Dashboard.navigateTo('analytics')"><span class="nav-icon">📊</span>Analytics</div>
+        <div class="nav-item" data-view="activity" onclick="IBlog.Dashboard.navigateTo('activity')"><span class="nav-icon">🟩</span>Activity</div>
+        <div class="nav-item" data-view="communities" onclick="IBlog.Dashboard.navigateTo('communities')"><span class="nav-icon">🏘️</span>Communities</div>
+        <div class="nav-item" data-view="search" onclick="IBlog.Dashboard.navigateTo('search')"><span class="nav-icon">🔍</span>Smart Search</div>
+        <div class="nav-item" data-view="trends" onclick="IBlog.Dashboard.navigateTo('trends')"><span class="nav-icon">📈</span>Trend Radar</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Account</div>
+        <div class="nav-item" data-view="profile" onclick="IBlog.Dashboard.navigateTo('profile')"><span class="nav-icon">👤</span>Profile</div>
+        <div class="nav-item" data-view="settings" onclick="IBlog.Dashboard.navigateTo('settings')"><span class="nav-icon">⚙️</span>Settings</div>
+        <div class="nav-item" id="upgrade-nav-btn" onclick="IBlog.Auth.showPremium()" style="display:none"><span class="nav-icon">⭐</span><span style="color:var(--premium);font-weight:600">Upgrade to Premium</span></div>
+        <div class="nav-item" onclick="IBlog.Dashboard.signout()"><span class="nav-icon">🚪</span>Sign Out</div>
+      </div>
+      <div class="rail-bottom">
+        <div class="accent-picker">
+          <div class="accent-picker-label">Accent Color</div>
+          <div class="accent-dots" id="accent-dots"></div>
+        </div>
+        <div class="dark-toggle">
+          <label class="toggle-switch"><input type="checkbox" id="dark-toggle-input" onchange="IBlog.Dashboard.toggleDark()"><div class="toggle-track"></div></label>
+          <span class="toggle-label" id="dark-toggle-label">☀️ Light</span>
+        </div>
+      </div>
+    </div>
+    
+
+    <!-- Center Feed -->
+    <div class="center-feed" id="center-feed">
+
+      <!-- ── HOME VIEW ──────────────────────────────────
+           components/compose-box/compose-box.html
+           ────────────────────────────────────────────── -->
+      <div class="view-panel active" id="view-home">
+        <div class="feed-tabs">
+          <div class="feed-tab active" onclick="IBlog.Dashboard.switchFeedTab(this,'foryou')">For You</div>
+          <div class="feed-tab" onclick="IBlog.Dashboard.switchFeedTab(this,'following')">Following</div>
+          <div class="feed-tab" onclick="IBlog.Dashboard.switchFeedTab(this,'trending')">Trending</div>
+          <div class="feed-tab" onclick="IBlog.Dashboard.switchFeedTab(this,'latest')">Latest</div>
+        </div><br>
+        <div class="compose-box">
+          <div class="compose-row">
+            <div class="compose-avatar" id="compose-avatar">A</div>
+            <textarea class="compose-input" id="composeInput" placeholder="What's on your mind? Share knowledge…" rows="2" onclick="IBlog.Feed.expandCompose()" oninput="IBlog.Feed.expandCompose()"></textarea>
+          </div>
+          <div class="compose-tools" id="composeTools">
+            <button class="tool-btn">📷 Image</button>
+            <button class="tool-btn">🔗 Link</button>
+            <button class="tool-btn">🏷️ Topic</button>
+            <button class="tool-btn">📊 Poll</button>
+            <button class="publish-btn" onclick="IBlog.Feed.publishPost()">Publish</button>
+          </div>
+        </div>
+        <div id="feed-container"></div>
+        <button class="load-more-btn" onclick="IBlog.utils.toast('All articles loaded!')">⬇ Load more articles</button>
+      </div>
+
+      <!-- ── EXPLORE VIEW ──────────────────────────────── -->
+      <div class="view-panel" id="view-explore" style="padding:28px">
+        <div class="view-header"><h1>🧭 Explore</h1><p>Discover articles from across the IBlog universe</p></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:28px;">
+          <div class="feat-card" onclick="IBlog.Dashboard.gateMap()"><div class="feat-icon" style="background:rgba(212,160,23,.12)">🌍</div><h3>Global Map <span class="badge badge-premium">⭐</span></h3><p>Explore what every country is reading.</p></div>
+          <div class="feat-card" onclick="IBlog.Dashboard.navigateTo('trends')"><div class="feat-icon" style="background:rgba(184,150,12,.12)">📈</div><h3>Trend Radar</h3><p>Real-time emerging topics detection.</p></div>
+          <div class="feat-card" onclick="IBlog.Dashboard.navigateTo('communities')"><div class="feat-icon" style="background:rgba(76,175,125,.1)">🏘️</div><h3>Communities</h3><p>Join knowledge spaces with like-minded readers.</p></div>
+        </div>
+        <div id="explore-feed"></div>
+      </div>
+
+      <!-- ── MAP VIEW — components/map/map.html ─────── -->
+      <div class="view-panel" id="view-map" style="padding:28px">
+        <div class="view-header flex-between">
+          <div><h1>🌍 Global Trend Map</h1><p>Click any country marker to explore its trending articles</p></div>
+          <span class="badge badge-premium" style="font-size:13px;padding:6px 14px">⭐ Premium Feature</span>
+        </div>
+        <div class="premium-gate">
+          <div id="world-map"></div>
+          <div class="premium-overlay" id="map-premium-overlay">
+            <div style="font-size:44px">🌍🔒</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text)">Premium Feature</h3>
+            <p style="font-size:14px;color:var(--text2);text-align:center;max-width:300px">Unlock the Global Trend Map to explore what every country is reading.</p>
+            <button class="premium-upgrade-btn" onclick="showPremium()">⭐ Upgrade to Premium</button>
+          </div>
+        </div>
+        <div class="country-feed" id="country-feed" style="display:none;margin-top:20px">
+          <div class="country-title" id="country-title">🌐 <em>World</em> — Trending Now</div>
+          <div id="country-articles"></div>
+        </div>
+      </div>
+
+      <!-- ── ACTIVITY — components/activity/activity.html -->
+      <div class="view-panel" id="view-activity">
+        <div class="view-header"><h1>🟩 Activity Tracker</h1><p>Your reading, writing, and engagement journey</p></div>
+        <div class="section-card">
+          <div class="flex-between" style="margin-bottom:14px">
+            <div><strong>2025–2026 Contributions</strong><br><small style="color:var(--text2)">Read days · Comments · Posts</small></div>
+            <div class="ai-pill"><span class="ai-dot"></span>342 total</div>
+          </div>
+          <div class="activity-grid" id="activity-grid"></div>
+          <div style="display:flex;gap:7px;align-items:center;margin-top:10px;font-size:11px;color:var(--text2)">
+            Less
+            <div style="width:11px;height:11px;border-radius:2px;background:var(--bg3)"></div>
+            <div style="width:11px;height:11px;border-radius:2px;background:rgba(184,150,12,.2)"></div>
+            <div style="width:11px;height:11px;border-radius:2px;background:rgba(184,150,12,.45)"></div>
+            <div style="width:11px;height:11px;border-radius:2px;background:rgba(184,150,12,.7)"></div>
+            <div style="width:11px;height:11px;border-radius:2px;background:var(--accent)"></div>
+            More
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div class="stat-box"><span class="stat-value">89</span><div class="stat-label">🔥 Day Streak</div></div>
+          <div class="stat-box"><span class="stat-value">47</span><div class="stat-label">📝 Posts</div></div>
+          <div class="stat-box"><span class="stat-value">156</span><div class="stat-label">💬 Comments</div></div>
+          <div class="stat-box"><span class="stat-value">12</span><div class="stat-label">🏘️ Communities</div></div>
+        </div>
+      </div>
+
+      <!-- ── SEARCH — components/search/search.html ──── -->
+      <div id="view-search-root"></div>
+
+      <!-- ── ANALYTICS — components/analytics/analytics.html -->
+      <div class="view-panel" id="view-analytics">
+        <div class="view-header"><h1>📊 Analytics</h1><p>Insights into your content performance</p></div>
+        <div class="analytics-grid">
+          <div class="analytics-card"><span class="stat-value">8.4k</span><div class="stat-label">Total Views</div></div>
+          <div class="analytics-card"><span class="stat-value">312</span><div class="stat-label">Total Likes</div></div>
+          <div class="analytics-card"><span class="stat-value">1.2k</span><div class="stat-label">Followers</div></div>
+          <div class="analytics-card"><span class="stat-value">47</span><div class="stat-label">Articles</div></div>
+        </div>
+        <div class="chart-area">
+          <div class="flex-between"><strong>Views Over Time</strong><span style="color:var(--text2);font-size:12px">Last 12 weeks</span></div>
+          <div class="chart-bars" id="chart-bars"></div>
+        </div>
+        <div class="section-card"><h3 style="margin-bottom:14px">Top Performing Articles</h3><div id="top-articles-list"></div></div>
+      </div>
+
+      <!-- ── COMMUNITIES — components/communities/communities.html -->
+      <div class="view-panel" id="view-communities">
+        <div class="view-header"><h1>🏘️ Community Spaces</h1><p>Topic-based communities for deep knowledge sharing</p></div>
+        <div class="community-grid" id="comm-grid"></div>
+      </div>
+
+      <!-- ── TRENDS — components/trends/trends.html ────── -->
+      <div class="view-panel" id="view-trends">
+        <div class="view-header"><h1>📈 Trend Radar</h1><p>Real-time emerging topics detected from reading patterns</p></div>
+        <div class="section-card">
+          <div class="flex-between" style="margin-bottom:14px"><strong>Emerging Now</strong><div class="ai-pill"><span class="ai-dot"></span>AI Analysis</div></div>
+          <div id="trend-list"></div>
+        </div>
+        <div class="section-card"><strong style="display:block;margin-bottom:14px">Rising Categories</strong><div class="trend-cat-grid" id="trend-cats"></div></div>
+      </div>
+
+      <!-- ── NOTIFICATIONS — components/notifications/notifications.html -->
+      <div id="view-notifications-root"></div>
+      <div id="view-messages-root"></div>
+      <div id="view-saved-root"></div>
+
+      <!-- ── MESSAGES -->
+      <div class="view-panel" id="view-messages">
+        <div class="view-header"><h1>💬 Messages</h1></div>
+        <div class="section-card">
+          <div class="notif-item"><div class="notif-dot" style="background:var(--accent2)"></div><div><div class="notif-text"><strong>Léa Moreau</strong>: "Your article on Quantum AI was incredible! Can we collaborate?"</div><div class="notif-time">2 hours ago</div></div></div>
+          <div class="notif-item"><div class="notif-dot read"></div><div><div class="notif-text"><strong>IBlog Team</strong>: Welcome to IBlog!</div><div class="notif-time">Yesterday</div></div></div>
+        </div>
+      </div>
+
+      <!-- ── SAVED -->
+      <div class="view-panel" id="view-saved">
+        <div class="view-header"><h1>🔖 Saved Articles</h1></div>
+        <div id="saved-list"></div>
+      </div>
+
+      <!-- ── PROFILE — components/profile/profile.html ── -->
+      <div class="view-panel" id="view-profile">
+        <div style="position:relative;margin-bottom:70px">
+          <div class="profile-banner"></div>
+          <div class="profile-avatar-big" id="profile-avatar-big" style="background:var(--accent)">A</div>
+        </div>
+        <div class="profile-info">
+          <div class="flex-between" style="margin-bottom:8px">
+            <h2 id="profile-name" style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text)">Amara Diallo</h2>
+            <div id="profile-premium-badge" style="display:none" class="badge badge-premium">⭐ Premium</div>
+          </div>
+          <p style="color:var(--text2);margin-bottom:18px">@amara · Passionate writer &amp; knowledge explorer.</p>
+          <div style="display:flex;gap:22px;margin-bottom:18px">
+            <div><strong id="profile-article-count">0</strong> <span style="color:var(--text2);font-size:13px">Articles</span></div>
+            <div><strong>1.2k</strong> <span style="color:var(--text2);font-size:13px">Followers</span></div>
+            <div><strong>389</strong> <span style="color:var(--text2);font-size:13px">Following</span></div>
+          </div>
+          <div class="topic-chips"><span class="topic-chip active">AI</span><span class="topic-chip active">Technology</span><span class="topic-chip active">Science</span></div>
+        </div>
+      </div>
+
+      <!-- ── WRITER — components/writer/writer.html ───── -->
+      <div class="view-panel writer-view" id="view-write">
+        <div class="view-header"><h1>✏️ Write an Article</h1><p>Share your knowledge with the IBlog community</p></div>
+        <div style="margin-bottom:22px">
+          <div class="flex-between" style="margin-bottom:14px">
+            <div><strong style="font-size:15px">Article Templates</strong> <span class="badge badge-premium" style="margin-left:8px">⭐ Premium</span></div>
+            <span style="font-size:12px;color:var(--text2)" id="template-subtitle">Upgrade to access 9 professional templates</span>
+          </div>
+          <div class="premium-gate" style="min-height:180px">
+            <div class="template-grid" id="template-grid" style="pointer-events:none;opacity:.35"></div>
+            <div class="premium-overlay" id="template-overlay">
+              <div style="font-size:40px">✍️🔒</div>
+              <h3 style="font-family:'Playfair Display',serif;font-size:20px;color:var(--text)">Premium Templates</h3>
+              <p style="font-size:13px;color:var(--text2);text-align:center;max-width:280px">9 professional article layouts for any content type.</p>
+              <button class="premium-upgrade-btn" onclick="showPremium()">⭐ Upgrade to Unlock</button>
+>>>>>>> Stashed changes
             </div>
           </div>
           <button
@@ -1135,6 +1367,7 @@
     <!-- ════════════════════════════════════════════════════════
      JS COMPONENTS (ordre de chargement strict)
      ════════════════════════════════════════════════════════ -->
+<<<<<<< Updated upstream
     <script src="toggledark.js"></script>  <!-- before everything else -->
     <script src="data.js"></script>
     <script src="js/feed.js"></script>
@@ -1151,3 +1384,16 @@
     <script src="app.js"></script>
   </body>
 </html>
+=======
+<script src="data.js"></script>
+<script src="iblog-components-v3/js/feed.js"></script>
+<script src="iblog-components-v3/js/views.js"></script>
+<script src="iblog-components-v3/js/chat.js"></script>
+<script src="components/landing-nav/landing-nav.js"></script>
+<script src="components/dashboard-layout/dashboard.js"></script>
+<script src="components/notifications/notifications.js"></script>
+<script src="components/auth/auth.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
+>>>>>>> Stashed changes
