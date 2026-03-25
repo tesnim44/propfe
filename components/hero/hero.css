@@ -130,12 +130,19 @@
   backdrop-filter: blur(8px);
   padding: 5px 13px;
   border-radius: 99px;
+
+}
+.slide-cat:hover {
+    background: rgba(255,255,255,.25);
+    border-color: rgba(255,255,255,.35);
+    color: #fff;
+
 }
 
 .slide-num {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: rgba(255,255,255,.45);
+  color: rgba(255, 255, 255, 0.799);
   letter-spacing: 1px;
 }
 

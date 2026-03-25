@@ -281,10 +281,12 @@ function toggleDark() {
     document.getElementById('landing-dark-pill').textContent = isDark ? '☀️' : '🌙';
   }
 
-  return {
-    enter, updateUserUI, refreshGates, navigateTo, gateMap,
-    toggleDark, signout, switchFeedTab,
-    initHero, heroPrev, heroNext, heroGo,
-    buildTicker, buildLandingCarousel, toggleLandingDark,
-  };
+  // In the return statement at the bottom, add _heroIdx
+return {
+  enter, updateUserUI, refreshGates, navigateTo, gateMap,
+  toggleDark, signout, switchFeedTab,
+  initHero, heroPrev, heroNext, heroGo,
+  buildTicker, buildLandingCarousel, toggleLandingDark,
+  get _heroIdx() { return _heroIdx; } // ← add this
+};
 })();

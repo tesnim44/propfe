@@ -153,74 +153,70 @@
 
   // ── Auth Actions ──────────────────────────────────────────
 
-  window.doSignup = function() {
-    const name     = document.getElementById('su-name')?.value.trim();
-    const email    = document.getElementById('su-email')?.value.trim();
-    const password = document.getElementById('su-pass')?.value;
-    const plan     = localStorage.getItem('selectedPlan') || null;
+ // At top of auth.js IIFE — add this variable
+let _pendingArticleId = null;
+window.setPendingArticle = function(id) {
+  _pendingArticleId = id;
+};
+window.doSignin = function() {
+  const email    = document.getElementById('si-email')?.value.trim();
+  const password = document.getElementById('si-pass')?.value;
+  if (!email || !password) { alert('Please fill in all fields.'); return; }
 
-    if (!plan) { alert('Please select a plan to continue.'); return; }
-    if (!name || !email || !password) { alert('Please fill in all fields.'); return; }
-    if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  let user;
+  const savedUser = sessionStorage.getItem('user');
+  if (savedUser) {
+    const parsed = JSON.parse(savedUser);
+    if (parsed.email === email) user = parsed;
+  }
+  if (!user) {
+    user = { name: email.split('@')[0], email, plan: 'free', isPremium: false };
+  }
+  sessionStorage.setItem('user', JSON.stringify(user));
+  IBlog.state.currentUser = user;
+  closeAllModals();
+  goToDashboard(_pendingArticleId);
+  _pendingArticleId = null;
+};
 
-    const user = { name, email, plan, isPremium: plan === 'premium' };
-
-    if (plan === 'premium') {
-      // Store as pending — only promoted to real session after payment succeeds
-      sessionStorage.setItem('pendingUser', JSON.stringify(user));
-      closeAllModals();
-      setTimeout(() => {
-        showPerks();
-        document.getElementById('modal-premium')?.classList.add('active');
-      }, 0);
-    } else {
-      sessionStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('user', JSON.stringify(user));
-      IBlog.state.currentUser = user;
-      closeAllModals();
-      goToDashboard();
-    }
+window.demoLogin = function(plan = 'free', articleId = null) {
+  const user = {
+    name: plan === 'premium' ? 'Demo Premium' : 'Demo Free',
+    email: plan === 'premium' ? 'demo.premium@iblog.com' : 'demo@iblog.com',
+    plan,
+    isPremium: plan === 'premium',
   };
+  sessionStorage.setItem('user', JSON.stringify(user));
+  IBlog.state.currentUser = user;
+  closeAllModals();
+  goToDashboard(_pendingArticleId);
+    _pendingArticleId = null;
+};
 
-  window.doSignin = function() {
-    const email    = document.getElementById('si-email')?.value.trim();
-    const password = document.getElementById('si-pass')?.value;
+window.doSignup = function() {
+  const name     = document.getElementById('su-name')?.value.trim();
+  const email    = document.getElementById('su-email')?.value.trim();
+  const password = document.getElementById('su-pass')?.value;
+  const plan     = localStorage.getItem('selectedPlan') || 'free';
 
-    if (!email || !password) { alert('Please fill in all fields.'); return; }
+  if (!name || !email || !password) { alert('Please fill in all fields.'); return; }
+  if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
 
-    let user;
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      if (parsed.email === email) {
-        user = parsed;
-      }
-    }
-    if (!user) {
-      user = { name: email.split('@')[0], email, plan: 'free', isPremium: false };
-    }
+  const user = { name, email, plan, isPremium: plan === 'premium' };
+  sessionStorage.setItem('user', JSON.stringify(user));
+  IBlog.state.currentUser = user;
+  closeAllModals();
 
-    sessionStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('user', JSON.stringify(user));
-    IBlog.state.currentUser = user;
-    closeAllModals();
-    goToDashboard();
-  };
-
-  window.demoLogin = function(plan = 'free') {
-    const user = {
-      name: plan === 'premium' ? 'Demo Premium' : 'Demo Free',
-      email: plan === 'premium' ? 'demo.premium@iblog.com' : 'demo@iblog.com',
-      plan,
-      isPremium: plan === 'premium',
-    };
-    sessionStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('user', JSON.stringify(user));
-    IBlog.state.currentUser = user;
-    closeAllModals();
-    goToDashboard();
-  };
-
+  if (plan === 'premium') {
+    setTimeout(() => {
+      showPerks();
+      document.getElementById('modal-premium')?.classList.add('active');
+    }, 0);
+  } else {
+    goToDashboard(_pendingArticleId);
+    _pendingArticleId = null;
+  }
+};
   // ── Payment ───────────────────────────────────────────────
 
   window.switchPayTab = function(el, tab) {
@@ -359,13 +355,17 @@
     }, 1500);
   }
 
-  function goToDashboard() {
-    closeAllModals();
-    document.getElementById('landing-page').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    IBlog.Dashboard.enter();
+  function goToDashboard(pendingId = null) {
+  closeAllModals();
+  document.getElementById('landing-page').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  IBlog.Dashboard.enter();
+  if (pendingId) {
+    setTimeout(() => {
+      IBlog.Feed.openReader(pendingId);
+    }, 300);
   }
-
+}
   // ── HTML Template ─────────────────────────────────────────
 
   function getModalsHTML() {
