@@ -13,7 +13,6 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildRailCommunities();
     IBlog.Views.buildTopAuthors();
     IBlog.Views.buildActivity();
-    IBlog.Views.buildAnalytics();
     IBlog.Communities.init();
     IBlog.Views.buildTrends();
     IBlog.Views.buildNotifications();
@@ -103,6 +102,7 @@ IBlog.Dashboard = (() => {
     if (view === 'articles') IBlog.Views.buildMyArticles();
     //communities
     if (view === 'communities') IBlog.Communities.init();
+    if (view === 'analytics') IBlog.Analytics.init();
   }
 
   function gateMap() {
