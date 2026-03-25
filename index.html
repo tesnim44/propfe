@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/global.css" />
 
     <!-- ── Component CSS (one per feature) ─────────────── -->
+    <link rel="stylesheet" href="css/Darkmode.css" />
     <link rel="stylesheet" href="components/preloader/preloader.css" />
     <link rel="stylesheet" href="components/auth/auth.css" />
     <link rel="stylesheet" href="components/landing-nav/landing-nav.css" />
@@ -77,50 +78,10 @@
     <div id="landing-page">
       <div id="landing-root"></div>
 
-      <!-- components/hero/hero.html -->
-      <section class="hero" id="hero-section">
-        <div class="hero-slide active" id="slide-0"></div>
-        <div class="hero-slide" id="slide-1"></div>
-        <div class="hero-slide" id="slide-2"></div>
-        <div class="hero-slide" id="slide-3"></div>
-        <div class="hero-slide" id="slide-4"></div>
-        <div class="hero-content">
-          <div class="hero-cat-badge">
-            <span class="hero-cat-dot"></span
-            ><span id="hero-cat">Art &amp; Science</span>
-          </div>
-          <div class="hero-slide-counter" id="hero-counter">— 01 / 05</div>
-          <h1 class="hero-title" id="hero-title">
-            How Did van Gogh's <em>Turbulent Mind</em> Depict One of Physics'
-            Most Complex Concepts?
-          </h1>
-          <div class="hero-byline" id="hero-byline"></div>
-          <div class="hero-btns">
-            <button class="hero-btn-white" onclick="showSignup()">
-              Read Article →
-            </button>
-            <button class="hero-btn-outline" onclick="showSignup()">
-              Get Started Free
-            </button>
-          </div>
-        </div>
-        <div
-          class="hero-arrow hero-arrow-left"
-          onclick="IBlog.Dashboard.heroPrev()"
-        >
-          ‹
-        </div>
-        <div
-          class="hero-arrow hero-arrow-right"
-          onclick="IBlog.Dashboard.heroNext()"
-        >
-          ›
-        </div>
-        <div class="hero-thumbs" id="hero-thumbs"></div>
-        <div class="hero-dots" id="hero-dots"></div>
-        <div class="hero-counter-br" id="hero-counter-br">1 / 5</div>
-      </section>
 
+      <!-- components/hero/hero.html -->
+
+      <div id="hero-root"></div>
       <!-- components/ticker/ticker.html -->
       <div class="ticker">
         <div class="ticker-inner" id="ticker-inner"></div>
@@ -1241,11 +1202,13 @@
     <!-- ════════════════════════════════════════════════════════
      JS COMPONENTS (ordre de chargement strict)
      ════════════════════════════════════════════════════════ -->
+    <script src="toggledark.js"></script>  <!-- before everything else -->
     <script src="data.js"></script>
     <script src="js/feed.js"></script>
     <script src="js/views.js"></script>
     <script src="components/chat/chat.js"></script>
     <script src="components/landing-nav/landing-nav.js"></script>
+    <script src="components/hero/hero.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/auth/auth.js"></script>
 

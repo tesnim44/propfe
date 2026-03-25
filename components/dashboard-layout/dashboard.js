@@ -141,13 +141,11 @@ IBlog.Dashboard = (() => {
   }
 
   /* ── Dark mode toggle ─────────────────────────────────── */
-  function toggleDark() {
-    const checked = document.getElementById('dark-toggle-input')?.checked;
-    IBlog.utils.applyDark(!!checked);
-    const lbl = document.getElementById('dark-toggle-label');
-    if (lbl) lbl.textContent = checked ? '🌙 Dark' : '☀️ Light';
-  }
-
+  /* ── Dark mode toggle (dashboard checkbox) ────────────────── */
+function toggleDark() {
+  window._dashToggleDark(); // delegate to toggleDark.js
+}
+  
   /* ── Sign out ─────────────────────────────────────────── */
   function signout() {
   IBlog.state.currentUser = null;
@@ -283,10 +281,12 @@ IBlog.Dashboard = (() => {
     document.getElementById('landing-dark-pill').textContent = isDark ? '☀️' : '🌙';
   }
 
-  return {
-    enter, updateUserUI, refreshGates, navigateTo, gateMap,
-    toggleDark, signout, switchFeedTab,
-    initHero, heroPrev, heroNext, heroGo,
-    buildTicker, buildLandingCarousel, toggleLandingDark,
-  };
+  // In the return statement at the bottom, add _heroIdx
+return {
+  enter, updateUserUI, refreshGates, navigateTo, gateMap,
+  toggleDark, signout, switchFeedTab,
+  initHero, heroPrev, heroNext, heroGo,
+  buildTicker, buildLandingCarousel, toggleLandingDark,
+  get _heroIdx() { return _heroIdx; } // ← add this
+};
 })();
