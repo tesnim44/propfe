@@ -11,3 +11,27 @@
 .feat-card p{font-size:13px;color:var(--text2);line-height:1.75;}
 @media(max-width:900px){.features-section{padding:60px 24px;}.feat-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:640px){.feat-grid{grid-template-columns:1fr;}}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px 24px;
+  border-radius: 12px;
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 10000;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
