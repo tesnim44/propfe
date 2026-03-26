@@ -37,7 +37,7 @@
     <link rel="stylesheet" href="components/map/map.css" />
     <link rel="stylesheet" href="components/activity/activity.css" />
     <link rel="stylesheet" href="components/search/search.css" />
-    <link rel="stylesheet" href="components/analytics/analytics.css" />
+    <link rel="stylesheet" href="components/stats/stats.css" />
     <link rel="stylesheet" href="components/communities/communities.css" />
     <link rel="stylesheet" href="components/chat/chat.css" />
     <link rel="stylesheet" href="components/trends/trends.css" />
@@ -77,7 +77,6 @@
      ════════════════════════════════════════════════════════ -->
     <div id="landing-page">
       <div id="landing-root"></div>
-
 
       <!-- components/hero/hero.html -->
 
@@ -1202,17 +1201,19 @@
     <!-- ════════════════════════════════════════════════════════
      JS COMPONENTS (ordre de chargement strict)
      ════════════════════════════════════════════════════════ -->
-    <script src="toggledark.js"></script>  <!-- before everything else -->
+    <script src="toggledark.js"></script>
+    <!-- before everything else -->
     <script src="data.js"></script>
     <script src="js/feed.js"></script>
     <script src="js/views.js"></script>
     <script src="components/chat/chat.js"></script>
     <script src="components/landing-nav/landing-nav.js"></script>
     <script src="components/hero/hero.js"></script>
+
+    <script src="components/stats/stats.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/auth/auth.js"></script>
 
-    <script src="components/analytics/analytics.js"></script>
     <script src="components/trends/trends.js"></script>
     <script src="components/communities/communities.js"></script>
     <script src="app.js"></script>

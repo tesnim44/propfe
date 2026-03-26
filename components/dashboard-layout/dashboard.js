@@ -82,6 +82,9 @@ IBlog.Dashboard = (() => {
 
   /* ── Navigation ───────────────────────────────────────── */
   function navigateTo(view) {
+
+    if (view === 'analytics') IBlog.Analytics?.init();
+     if (view === 'communities') IBlog.Communities.init();
     document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + view);
     if (el) el.classList.add('active');
@@ -101,8 +104,7 @@ IBlog.Dashboard = (() => {
     // My articles
     if (view === 'articles') IBlog.Views.buildMyArticles();
     //communities
-    if (view === 'communities') IBlog.Communities.init();
-    if (view === 'analytics') IBlog.Analytics.init();
+   
   }
 
   function gateMap() {
