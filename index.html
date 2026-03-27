@@ -821,45 +821,26 @@ Updated upstream
           <div class="view-panel" id="view-search">
             <div class="view-header">
               <h1>🔍 Smart Search</h1>
-              <p>
-                AI-powered semantic search — finds articles even when wording
-                differs
-              </p>
-            </div>
-            <div class="search-full">
-              <input
-                type="text"
-                id="smart-search-input"
-                placeholder='Try: "AI ethics" or "future of work"…'
-                onkeydown="if (event.key === 'Enter') IBlog.Views.doSearch();"
-              />
-              <button onclick="IBlog.Views.doSearch()">Search</button>
-            </div>
-            <div class="filter-row">
-              <button class="filter-chip active" onclick="toggleFilter(this)">
-                All
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Technology
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Science
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                AI
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Culture
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                &lt; 5 min
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Popular
-              </button>
-            </div>
-            <div id="search-results"></div>
+              <p>AI-powered semantic search — finds articles even when wording differs</p>
+           </div>
+           <div class="search-full">
+            <input type="text"
+           id="smart-search-input"
+           placeholder='Try: "AI ethics" or "future of work"…'
+           onkeydown="if(event.key==='Enter') IBlog.Views.doSearch()"/>
+           <button onclick="IBlog.Views.doSearch()">Search</button>
           </div>
+          <div class="filter-row">
+            <button class="filter-chip active" onclick="toggleFilter(this)">All</button>
+            <button class="filter-chip" onclick="toggleFilter(this)">Technology</button>
+            <button class="filter-chip" onclick="toggleFilter(this)">Science</button>
+            <button class="filter-chip" onclick="toggleFilter(this)">AI</button>
+            <button class="filter-chip" onclick="toggleFilter(this)">Culture</button>
+            <button class="filter-chip" onclick="toggleFilter(this)">&#60; 5 min</button>
+            <button class="filter-chip" onclick="toggleFilter(this)">Popular</button>
+          </div>
+          <div id="search-results"></div>
+        </div>
 
           <!-- ── ANALYTICS — components/analytics/analytics.html -->
           <div id="analytics-root"></div>
