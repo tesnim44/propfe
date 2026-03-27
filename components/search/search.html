@@ -1,22 +1,28 @@
-<!-- ══ SMART SEARCH VIEW ═════════════════════════════════ -->
 <div class="view-panel" id="view-search">
   <div class="view-header">
     <h1>🔍 Smart Search</h1>
-    <p>AI-powered semantic search — finds articles even when wording differs</p>
+    <p>Recherche sémantique — trouve les articles même avec des mots différents</p>
   </div>
+
   <div class="search-full">
-    <input type="text" id="smart-search-input" placeholder='Try: "AI ethics" or "future of work"…'
-      onkeydown="if(event.key==='Enter')IBlog.Views.doSearch()">
-    <button onclick="IBlog.Views.doSearch()">Search</button>
+    <input
+      type="text"
+      id="smart-search-input"
+      placeholder='Essayez : "IA éthique" ou "futur du travail"…'
+      onkeydown="if(event.key==='Enter') IBlog.Search.doSearch()"
+    >
+    <button onclick="IBlog.Search.doSearch()">Rechercher</button>
   </div>
+
   <div class="filter-row">
-    <button class="filter-chip active" onclick="toggleFilter(this)">All</button>
-    <button class="filter-chip" onclick="toggleFilter(this)">Technology</button>
-    <button class="filter-chip" onclick="toggleFilter(this)">Science</button>
-    <button class="filter-chip" onclick="toggleFilter(this)">AI</button>
-    <button class="filter-chip" onclick="toggleFilter(this)">Culture</button>
-    <button class="filter-chip" onclick="toggleFilter(this)">&lt; 5 min</button>
-    <button class="filter-chip" onclick="toggleFilter(this)">Popular</button>
+    <button class="filter-chip active" onclick="IBlog.Search.toggleFilter(this)">Tous</button>
+    <button class="filter-chip" onclick="IBlog.Search.toggleFilter(this)">Technologie</button>
+    <button class="filter-chip" onclick="IBlog.Search.toggleFilter(this)">Science</button>
+    <button class="filter-chip" onclick="IBlog.Search.toggleFilter(this)">IA</button>
+    <button class="filter-chip" onclick="IBlog.Search.toggleFilter(this)">Culture</button>
+    <button class="filter-chip" onclick="IBlog.Search.toggleFilter(this)">&lt; 5 min</button>
+    <button class="filter-chip" onclick="IBlog.Search.toggleFilter(this)">Populaire</button>
   </div>
+
   <div id="search-results"></div>
 </div>
