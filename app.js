@@ -1,6 +1,9 @@
 function toggleFilter(el) {
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  // Relancer la recherche avec le nouveau filtre
+  const input = document.getElementById('smart-search-input');
+  if (input && input.value.trim()) IBlog.Views.doSearch();
 }
 
 window.openArticleFromLanding = function(slideIndex) {
