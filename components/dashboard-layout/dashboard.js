@@ -14,7 +14,8 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildTopAuthors();
     IBlog.Views.buildActivity();
     IBlog.Communities.init();
-    IBlog.Views.buildTrends();
+    IBlog.Trends?.init();
+
     IBlog.Views.buildNotifications();
     IBlog.Views.buildMyArticles();
     IBlog.Views.buildTemplates();
@@ -85,6 +86,20 @@ IBlog.Dashboard = (() => {
 
     if (view === 'analytics') IBlog.Analytics?.init();
      if (view === 'communities') IBlog.Communities.init();
+    
+    // Lazy init for map
+    if (view === 'map') IBlog.Views.initMap();
+    // Profile
+    if (view === 'profile') IBlog.Views.buildProfile();
+    // Saved
+    if (view === 'saved') _buildSavedView();
+    // My articles
+    if (view === 'articles') IBlog.Views.buildMyArticles();
+    //communities
+    if (view === 'trends') IBlog.Trends?.init();
+   
+
+
     document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + view);
     if (el) el.classList.add('active');
@@ -95,16 +110,6 @@ IBlog.Dashboard = (() => {
     const activeNav = document.querySelector(`.nav-item[data-view="${view}"]`);
     if (activeNav) activeNav.classList.add('active');
 
-    // Lazy init for map
-    if (view === 'map') IBlog.Views.initMap();
-    // Profile
-    if (view === 'profile') IBlog.Views.buildProfile();
-    // Saved
-    if (view === 'saved') _buildSavedView();
-    // My articles
-    if (view === 'articles') IBlog.Views.buildMyArticles();
-    //communities
-   
   }
 
   function gateMap() {
