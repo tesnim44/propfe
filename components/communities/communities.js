@@ -54,21 +54,29 @@ IBlog.Communities = (() => {
   }
 
   /* ── Premium button ──────────────────────────────────── */
-  function _checkPremiumAndShowButton() {
-    const user      = IBlog.state.currentUser;
-    const isPremium = user && (user.isPremium === true || user.plan === 'premium');
-    const createBtn = document.getElementById('create-community-btn');
-    if (!createBtn) return;
+ function _checkPremiumAndShowButton() {
+  const createBtn = document.getElementById('create-community-btn');
+  if (!createBtn) return;
 
-    if (isPremium) {
-      createBtn.style.display = 'flex';
-      const newBtn = createBtn.cloneNode(true);
-      createBtn.parentNode.replaceChild(newBtn, createBtn);
-      newBtn.onclick = () => showCreateCommunityModal();
-    } else {
-      createBtn.style.display = 'none';
-    }
+  // Always visible
+  createBtn.style.display = 'flex';
+
+  const newBtn = createBtn.cloneNode(true);
+  createBtn.parentNode.replaceChild(newBtn, createBtn);
+
+  const user      = IBlog.state.currentUser;
+  const isPremium = user && (user.isPremium === true || user.plan === 'premium');
+
+  if (isPremium) {
+    newBtn.onclick = () => showCreateCommunityModal();
+  } else {
+    // Non-premium: show upgrade prompt instead
+    newBtn.onclick = () => {
+      IBlog.utils.toast('⭐ Create your own community with Premium!', 'info');
+      if (window.showPremium) showPremium();
+    };
   }
+}
 
   /* ── Create community modal ──────────────────────────── */
   function _injectCreateModal() {
