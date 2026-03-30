@@ -1,11 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IBlog — Knowledge Without Borders</title>
-
-    <link rel="stylesheet" href="css/global.css" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IBlog — Knowledge Without Borders</title>
+      <link rel="stylesheet" href="css/global.css" />
     <link rel="stylesheet" href="css/Darkmode.css" />
     <link rel="stylesheet" href="components/preloader/preloader.css" />
     <link rel="stylesheet" href="components/auth/auth.css" />
@@ -43,158 +42,76 @@
     <link rel="stylesheet" href="components/notifications/notifications.css" />
     <link rel="stylesheet" href="components/my-articles/my-articles.css" />
   </head>
-  <body>
-    <!-- PRELOADER + TOAST -->
-    <div id="preloader-root"></div>
-    <div id="toast-root"></div>
-    <script src="components/preloader/preloader.js"></script>
+  <link rel="stylesheet" href="components/admin/admin.css">
+</head>
+<body>
 
-    <!-- AUTH MODALS -->
-    <div id="auth-root"></div>
+<!-- ════════════════════════════════════════════════════════
+     PRELOADER + TOAST
+     ════════════════════════════════════════════════════════ -->
+<div id="preloader-root"></div>
+<div id="toast-root"></div>
+<script src="components/preloader/preloader.js"></script>
 
-    <!-- ARTICLE READER OVERLAY -->
-    <div
-      id="article-reader-overlay"
-      onclick="if (event.target === this) IBlog.Feed.closeReader();"
-    >
-      <div id="article-reader-content"></div>
+<!-- ════════════════════════════════════════════════════════
+     AUTH MODALS
+     ════════════════════════════════════════════════════════ -->
+<div id="auth-root"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     ARTICLE READER OVERLAY
+     ════════════════════════════════════════════════════════ -->
+<div id="article-reader-overlay" onclick="if(event.target===this)IBlog.Feed.closeReader()">
+  <div id="article-reader-content"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     LANDING PAGE
+     ════════════════════════════════════════════════════════ -->
+<div id="landing-page">
+  <div id="landing-root"></div>
+  <div id="hero-root"></div>
+
+  <!-- Ticker -->
+  <div class="ticker"><div class="ticker-inner" id="ticker-inner"></div></div>
+
+  <!-- Features -->
+  <section class="features-section" id="features">
+    <div class="section-eyebrow">Why IBlog</div>
+    <h2 class="section-headline">A platform built for<br><span style="color:var(--accent)">curious minds</span></h2>
+    <div class="feat-grid">
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(184,150,12,.12)">🤖</div><h3>AI Recommendations</h3><p>Personalized feeds based on your reading patterns and interests across 27 categories.</p></div>
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(232,93,58,.1)">🎙️</div><h3>Article → Podcast</h3><p>Convert any article to a podcast instantly. Choose male, female, or auto AI voice.</p></div>
+      <div class="feat-card premium-feat" onclick="showPremium()"><div class="feat-icon" style="background:rgba(212,160,23,.15)">🌍</div><h3>Global Trend Map <span class="badge badge-premium">⭐ Premium</span></h3><p>Explore what 19 countries are reading. Click any nation for local trends.</p></div>
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(76,175,125,.1)">🏘️</div><h3>Community Spaces</h3><p>Join topic-based communities with live chat, threads, and curated resources.</p></div>
+      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(184,150,12,.12)">📊</div><h3>Activity Tracker</h3><p>GitHub-style calendar tracking your reading days, comments, and posts.</p></div>
+      <div class="feat-card premium-feat" onclick="showPremium()"><div class="feat-icon" style="background:rgba(212,160,23,.15)">✍️</div><h3>Article Templates <span class="badge badge-premium">⭐ Premium</span></h3><p>9 professional article templates. Edit your published articles anytime.</p></div>
     </div>
+  </section>
 
-    <!-- ═══════════════════════════════════════════
-         LANDING PAGE
-    ═══════════════════════════════════════════ -->
-    <div id="landing-page">
-      <div id="landing-root"></div>
+  <!-- Carousel -->
+  <section class="carousel-section" id="trending">
+    <div class="carousel-header">
+      <div class="section-eyebrow">Featured</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:var(--text)">Trending this week</h2>
+    </div>
+    <div class="carousel-track" id="landing-carousel"></div>
+  </section>
 
-      <!-- components/hero/hero.html -->
-
-      <div id="hero-root"></div>
-
-      <div class="ticker">
-        <div class="ticker-inner" id="ticker-inner"></div>
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-box">
+      <h2>Ready to read smarter?</h2>
+      <p>Join 12,400+ readers using IBlog to stay ahead of the knowledge curve.</p>
+      <div class="cta-btns">
+        <button class="btn btn-primary" style="font-size:15px;padding:14px 40px" onclick="showSignup()">Join Free →</button>
+        <button class="btn btn-premium" style="font-size:15px;padding:14px 40px" onclick="showPremium()">⭐ Go Premium</button>
       </div>
-
-      <section class="features-section" id="features">
-        <div class="section-eyebrow">Why IBlog</div>
-        <h2 class="section-headline">
-          A platform built for<br /><span style="color: var(--accent)"
-            >curious minds</span
-          >
-        </h2>
-        <div class="feat-grid">
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(184, 150, 12, 0.12)">
-              🤖
-            </div>
-            <h3>AI Recommendations</h3>
-            <p>
-              Personalized feeds based on your reading patterns and interests
-              across 27 categories.
-            </p>
-          </div>
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(232, 93, 58, 0.1)">
-              🎙️
-            </div>
-            <h3>Article → Podcast</h3>
-            <p>
-              Convert any article to a podcast instantly. Choose male, female,
-              or auto AI voice.
-            </p>
-          </div>
-          <div class="feat-card premium-feat" onclick="showPremium()">
-            <div class="feat-icon" style="background: rgba(212, 160, 23, 0.15)">
-              🌍
-            </div>
-            <h3>
-              Global Trend Map
-              <span class="badge badge-premium">⭐ Premium</span>
-            </h3>
-            <p>
-              Explore what 19 countries are reading. Click any nation for local
-              trends.
-            </p>
-          </div>
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(76, 175, 125, 0.1)">
-              🏘️
-            </div>
-            <h3>Community Spaces</h3>
-            <p>
-              Join topic-based communities with live chat, threads, and curated
-              resources.
-            </p>
-          </div>
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(184, 150, 12, 0.12)">
-              📊
-            </div>
-            <h3>Activity Tracker</h3>
-            <p>
-              GitHub-style calendar tracking your reading days, comments, and
-              posts.
-            </p>
-          </div>
-          <div class="feat-card premium-feat" onclick="showPremium()">
-            <div class="feat-icon" style="background: rgba(212, 160, 23, 0.15)">
-              ✍️
-            </div>
-            <h3>
-              Article Templates
-              <span class="badge badge-premium">⭐ Premium</span>
-            </h3>
-            <p>
-              9 professional article templates. Edit your published articles
-              anytime.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="carousel-section" id="trending">
-        <div class="carousel-header">
-          <div class="section-eyebrow">Featured</div>
-          <h2
-            style="
-              font-family: &quot;Playfair Display&quot;, serif;
-              font-size: 34px;
-              font-weight: 700;
-              color: var(--text);
-            "
-          >
-            Trending this week
-          </h2>
-        </div>
-        <div class="carousel-track" id="landing-carousel"></div>
-      </section>
-
-      <section class="cta-section">
-        <div class="cta-box">
-          <h2>Ready to read smarter?</h2>
-          <p>
-            Join 12,400+ readers using IBlog to stay ahead of the knowledge
-            curve.
-          </p>
-          <div class="cta-btns">
-            <button
-              class="btn btn-primary"
-              style="font-size: 15px; padding: 14px 40px"
-              onclick="showSignup()"
-            >
-              Join Free →
-            </button>
-            <button
-              class="btn btn-premium"
-              style="font-size: 15px; padding: 14px 40px"
-              onclick="showPremium()"
-            >
-              ⭐ Go Premium
-            </button>
-          </div>
-        </div>
-      </section>
     </div>
-    <!-- /landing-page -->
+  </section>
+
+</div><!-- /landing-page -->
+
 
     <!-- ═══════════════════════════════════════════
          DASHBOARD
@@ -1184,6 +1101,7 @@
     <!-- JS COMPONENTS (ordre de chargement strict) -->
     <script src="toggledark.js"></script>
     <script src="data.js"></script>
+    <script src="components/admin/admin.js"></script>
     <script src="components/article-card/article-card.js"></script>
     <script src="js/feed.js"></script>
     <script src="js/views.js"></script>
@@ -1194,8 +1112,10 @@
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/notifications/notifications.js"></script>
     <script src="components/auth/auth.js"></script>
+    <script src="components/analytics/analytics.js"></script>
     <script src="components/trends/trends.js"></script>
     <script src="components/communities/communities.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
+
