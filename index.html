@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IBlog — Knowledge Without Borders</title>
 
-    <!-- ── Global Design System ────────────────────────── -->
     <link rel="stylesheet" href="css/global.css" />
-
-    <!-- ── Component CSS (one per feature) ─────────────── -->
     <link rel="stylesheet" href="css/Darkmode.css" />
     <link rel="stylesheet" href="components/preloader/preloader.css" />
     <link rel="stylesheet" href="components/auth/auth.css" />
@@ -47,24 +44,15 @@
     <link rel="stylesheet" href="components/my-articles/my-articles.css" />
   </head>
   <body>
-    <!-- ════════════════════════════════════════════════════════
-     PRELOADER + TOAST
-     components/preloader/preloader.html
-     ════════════════════════════════════════════════════════ -->
+    <!-- PRELOADER + TOAST -->
     <div id="preloader-root"></div>
     <div id="toast-root"></div>
     <script src="components/preloader/preloader.js"></script>
 
-    <!-- ════════════════════════════════════════════════════════
-     AUTH MODALS
-     components/auth/auth.html
-     ════════════════════════════════════════════════════════ -->
+    <!-- AUTH MODALS -->
     <div id="auth-root"></div>
 
-    <!-- ════════════════════════════════════════════════════════
-     ARTICLE READER OVERLAY
-     components/article-reader/article-reader.html
-     ════════════════════════════════════════════════════════ -->
+    <!-- ARTICLE READER OVERLAY -->
     <div
       id="article-reader-overlay"
       onclick="if (event.target === this) IBlog.Feed.closeReader();"
@@ -72,21 +60,20 @@
       <div id="article-reader-content"></div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════
-     LANDING PAGE
-     ════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════
+         LANDING PAGE
+    ═══════════════════════════════════════════ -->
     <div id="landing-page">
       <div id="landing-root"></div>
 
       <!-- components/hero/hero.html -->
 
       <div id="hero-root"></div>
-      <!-- components/ticker/ticker.html -->
+
       <div class="ticker">
         <div class="ticker-inner" id="ticker-inner"></div>
       </div>
 
-      <!-- components/features/features.html -->
       <section class="features-section" id="features">
         <div class="section-eyebrow">Why IBlog</div>
         <h2 class="section-headline">
@@ -164,7 +151,6 @@
         </div>
       </section>
 
-      <!-- components/carousel/carousel.html -->
       <section class="carousel-section" id="trending">
         <div class="carousel-header">
           <div class="section-eyebrow">Featured</div>
@@ -182,7 +168,6 @@
         <div class="carousel-track" id="landing-carousel"></div>
       </section>
 
-      <!-- components/cta/cta.html -->
       <section class="cta-section">
         <div class="cta-box">
           <h2>Ready to read smarter?</h2>
@@ -211,19 +196,19 @@
     </div>
     <!-- /landing-page -->
 
-    <!-- ════════════════════════════════════════════════════════
-     DASHBOARD
-     ════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════
+         DASHBOARD
+    ═══════════════════════════════════════════ -->
     <div id="dashboard">
       <div class="dash-layout">
-        <!-- components/left-rail/left-rail.html -->
+        <!-- ── LEFT RAIL ── -->
         <div class="left-rail">
           <div class="iblog-brand">IBlog</div>
           <div class="user-card">
             <div class="dash-avatar" id="dash-avatar">A</div>
             <div class="user-info">
-              <strong id="dash-name">Amara Diallo</strong
-              ><small id="dash-plan-label">Free Member</small>
+              <strong id="dash-name">Amara Diallo</strong>
+              <small id="dash-plan-label">Free Member</small>
             </div>
           </div>
           <button
@@ -368,23 +353,23 @@
               <div class="accent-dots" id="accent-dots"></div>
             </div>
             <div class="dark-toggle">
-              <label class="toggle-switch"
-                ><input
+              <label class="toggle-switch">
+                <input
                   type="checkbox"
                   id="dark-toggle-input"
-                  onchange="IBlog.Dashboard.toggleDark()" />
-                <div class="toggle-track"></div
-              ></label>
+                  onchange="IBlog.Dashboard.toggleDark()"
+                />
+                <div class="toggle-track"></div>
+              </label>
               <span class="toggle-label" id="dark-toggle-label">☀️ Light</span>
             </div>
           </div>
         </div>
+        <!-- /left-rail -->
 
-        <!-- Center Feed -->
+        <!-- ── CENTER FEED ── -->
         <div class="center-feed" id="center-feed">
-          <!-- ── HOME VIEW ──────────────────────────────────
-           components/compose-box/compose-box.html
-           ────────────────────────────────────────────── -->
+          <!-- HOME -->
           <div class="view-panel active" id="view-home">
             <div class="feed-tabs">
               <div
@@ -444,7 +429,7 @@
             </button>
           </div>
 
-          <!-- ── EXPLORE VIEW ──────────────────────────────── -->
+          <!-- EXPLORE -->
           <div class="view-panel" id="view-explore" style="padding: 28px">
             <div class="view-header">
               <h1>🧭 Explore</h1>
@@ -498,7 +483,7 @@
             <div id="explore-feed"></div>
           </div>
 
-          <!-- ── MAP VIEW — components/map/map.html ─────── -->
+          <!-- MAP -->
           <div class="view-panel" id="view-map" style="padding: 28px">
             <div class="view-header flex-between">
               <div>
@@ -553,7 +538,7 @@
             </div>
           </div>
 
-          <!-- ── ACTIVITY — components/activity/activity.html -->
+          <!-- ACTIVITY -->
           <div class="view-panel" id="view-activity">
             <div class="view-header">
               <h1>🟩 Activity Tracker</h1>
@@ -650,7 +635,7 @@
             </div>
           </div>
 
-          <!-- ── SEARCH — components/search/search.html ──── -->
+          <!-- SEARCH -->
           <div class="view-panel" id="view-search">
             <div class="view-header">
               <h1>🔍 Smart Search</h1>
@@ -685,7 +670,7 @@
                 Culture
               </button>
               <button class="filter-chip" onclick="toggleFilter(this)">
-                &lt; 5 min
+                &#60; 5 min
               </button>
               <button class="filter-chip" onclick="toggleFilter(this)">
                 Popular
@@ -694,22 +679,64 @@
             <div id="search-results"></div>
           </div>
 
-          <!-- ── ANALYTICS — components/analytics/analytics.html -->
-          <div id="analytics-root"></div>
+          <!-- ANALYTICS -->
+          <div class="view-panel" id="view-analytics">
+            <div class="view-header">
+              <h1>📊 Analytics</h1>
+              <p>Insights into your content performance</p>
+            </div>
+            <div class="analytics-grid">
+              <div class="analytics-card">
+                <span class="stat-value">8.4k</span>
+                <div class="stat-label">Total Views</div>
+              </div>
+              <div class="analytics-card">
+                <span class="stat-value">312</span>
+                <div class="stat-label">Total Likes</div>
+              </div>
+              <div class="analytics-card">
+                <span class="stat-value">1.2k</span>
+                <div class="stat-label">Followers</div>
+              </div>
+              <div class="analytics-card">
+                <span class="stat-value">47</span>
+                <div class="stat-label">Articles</div>
+              </div>
+            </div>
+            <div class="chart-area">
+              <div class="flex-between">
+                <strong>Views Over Time</strong
+                ><span style="color: var(--text2); font-size: 12px"
+                  >Last 12 weeks</span
+                >
+              </div>
+              <div class="chart-bars" id="chart-bars"></div>
+            </div>
+            <div class="section-card">
+              <h3 style="margin-bottom: 14px">Top Performing Articles</h3>
+              <div id="top-articles-list"></div>
+            </div>
+          </div>
 
-          <!-- ── COMMUNITIES — components/communities/communities.html -->
-          <div id="communities-root"></div>
+          <!-- COMMUNITIES -->
+          <div class="view-panel" id="view-communities">
+            <div class="view-header">
+              <h1>🏘️ Community Spaces</h1>
+              <p>Topic-based communities for deep knowledge sharing</p>
+            </div>
+            <div class="community-grid" id="comm-grid"></div>
+          </div>
 
           <!-- ── TRENDS — components/trends/trends.html ────── -->
           <div id="trend-root"></div>
 
-          <!-- ── NOTIFICATIONS — components/notifications/notifications.html -->
+          <!-- NOTIFICATIONS -->
           <div class="view-panel" id="view-notifications">
             <div class="view-header"><h1>🔔 Notifications</h1></div>
             <div class="section-card" id="notif-list"></div>
           </div>
 
-          <!-- ── MESSAGES -->
+          <!-- MESSAGES -->
           <div class="view-panel" id="view-messages">
             <div class="view-header"><h1>💬 Messages</h1></div>
             <div class="section-card">
@@ -735,13 +762,13 @@
             </div>
           </div>
 
-          <!-- ── SAVED -->
+          <!-- SAVED -->
           <div class="view-panel" id="view-saved">
             <div class="view-header"><h1>🔖 Saved Articles</h1></div>
             <div id="saved-list"></div>
           </div>
 
-          <!-- ── PROFILE — components/profile/profile.html ── -->
+          <!-- PROFILE -->
           <div class="view-panel" id="view-profile">
             <div style="position: relative; margin-bottom: 70px">
               <div class="profile-banner"></div>
@@ -798,14 +825,14 @@
                 </div>
               </div>
               <div class="topic-chips">
-                <span class="topic-chip active">AI</span
-                ><span class="topic-chip active">Technology</span
-                ><span class="topic-chip active">Science</span>
+                <span class="topic-chip active">AI</span>
+                <span class="topic-chip active">Technology</span>
+                <span class="topic-chip active">Science</span>
               </div>
             </div>
           </div>
 
-          <!-- ── WRITER — components/writer/writer.html ───── -->
+          <!-- WRITER -->
           <div class="view-panel writer-view" id="view-write">
             <div class="view-header">
               <h1>✏️ Write an Article</h1>
@@ -879,14 +906,14 @@
               placeholder="Your article title…"
             />
             <div class="writer-toolbar">
-              <button class="tb-btn"><b>B</b></button
-              ><button class="tb-btn"><i>I</i></button>
-              <button class="tb-btn">H1</button
-              ><button class="tb-btn">H2</button>
-              <button class="tb-btn">""</button
-              ><button class="tb-btn">Code</button>
-              <button class="tb-btn">Link</button
-              ><button class="tb-btn">📷</button>
+              <button class="tb-btn"><b>B</b></button>
+              <button class="tb-btn"><i>I</i></button>
+              <button class="tb-btn">H1</button>
+              <button class="tb-btn">H2</button>
+              <button class="tb-btn">""</button>
+              <button class="tb-btn">Code</button>
+              <button class="tb-btn">Link</button>
+              <button class="tb-btn">📷</button>
             </div>
             <textarea
               class="writer-editor"
@@ -907,7 +934,7 @@
                 type="text"
                 id="article-img"
                 class="full-width"
-                placeholder="Cover image URL (optional) — https://images.unsplash.com/…"
+                placeholder="Cover image URL (optional)"
               />
             </div>
             <div class="quality-analyzer">
@@ -976,7 +1003,7 @@
             </div>
           </div>
 
-          <!-- ── MY ARTICLES — components/my-articles/my-articles.html -->
+          <!-- MY ARTICLES -->
           <div class="view-panel" id="view-articles">
             <div class="view-header flex-between">
               <div><h1>📄 My Articles</h1></div>
@@ -991,7 +1018,7 @@
             <div id="my-articles-list"></div>
           </div>
 
-          <!-- ── SETTINGS -->
+          <!-- SETTINGS -->
           <div class="view-panel" id="view-settings">
             <div class="view-header"><h1>⚙️ Settings</h1></div>
             <div class="section-card">
@@ -1074,7 +1101,7 @@
         </div>
         <!-- /center-feed -->
 
-        <!-- components/right-rail/right-rail.html -->
+        <!-- ── RIGHT RAIL ── -->
         <div class="right-rail">
           <div class="search-bar">
             <span>🔍</span>
@@ -1147,22 +1174,20 @@
             ><a href="#">Terms</a><a href="#">© 2026 IBlog</a>
           </div>
         </div>
+        <!-- /right-rail -->
       </div>
       <!-- /dash-layout -->
     </div>
     <!-- /dashboard -->
 
-    <!-- ════════════════════════════════════════════════════════
-     COMMUNITY CHAT PANEL
-     components/chat/chat.html
-     ════════════════════════════════════════════════════════ -->
+    <!-- COMMUNITY CHAT PANEL -->
     <div id="chatOverlay" onclick="IBlog.Chat.closedIfOutside(event)">
       <div class="chat-panel">
         <div class="chat-header">
           <div class="chat-header-icon" id="chat-icon">🤖</div>
           <div class="chat-header-info">
-            <strong id="chat-title">AI &amp; ML</strong
-            ><small id="chat-meta">4.2k members · 23 online</small>
+            <strong id="chat-title">AI &amp; ML</strong>
+            <small id="chat-meta">4.2k members · 23 online</small>
           </div>
           <button class="chat-close" onclick="IBlog.Chat.close()">✕</button>
         </div>
@@ -1198,22 +1223,19 @@
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════
-     JS COMPONENTS (ordre de chargement strict)
-     ════════════════════════════════════════════════════════ -->
+    <!-- JS COMPONENTS (ordre de chargement strict) -->
     <script src="toggledark.js"></script>
-    <!-- before everything else -->
     <script src="data.js"></script>
+    <script src="components/article-card/article-card.js"></script>
     <script src="js/feed.js"></script>
     <script src="js/views.js"></script>
     <script src="components/chat/chat.js"></script>
     <script src="components/landing-nav/landing-nav.js"></script>
     <script src="components/hero/hero.js"></script>
-
     <script src="components/stats/stats.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
+    <script src="components/notifications/notifications.js"></script>
     <script src="components/auth/auth.js"></script>
-
     <script src="components/trends/trends.js"></script>
     <script src="components/communities/communities.js"></script>
     <script src="app.js"></script>
