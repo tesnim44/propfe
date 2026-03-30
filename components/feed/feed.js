@@ -28,16 +28,20 @@ IBlog.Feed = (() => {
   function build(tab = 'foryou', containerId = 'feed-container') {
     const container = document.getElementById(containerId);
     if (!container) return;
-
     container.innerHTML = '';
     const articles = _filterArticles(tab);
-
     articles.forEach((article, i) => {
       const card = IBlog.ArticleCard.render(article, i);
+      // Forcer opacity 1 après insertion
+      card.style.opacity = '0';
       container.appendChild(card);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          card.style.opacity = '';
+        });
+      });
     });
-  }
-
+}
   /* ══════════════════════════════════════════════════════
      openReader(id)
      Affiche l'article en overlay plein écran
