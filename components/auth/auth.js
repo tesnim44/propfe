@@ -2,7 +2,7 @@
 
 (function() {
   'use strict';
-
+  
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
@@ -163,6 +163,14 @@ window.doSignin = function() {
   const password = document.getElementById('si-pass')?.value;
   if (!email || !password) { alert('Please fill in all fields.'); return; }
 
+  // ── Admin check ──────────────────────────────────────
+  if (email === 'admin@iblog.com' && password === 'admin2026') {
+    sessionStorage.setItem('adminLoggedIn', 'true');
+    window.location.href = 'components/admin/admin.html';
+    return;
+  }
+
+  // ── Regular user ─────────────────────────────────────
   let user;
   const savedUser = sessionStorage.getItem('user');
   if (savedUser) {
@@ -179,7 +187,7 @@ window.doSignin = function() {
   _pendingArticleId = null;
 };
 
-window.demoLogin = function(plan = 'free', articleId = null) {
+window.demoLogin = function(plan = 'free') {
   const user = {
     name: plan === 'premium' ? 'Demo Premium' : 'Demo Free',
     email: plan === 'premium' ? 'demo.premium@iblog.com' : 'demo@iblog.com',
@@ -190,9 +198,8 @@ window.demoLogin = function(plan = 'free', articleId = null) {
   IBlog.state.currentUser = user;
   closeAllModals();
   goToDashboard(_pendingArticleId);
-    _pendingArticleId = null;
+  _pendingArticleId = null;
 };
-
 window.doSignup = function() {
   const name     = document.getElementById('su-name')?.value.trim();
   const email    = document.getElementById('su-email')?.value.trim();
@@ -201,6 +208,12 @@ window.doSignup = function() {
 
   if (!name || !email || !password) { alert('Please fill in all fields.'); return; }
   if (password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+
+  // Block admin email from signing up as regular user
+  if (email === 'admin@iblog.com') {
+    alert('This email is reserved. Please use the admin panel.');
+    return;
+  }
 
   const user = { name, email, plan, isPremium: plan === 'premium' };
   sessionStorage.setItem('user', JSON.stringify(user));

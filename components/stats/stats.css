@@ -1,0 +1,342 @@
+/* components/stats/stats.css
+   Covers: header, KPI grid, weekly chart, engagement rings,
+           countries, article rows, categories, SEO table.
+   Uses --bg2, --bg3, --border, --text, --text2, --accent from your theme.
+*/
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════ */
+@keyframes an-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+.an-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.an-date-badge {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* ═══════════════════════════════════════════════
+   KPI GRID
+═══════════════════════════════════════════════ */
+.an-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.an-kpi {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: an-fade-up 0.4s ease both;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.an-kpi:nth-child(1) { animation-delay: 0.00s; }
+.an-kpi:nth-child(2) { animation-delay: 0.06s; }
+.an-kpi:nth-child(3) { animation-delay: 0.12s; }
+.an-kpi:nth-child(4) { animation-delay: 0.18s; }
+.an-kpi:nth-child(5) { animation-delay: 0.24s; }
+.an-kpi:nth-child(6) { animation-delay: 0.30s; }
+.an-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+.an-kpi-icon {
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.an-kpi-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.an-kpi-unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text2);
+}
+.an-kpi-label {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION CARD
+═══════════════════════════════════════════════ */
+.an-section-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 14px;
+  animation: an-fade-up 0.4s ease 0.15s both;
+}
+.an-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════
+   WEEKLY CHART (canvas)
+═══════════════════════════════════════════════ */
+.an-chart-wrap {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
+#an-weekly-chart {
+  display: block;
+  width: 100% !important;
+}
+
+/* ═══════════════════════════════════════════════
+   ENGAGEMENT RINGS
+═══════════════════════════════════════════════ */
+.an-engagement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.an-eng-item {
+  text-align: center;
+  padding: 8px 0;
+}
+.an-eng-label {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+.an-eng-ring svg {
+  display: block;
+  margin: 0 auto;
+}
+.an-ring-arc {
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.an-eng-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.an-pct {
+  font-size: 14px;
+  color: var(--text2);
+  margin-left: 1px;
+}
+.an-eng-hint {
+  font-size: 11px;
+  color: var(--text2);
+  opacity: 0.6;
+  margin-top: 3px;
+}
+
+/* ═══════════════════════════════════════════════
+   HORIZONTAL BAR ROWS  (countries / categories)
+═══════════════════════════════════════════════ */
+.an-device-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.an-device-row:last-child { margin-bottom: 0; }
+
+.an-device-label {
+  font-size: 12px;
+  color: var(--text);
+  width: 130px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.an-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.an-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.an-device-pct {
+  font-size: 12px;
+  color: var(--text2);
+  width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════
+   ARTICLE ROWS
+═══════════════════════════════════════════════ */
+.an-article-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
+}
+.an-article-row:last-child { border-bottom: none; }
+.an-article-row:hover { background: var(--bg3); }
+
+.an-article-warn {
+  border-left: 3px solid color-mix(in srgb, #fbbf24 60%, transparent);
+  padding-left: 10px;
+  border-radius: 0 10px 10px 0;
+}
+.an-rank {
+  font-size: 20px;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.an-article-info { flex: 1; min-width: 0; }
+.an-article-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.an-article-bar-wrap {
+  height: 5px;
+  background: var(--bg3);
+  border-radius: 3px;
+  margin-bottom: 7px;
+  overflow: hidden;
+}
+.an-article-bar {
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 55%, #4ecdc4)
+  );
+  border-radius: 3px;
+  transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.an-article-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--text2);
+  flex-wrap: wrap;
+}
+.an-article-tip {
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════════════
+   SEO TABLE
+═══════════════════════════════════════════════ */
+.an-seo-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+.an-seo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.an-seo-table th {
+  text-align: left;
+  color: var(--text2);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.an-seo-table td {
+  padding: 10px 12px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.an-seo-table tbody tr:last-child td { border-bottom: none; }
+.an-seo-table tbody tr:hover td { background: var(--bg3); }
+
+.an-pos-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.an-pos-top { background: color-mix(in srgb, #34d399 15%, transparent); color: #34d399; }
+.an-pos-mid { background: color-mix(in srgb, #fbbf24 15%, transparent); color: #f59e0b; }
+.an-pos-low { background: color-mix(in srgb, #f87171 15%, transparent); color: #f87171; }
+
+/* ═══════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════ */
+.an-empty {
+  text-align: center;
+  color: var(--text2);
+  padding: 28px 0;
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .an-kpi-grid        { grid-template-columns: repeat(2, 1fr); }
+  .an-engagement-grid { grid-template-columns: repeat(3, 1fr); }
+  .an-device-label    { width: 100px; }
+}
