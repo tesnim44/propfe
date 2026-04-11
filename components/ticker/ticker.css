@@ -4,3 +4,4 @@
 .ticker-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
 .ticker-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);}
 @keyframes tickerAnim{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+

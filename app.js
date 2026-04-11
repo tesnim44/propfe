@@ -41,11 +41,9 @@ window.openArticleFromLanding = function(slideIndex) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  window.addEventListener('beforeunload', () => {
-    sessionStorage.clear();
-  });
-
+  // Clear any leftover localStorage user data so tab-close always returns to landing
+  localStorage.removeItem('user');
+  localStorage.removeItem('selectedPlan');
   const savedUser = sessionStorage.getItem('user'); // ← sessionStorage not localStorage
   if (savedUser) {
     try {
