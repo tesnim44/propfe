@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IBlog — Admin Panel</title>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="admin-toast"></div>
+
+<!-- Confirm Dialog -->
+<div class="admin-confirm-overlay" id="admin-confirm">
+  <div class="admin-confirm-box">
+    <div class="admin-confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="admin-confirm-title" id="confirm-title">Are you sure?</div>
+    <div class="admin-confirm-msg" id="confirm-msg">This action cannot be undone.</div>
+    <div class="admin-confirm-btns">
+      <button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.closeConfirm()">Cancel</button>
+      <button class="admin-btn admin-btn-danger" id="confirm-ok-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ LOGIN ════ -->
+<div id="admin-login">
+  <div class="admin-login-card">
+    <div class="admin-login-logo">
+      IBlog
+      <span>Admin Console</span>
+    </div>
+    <h2 class="admin-login-title">Welcome back, Admin</h2>
+    <p class="admin-login-sub">Sign in to access the control panel.</p>
+    <div class="admin-login-error" id="admin-login-error">✗ Invalid credentials. Please try again.</div>
+    <div class="admin-form-group">
+      <label>Admin Email</label>
+      <input type="email" id="admin-email" placeholder="admin@iblog.com" onkeydown="if(event.key==='Enter')IBlogAdmin.login()"/>
+    </div>
+    <div class="admin-form-group">
+      <label>Password</label>
+      <input type="password" id="admin-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')IBlogAdmin.login()"/>
+    </div>
+    <button class="admin-login-btn" onclick="IBlogAdmin.login()">Sign In to Admin Panel →</button>
+    <div class="admin-login-footer">
+      <a href="../../index.html">← Back to IBlog</a>
+      <span>© 2026 IBlog</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════ DASHBOARD ════ -->
+<div id="admin-dashboard">
+  <div class="admin-layout">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-logo">IBlog</div>
+        <div class="admin-brand-tag">Admin Console</div>
+      </div>
+
+      <div class="admin-nav-section">
+        <div class="admin-nav-label">Overview</div>
+        <div class="admin-nav-item active" onclick="IBlogAdmin.navigate('overview')">
+          <span class="admin-nav-icon">📊</span> Dashboard
+        </div>
+      </div>
+
+      <div class="admin-nav-section">
+        <div class="admin-nav-label">Management</div>
+        <div class="admin-nav-item" onclick="IBlogAdmin.navigate('users')">
+          <span class="admin-nav-icon">👥</span> Users
+          <span class="admin-nav-badge" id="users-badge">2</span>
+        </div>
+        <div class="admin-nav-item" onclick="IBlogAdmin.navigate('articles')">
+          <span class="admin-nav-icon">📄</span> Articles
+          <span class="admin-nav-badge" id="articles-badge">3</span>
+        </div>
+        <div class="admin-nav-item" onclick="IBlogAdmin.navigate('revenue')">
+          <span class="admin-nav-icon">💰</span> Revenue
+        </div>
+      </div>
+
+      <div class="admin-nav-section">
+        <div class="admin-nav-label">System</div>
+        <div class="admin-nav-item" onclick="IBlogAdmin.navigate('settings')">
+          <span class="admin-nav-icon">⚙️</span> Settings
+        </div>
+        <div class="admin-nav-item" onclick="window.location.href='../../index.html'">
+          <span class="admin-nav-icon">🌐</span> View Site
+        </div>
+      </div>
+
+      <div class="admin-sidebar-footer">
+        <div class="admin-user-pill" onclick="IBlogAdmin.logout()">
+          <div class="admin-user-avatar">A</div>
+          <div class="admin-user-info">
+            <strong>Admin</strong>
+            <small>Sign out →</small>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+
+      <!-- ── OVERVIEW ── -->
+      <div class="admin-view active" id="view-overview">
+        <div class="admin-topbar">
+          <div>
+            <div class="admin-page-title">Dashboard Overview</div>
+            <div class="admin-page-sub">Welcome back — here's what's happening today.</div>
+          </div>
+          <div class="admin-topbar-right">
+            <div id="admin-time"></div>
+          </div>
+        </div>
+
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">👥</div>
+            <div class="admin-stat-value" id="stat-users">—</div>
+            <div class="admin-stat-label">Total Users</div>
+            <div class="admin-stat-change up">↑ +24 this week</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">📄</div>
+            <div class="admin-stat-value" id="stat-articles">—</div>
+            <div class="admin-stat-label">Total Articles</div>
+            <div class="admin-stat-change up">↑ +8 today</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">⭐</div>
+            <div class="admin-stat-value" id="stat-premium">—</div>
+            <div class="admin-stat-label">Premium Users</div>
+            <div class="admin-stat-change up">↑ +3 this week</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">💰</div>
+            <div class="admin-stat-value" id="stat-revenue">—</div>
+            <div class="admin-stat-label">Monthly Revenue</div>
+            <div class="admin-stat-change up">↑ +12% vs last month</div>
+          </div>
+        </div>
+
+        <div class="admin-revenue-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div><div class="admin-card-title">User Growth</div><div class="admin-card-sub">Last 8 weeks</div></div>
+            </div>
+            <div class="admin-chart" id="chart-users"></div>
+          </div>
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div><div class="admin-card-title">Revenue</div><div class="admin-card-sub">Last 8 weeks ($)</div></div>
+            </div>
+            <div class="admin-chart" id="chart-revenue"></div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div><div class="admin-card-title">Recent Activity</div><div class="admin-card-sub">Latest platform events</div></div>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>Event</th><th>User</th><th>Time</th><th>Status</th></tr></thead>
+            <tbody id="activity-log"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── USERS ── -->
+      <div class="admin-view" id="view-users">
+        <div class="admin-topbar">
+          <div>
+            <div class="admin-page-title">User Management</div>
+            <div class="admin-page-sub">Manage all registered users</div>
+          </div>
+          <div class="admin-topbar-right">
+            <div class="admin-search-bar">
+              <span>🔍</span>
+              <input type="text" placeholder="Search users…" oninput="IBlogAdmin.filterUsers(this.value)"/>
+            </div>
+          </div>
+        </div>
+        <div class="admin-filter-row">
+          <button class="admin-filter-chip active" onclick="IBlogAdmin.filterUsersByPlan(this,'all')">All</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterUsersByPlan(this,'premium')">⭐ Premium</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterUsersByPlan(this,'free')">Free</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterUsersByPlan(this,'banned')">🚫 Banned</button>
+        </div>
+        <div class="admin-card">
+          <table class="admin-table">
+            <thead><tr><th>User</th><th>Plan</th><th>Articles</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── ARTICLES ── -->
+      <div class="admin-view" id="view-articles">
+        <div class="admin-topbar">
+          <div>
+            <div class="admin-page-title">Content Management</div>
+            <div class="admin-page-sub">Feature, boost, pin and categorize articles</div>
+          </div>
+          <div class="admin-topbar-right">
+            <div class="admin-search-bar">
+              <span>🔍</span>
+              <input type="text" placeholder="Search articles…" oninput="IBlogAdmin.filterArticles(this.value)"/>
+            </div>
+          </div>
+        </div>
+        <div class="admin-filter-row">
+          <button class="admin-filter-chip active" onclick="IBlogAdmin.filterArticlesByStatus(this,'all')">All</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterArticlesByStatus(this,'featured')">⭐ Featured</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterArticlesByStatus(this,'pinned')">📌 Pinned</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterArticlesByStatus(this,'boosted')">🚀 Boosted</button>
+          <button class="admin-filter-chip" onclick="IBlogAdmin.filterArticlesByStatus(this,'hidden')">🙈 Hidden</button>
+        </div>
+        <div class="admin-card">
+          <table class="admin-table">
+            <thead><tr><th>Article</th><th>Author</th><th>Category</th><th>Views</th><th>Label</th><th>Actions</th></tr></thead>
+            <tbody id="articles-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REVENUE ── -->
+      <div class="admin-view" id="view-revenue">
+        <div class="admin-topbar">
+          <div>
+            <div class="admin-page-title">Revenue Analytics</div>
+            <div class="admin-page-sub">Premium subscriptions and financial overview</div>
+          </div>
+        </div>
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">💳</div>
+            <div class="admin-stat-value">$2,187</div>
+            <div class="admin-stat-label">This Month</div>
+            <div class="admin-stat-change up">↑ +12%</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">📈</div>
+            <div class="admin-stat-value">$18,450</div>
+            <div class="admin-stat-label">This Year</div>
+            <div class="admin-stat-change up">↑ +34%</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">🔄</div>
+            <div class="admin-stat-value">94%</div>
+            <div class="admin-stat-label">Retention Rate</div>
+            <div class="admin-stat-change up">↑ +2%</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-icon">❌</div>
+            <div class="admin-stat-value">6%</div>
+            <div class="admin-stat-label">Churn Rate</div>
+            <div class="admin-stat-change down">↑ +1%</div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div><div class="admin-card-title">Premium Subscribers</div><div class="admin-card-sub">All active premium accounts</div></div>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>User</th><th>Plan Start</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="revenue-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="admin-view" id="view-settings">
+        <div class="admin-topbar">
+          <div>
+            <div class="admin-page-title">Admin Settings</div>
+            <div class="admin-page-sub">Platform configuration and preferences</div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header"><div class="admin-card-title">Platform Settings</div></div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text)">Maintenance Mode</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px">Disable public access while updating</div>
+              </div>
+              <button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.toast('Maintenance mode toggled','success')">Toggle</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text)">New User Registrations</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px">Allow or block new signups</div>
+              </div>
+              <button class="admin-btn admin-btn-success" onclick="IBlogAdmin.toast('Registration settings saved','success')">Enabled</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text)">Premium Price</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px">Current: $9.00 / month</div>
+              </div>
+              <button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.toast('Price settings coming soon')">Edit</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text)">Admin Password</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px">Last changed: never</div>
+              </div>
+              <button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.toast('Password change coming soon')">Change</button>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card" style="border-color:rgba(204,34,51,.2)">
+          <div class="admin-card-header"><div class="admin-card-title" style="color:var(--red)">⚠️ Danger Zone</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text)">Clear All Banned Users</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">Permanently remove all banned accounts</div>
+            </div>
+            <button class="admin-btn admin-btn-danger" onclick="IBlogAdmin.toast('Action restricted in demo','danger')">Execute</button>
+                </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

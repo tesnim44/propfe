@@ -1,147 +1,280 @@
-<!-- Signup -->
+<!-- Signup modal -->
 <div class="modal-overlay" id="modal-signup">
   <div class="modal">
     <button class="modal-close" onclick="closeAllModals()">✕</button>
-    <h2 class="modal-title">Join IBlog</h2>
-    <p class="modal-subtitle">Choose your plan to get started.</p>
-    <div class="plan-picker">
-      <div class="plan-opt selected" onclick="selectPlan(this,'free')">
-        <div class="plan-icon">📖</div><strong>Free</strong><small>Read & write, basic tools</small>
+    <div class="social-signin">
+      <p class="social-label">Sign up with</p>
+      <div class="social-btns">
+        <button class="social-btn" title="Google" onclick="socialLogin('google')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/></svg>
+        </button>
+        <button class="social-btn" title="Facebook" onclick="socialLogin('facebook')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+        </button>
+        <button class="social-btn" title="X / Twitter" onclick="socialLogin('twitter')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </button>
+        <button class="social-btn" title="GitHub" onclick="socialLogin('github')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        </button>
+      </div>
+      <div class="social-divider"><span>or continue with email</span></div>
+    </div>
+    <div class="plan-picker" style="margin-bottom:16px">
+      <div class="plan-opt" onclick="selectPlan(this,'free')">
+        <div class="plan-icon"></div><strong>Free</strong><small>Read &amp; write, basic tools</small>
       </div>
       <div class="plan-opt premium-plan" onclick="selectPlan(this,'premium')">
-        <div class="plan-icon">⭐</div><strong>Premium</strong><small>Templates · Map · Priority</small>
+        <div class="plan-icon"></div><strong>Premium</strong><small>Templates · Map · Priority</small>
         <div class="plan-price">$9 / mo</div>
       </div>
     </div>
-    <div class="form-group"><label>Full Name</label><input type="text" placeholder="Amara Diallo" id="su-name"></div>
-    <div class="form-group"><label>Email</label><input type="email" placeholder="you@iblog.com" id="su-email"></div>
-    <div class="form-group"><label>Password</label><input type="password" placeholder="••••••••" id="su-pass"></div>
-    <button class="btn btn-primary btn-full" onclick="doSignup()">Create Account</button>
-    <div class="modal-switch">Already have an account? <a onclick="showSignin()">Sign in</a></div>
-  </div>
-</div>
-
-<!-- Signin -->
-<div class="modal-overlay" id="modal-signin">
-  <div class="modal">
-    <button class="modal-close" onclick="closeAllModals()">✕</button>
-    <h2 class="modal-title">Welcome back</h2>
-    <p class="modal-subtitle">Continue your knowledge journey.</p>
-    <div class="form-group"><label>Email</label><input type="email" placeholder="you@iblog.com" id="si-email"></div>
-    <div class="form-group"><label>Password</label><input type="password" placeholder="••••••••" id="si-pass"></div>
-    <button class="btn btn-primary btn-full" onclick="doSignin()">Sign In</button>
+    <div class="field-float">
+      <input type="text" id="su-name" placeholder=" " onblur="validateField('su-name')">
+      <label>Full Name</label>
+      <div class="field-err" id="su-name-err"></div>
+    </div>
+    <div class="field-float">
+      <input type="email" id="su-email" placeholder=" " onblur="validateField('su-email')">
+      <label>Email address</label>
+      <div class="field-err" id="su-email-err"></div>
+    </div>
+    <div class="field-float" style="position:relative">
+      <input type="password" id="su-pass" placeholder=" " onblur="validateField('su-pass')">
+      <label>Password</label>
+      <button class="field-eye" type="button" onclick="togglePass('su-pass',this)">${EYE_ICON}</button>
+      <div class="field-err" id="su-pass-err"></div>
+    </div>
+    <div class="field-float" style="position:relative">
+      <input type="password" id="su-pass2" placeholder=" " onblur="validateField('su-pass2')">
+      <label>Repeat Password</label>
+      <button class="field-eye" type="button" onclick="togglePass('su-pass2',this)">${EYE_ICON}</button>
+      <div class="field-err" id="su-pass2-err"></div>
+    </div>
+    <label class="auth-terms">
+      <input type="checkbox" id="su-terms">
+      I have read and agree to the <a href="#" onclick="event.preventDefault()">terms of service</a>
+    </label>
+    <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="doSignup()">Create Account</button>
     <div class="modal-switch">
-      New? <a onclick="showSignup()">Create account</a> &nbsp;·&nbsp;
-      <a onclick="demoLogin('free')">Demo Free</a> &nbsp;·&nbsp;
-      <a onclick="showPremium()" class="link-premium">Demo Premium ⭐</a>
+      <span>Already have an account?</span>
+      <a class="auth-arrow-link" onclick="showSignin()">Sign in ${ARROW}</a>
     </div>
   </div>
 </div>
 
-<!-- Premium upsell + Payment -->
-<div class="modal-overlay" id="modal-premium">
-  <div class="modal modal-center">
-    <button class="modal-close" onclick="closeAllModals()">✕</button>
+    <!-- Signin modal — tabbed -->
+    <div class="modal-overlay" id="modal-signin">
+      <div class="modal">
+        <button class="modal-close" onclick="closeAllModals()">✕</button>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="auth-tab-login" onclick="switchAuthTab('login')">Login</button>
+          <button class="auth-tab" id="auth-tab-register" onclick="switchAuthTab('register')">Register</button>
+        </div>
 
-    <!-- Step 1: Perks -->
-    <div id="premium-step-perks">
-      <div style="font-size:48px;margin-bottom:12px">⭐</div>
-      <h2 class="modal-title">Upgrade to Premium</h2>
-      <p class="modal-subtitle">Unlock the full IBlog experience</p>
-      <ul class="perk-list">
-        <li>Article templates — 9 professional layouts</li>
-        <li>Global Trend Map — explore any country</li>
-        <li>Priority feed — your articles shown first</li>
-        <li>Premium badge on your profile &amp; articles</li>
-        <li>Advanced analytics &amp; audience insights</li>
-        <li>Edit published articles anytime</li>
-      </ul>
-      <button class="btn btn-premium btn-full" onclick="showPayment()">Continue — $9/month</button>
-      <p class="modal-footnote">Cancel anytime. No commitment.</p>
+        <!-- LOGIN -->
+        <div class="auth-pane active" id="auth-pane-login">
+          <div class="social-signin">
+            <p class="social-label">Sign in with</p>
+            <div class="social-btns">
+              <button class="social-btn" title="Google" onclick="socialLogin('google')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/></svg>
+              </button>
+              <button class="social-btn" title="Facebook" onclick="socialLogin('facebook')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+              </button>
+              <button class="social-btn" title="X / Twitter" onclick="socialLogin('twitter')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </button>
+              <button class="social-btn" title="GitHub" onclick="socialLogin('github')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+              </button>
+            </div>
+            <div class="social-divider"><span>or continue with email</span></div>
+          </div>
+          <div class="field-float">
+            <input type="email" id="si-email" placeholder=" " onblur="validateField('si-email')">
+            <label>Email address</label>
+            <div class="field-err" id="si-email-err"></div>
+          </div>
+          <div class="field-float" style="position:relative">
+            <input type="password" id="si-pass" placeholder=" " onblur="validateField('si-pass')">
+            <label>Password</label>
+            <button class="field-eye" type="button" onclick="togglePass('si-pass',this)">${EYE_ICON}</button>
+            <div class="field-err" id="si-pass-err"></div>
+          </div>
+          <div class="auth-row">
+            <label class="auth-remember"><input type="checkbox" checked> Remember me</label>
+            <a class="auth-forgot" onclick="showForgotPassword()">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="doSignin()">Sign In</button>
+          <div class="modal-switch">
+            <div class="auth-link-row">
+              <a class="auth-arrow-link premium" onclick="showPremium()">Upgrade to Premium ${ARROW}</a>
+            </div>
+            <div class="auth-link-row">
+              <a class="auth-arrow-link admin" onclick="window.location.href='components/admin/admin.html'"> Admin Panel ${ARROW}</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- REGISTER -->
+        <div class="auth-pane" id="auth-pane-register">
+          <div class="social-signin">
+            <p class="social-label">Sign up with</p>
+            <div class="social-btns">
+              <button class="social-btn" title="Google" onclick="socialLogin('google')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/></svg>
+              </button>
+              <button class="social-btn" title="Facebook" onclick="socialLogin('facebook')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+              </button>
+              <button class="social-btn" title="X / Twitter" onclick="socialLogin('twitter')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </button>
+              <button class="social-btn" title="GitHub" onclick="socialLogin('github')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+              </button>
+            </div>
+            <div class="social-divider"><span>or continue with email</span></div>
+          </div>
+          <div class="plan-picker" style="margin-bottom:16px">
+            <div class="plan-opt" onclick="selectPlan(this,'free')">
+              <div class="plan-icon"></div><strong>Free</strong><small>Read &amp; write, basic tools</small>
+            </div>
+            <div class="plan-opt premium-plan" onclick="selectPlan(this,'premium')">
+              <div class="plan-icon"></div><strong>Premium</strong><small>Templates · Map · Priority</small>
+              <div class="plan-price">$9 / mo</div>
+            </div>
+          </div>
+          <div class="field-float">
+            <input type="text" id="su-name" placeholder=" " onblur="validateField('su-name')">
+            <label>Full Name</label>
+            <div class="field-err" id="su-name-err"></div>
+          </div>
+          <div class="field-float">
+            <input type="email" id="su-email" placeholder=" " onblur="validateField('su-email')">
+            <label>Email address</label>
+            <div class="field-err" id="su-email-err"></div>
+          </div>
+          <div class="field-float" style="position:relative">
+            <input type="password" id="su-pass" placeholder=" " onblur="validateField('su-pass')">
+            <label>Password</label>
+            <button class="field-eye" type="button" onclick="togglePass('su-pass',this)">${EYE_ICON}</button>
+            <div class="field-err" id="su-pass-err"></div>
+          </div>
+          <div class="field-float" style="position:relative">
+            <input type="password" id="su-pass2" placeholder=" " onblur="validateField('su-pass2')">
+            <label>Repeat Password</label>
+            <button class="field-eye" type="button" onclick="togglePass('su-pass2',this)">${EYE_ICON}</button>
+            <div class="field-err" id="su-pass2-err"></div>
+          </div>
+          <label class="auth-terms">
+            <input type="checkbox" id="su-terms">
+            I have read and agree to the <a href="#" onclick="event.preventDefault()">terms of service</a>
+          </label>
+          <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="doSignupTabbed()">Create Account</button>
+          <div class="modal-switch">
+            <span>Already have an account?</span>
+            <a class="auth-arrow-link" onclick="switchAuthTab('login')">Sign in ${ARROW}</a>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Step 2: Payment -->
-    <div id="premium-step-payment" style="display:none">
-      <h2 class="modal-title" style="margin-bottom:4px">Payment</h2>
-      <p class="modal-subtitle" style="margin-bottom:20px">Secure checkout · $9/month</p>
-
-      <!-- Pay method tabs -->
-      <div class="pay-tabs">
-        <button class="pay-tab active" onclick="switchPayTab(this,'card')">💳 Card</button>
-        <button class="pay-tab" onclick="switchPayTab(this,'paypal')">🅿 PayPal</button>
+    <!-- Forgot Password modal -->
+    <div class="modal-overlay" id="modal-forgot">
+      <div class="modal">
+        <button class="modal-close" onclick="closeAllModals()">✕</button>
+        <div id="forgot-body">
+          <h2 class="modal-title">Reset Password</h2>
+          <p class="modal-subtitle">Enter your email and we'll send a reset link.</p>
+          <div class="field-float">
+            <input type="email" id="fp-email" placeholder=" " onblur="validateField('fp-email')">
+            <label>Email address</label>
+            <div class="field-err" id="fp-email-err"></div>
+          </div>
+          <button class="btn btn-primary btn-full" id="fp-btn" onclick="doForgotPassword()">Send Reset Link</button>
+          <div class="modal-switch">
+            <a class="auth-arrow-link" onclick="showSignin()">← Back to Sign In</a>
+          </div>
+        </div>
+        <div class="reset-sent" id="forgot-sent" style="display:none">
+          <div class="reset-icon"></div>
+          <h2 class="modal-title">Check your inbox</h2>
+          <p class="modal-subtitle">A reset link was sent to<br><strong id="forgot-sent-email" style="color:var(--accent)"></strong></p>
+          <p style="font-size:12px;color:var(--text3);margin-top:12px">Didn't receive it? Check your spam folder or <a onclick="showForgotPassword()" style="color:var(--accent);cursor:pointer">try again</a>.</p>
+          <button class="btn btn-primary btn-full" style="margin-top:22px" onclick="showSignin()">Back to Sign In</button>
+        </div>
       </div>
-
-      <!-- Card form -->
-      <div id="pay-card">
-        <div class="form-group">
-          <label>Cardholder Name</label>
-          <input type="text" placeholder="Amara Diallo" id="pay-name">
-        </div>
-        <div class="form-group">
-          <label>Card Number</label>
-          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="pay-number"
-            oninput="formatCard(this)">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Expiry</label>
-            <input type="text" placeholder="MM / YY" maxlength="7" id="pay-expiry"
-              oninput="formatExpiry(this)">
-          </div>
-          <div class="form-group">
-            <label>CVV</label>
-            <input type="text" placeholder="•••" maxlength="4" id="pay-cvv">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Promo Code <span class="label-opt">(optional)</span></label>
-          <div class="promo-row">
-            <input type="text" placeholder="IBLOG2025" id="pay-promo">
-            <button class="promo-apply-btn" onclick="applyPromo('card')">Apply</button>
-          </div>
-          <div id="promo-msg" class="promo-msg"></div>
-        </div>
-        <div class="pay-summary">
-          <span>Total</span>
-          <strong id="pay-total">$9.00 / month</strong>
-        </div>
-        <button class="btn btn-premium btn-full" onclick="doPayment()">Pay $9.00</button>
-      </div>
-
-      <!-- PayPal -->
-      <div id="pay-paypal" style="display:none">
-        <p style="font-size:.85rem;color:var(--text2);margin-bottom:16px;text-align:center">
-          You'll be redirected to PayPal to complete your payment securely.
-        </p>
-        <div class="form-group">
-          <label>Promo Code <span class="label-opt">(optional)</span></label>
-          <div class="promo-row">
-            <input type="text" placeholder="IBLOG2025" id="pay-promo-pp">
-            <button class="promo-apply-btn" onclick="applyPromo('paypal')">Apply</button>
-          </div>
-          <div id="promo-msg-pp" class="promo-msg"></div>
-        </div>
-        <div class="pay-summary">
-          <span>Total</span>
-          <strong id="pay-total-pp">$9.00 / month</strong>
-        </div>
-        <button class="btn btn-paypal btn-full" onclick="doPayment()">
-          Pay with 🅿 PayPal
-        </button>
-      </div>
-
-      <button class="back-btn" onclick="showPerks()">← Back</button>
     </div>
 
-    <!-- Step 3: Success -->
-    <div id="premium-step-success" style="display:none;text-align:center">
-      <div style="font-size:56px;margin-bottom:16px">🎉</div>
-      <h2 class="modal-title">You're Premium!</h2>
-      <p class="modal-subtitle">Welcome to the full IBlog experience. Your badge is live.</p>
-      <button class="btn btn-primary btn-full" style="margin-top:24px" onclick="closeAllModals()">
-        Start Exploring
-      </button>
+    <!-- Premium upsell + Payment -->
+    <div class="modal-overlay" id="modal-premium">
+      <div class="modal modal-center">
+        <button class="modal-close" onclick="closeAllModals()">✕</button>
+        <div id="premium-step-perks">
+          <div style="font-size:48px;margin-bottom:12px"></div>
+          <h2 class="modal-title">Upgrade to Premium</h2>
+          <p class="modal-subtitle">Unlock the full IBlog experience</p>
+          <ul class="perk-list">
+            <li>Article templates — 9 professional layouts</li>
+            <li>Global Trend Map — explore any country</li>
+            <li>Priority feed — your articles shown first</li>
+            <li>Premium badge on your profile &amp; articles</li>
+            <li>Advanced analytics &amp; audience insights</li>
+            <li>Edit published articles anytime</li>
+          </ul>
+          <button class="btn btn-premium btn-full" onclick="showPayment()">Continue — $9/month</button>
+          <p class="modal-footnote">Cancel anytime. No commitment.</p>
+        </div>
+        <div id="premium-step-payment" style="display:none">
+          <h2 class="modal-title" style="margin-bottom:4px">Payment</h2>
+          <p class="modal-subtitle" style="margin-bottom:20px">Secure checkout · $9/month</p>
+          <div class="pay-tabs">
+            <button class="pay-tab active" onclick="switchPayTab(this,'card')">Card</button>
+            <button class="pay-tab" onclick="switchPayTab(this,'paypal')">🅿 PayPal</button>
+          </div>
+          <div id="pay-card">
+            <div class="field-float"><input type="text" id="pay-name" placeholder=" "><label>Cardholder Name</label></div>
+            <div class="field-float"><input type="text" placeholder=" " maxlength="19" id="pay-number" oninput="formatCard(this)"><label>Card Number</label></div>
+            <div class="form-row">
+              <div class="field-float"><input type="text" placeholder=" " maxlength="7" id="pay-expiry" oninput="formatExpiry(this)"><label>Expiry MM/YY</label></div>
+              <div class="field-float"><input type="text" placeholder=" " maxlength="4" id="pay-cvv"><label>CVV</label></div>
+            </div>
+            <div class="field-float">
+              <div class="promo-row">
+                <input type="text" placeholder=" " id="pay-promo" style="border-radius:10px">
+                <button class="promo-apply-btn" onclick="applyPromo('card')">Apply</button>
+              </div>
+              <div id="promo-msg" class="promo-msg"></div>
+            </div>
+            <div class="pay-summary"><span>Total</span><strong id="pay-total">$9.00 / month</strong></div>
+            <button class="btn btn-premium btn-full" onclick="doPayment()">Pay $9.00</button>
+          </div>
+          <div id="pay-paypal" style="display:none">
+            <p style="font-size:.85rem;color:var(--text2);margin-bottom:16px;text-align:center">You will be redirected to PayPal to complete your payment securely.</p>
+            <div class="field-float">
+              <div class="promo-row">
+                <input type="text" placeholder=" " id="pay-promo-pp" style="border-radius:10px">
+                <button class="promo-apply-btn" onclick="applyPromo('paypal')">Apply</button>
+              </div>
+              <div id="promo-msg-pp" class="promo-msg"></div>
+            </div>
+            <div class="pay-summary"><span>Total</span><strong id="pay-total-pp">$9.00 / month</strong></div>
+            <button class="btn btn-paypal btn-full" onclick="doPayment()">Pay with 🅿 PayPal</button>
+          </div>
+          <button class="back-btn" onclick="showPerks()">← Back</button>
+        </div>
+        <div id="premium-step-success" style="display:none;text-align:center">
+          <div style="font-size:56px;margin-bottom:16px"></div>
+          <h2 class="modal-title">You are Premium!</h2>
+          <p class="modal-subtitle">Welcome to the full IBlog experience. Your badge is live.</p>
+          <button class="btn btn-primary btn-full" style="margin-top:24px" onclick="closeAllModals()">Start Exploring</button>
+        </div>
+      </div>
     </div>
 
-  </div>
-</div>
+    <style>
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>

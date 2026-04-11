@@ -158,7 +158,7 @@ function toggleDark() {
   IBlog.state.currentUser = null;
   IBlog.state.savedArticles = [];
   IBlog.state.joinedCommunities.clear();
-  localStorage.removeItem('user');  // ← critical: clear storage
+  sessionStorage.removeItem('user');
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('landing-page').style.display = 'block';
   IBlog.Dashboard.initHero();

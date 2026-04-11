@@ -66,91 +66,13 @@
     <div id="landing-page">
       <div id="landing-root"></div>
 
-      <!-- components/hero/hero.html -->
-
       <div id="hero-root"></div>
 
       <div class="ticker">
         <div class="ticker-inner" id="ticker-inner"></div>
       </div>
 
-      <section class="features-section" id="features">
-        <div class="section-eyebrow">Why IBlog</div>
-        <h2 class="section-headline">
-          A platform built for<br /><span style="color: var(--accent)"
-            >curious minds</span
-          >
-        </h2>
-        <div class="feat-grid">
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(184, 150, 12, 0.12)">
-              🤖
-            </div>
-            <h3>AI Recommendations</h3>
-            <p>
-              Personalized feeds based on your reading patterns and interests
-              across 27 categories.
-            </p>
-          </div>
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(232, 93, 58, 0.1)">
-              🎙️
-            </div>
-            <h3>Article → Podcast</h3>
-            <p>
-              Convert any article to a podcast instantly. Choose male, female,
-              or auto AI voice.
-            </p>
-          </div>
-          <div class="feat-card premium-feat" onclick="showPremium()">
-            <div class="feat-icon" style="background: rgba(212, 160, 23, 0.15)">
-              🌍
-            </div>
-            <h3>
-              Global Trend Map
-              <span class="badge badge-premium">⭐ Premium</span>
-            </h3>
-            <p>
-              Explore what 19 countries are reading. Click any nation for local
-              trends.
-            </p>
-          </div>
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(76, 175, 125, 0.1)">
-              🏘️
-            </div>
-            <h3>Community Spaces</h3>
-            <p>
-              Join topic-based communities with live chat, threads, and curated
-              resources.
-            </p>
-          </div>
-          <div class="feat-card" onclick="showSignup()">
-            <div class="feat-icon" style="background: rgba(184, 150, 12, 0.12)">
-              📊
-            </div>
-            <h3>Activity Tracker</h3>
-            <p>
-              GitHub-style calendar tracking your reading days, comments, and
-              posts.
-            </p>
-          </div>
-          <div class="feat-card premium-feat" onclick="showPremium()">
-            <div class="feat-icon" style="background: rgba(212, 160, 23, 0.15)">
-              ✍️
-            </div>
-            <h3>
-              Article Templates
-              <span class="badge badge-premium">⭐ Premium</span>
-            </h3>
-            <p>
-              9 professional article templates. Edit your published articles
-              anytime.
-            </p>
-          </div>
-        </div>
-      </section>
-
+      <div id="features-root"></div>
       <section class="carousel-section" id="trending">
         <div class="carousel-header">
           <div class="section-eyebrow">Featured</div>
@@ -679,13 +601,13 @@
             <div id="search-results"></div>
           </div>
 
-          <!-- ── ANALYTICS — components/analytics/analytics.html -->
+          <!-- ANALYTICS -->
           <div id="analytics-root"></div>
 
-          <!-- ── COMMUNITIES — components/communities/communities.html -->
+          <!-- COMMUNITIES -->
           <div id="communities-root"></div>
 
-          <!-- ── TRENDS — components/trends/trends.html ────── -->
+          <!-- TRENDS -->
           <div id="trend-root"></div>
 
           <!-- NOTIFICATIONS -->
@@ -982,15 +904,16 @@
             <div class="section-card">
               <h3 style="margin-bottom: 18px">Account</h3>
               <div class="form-group">
-                <label>Display Name</label
-                ><input type="text" id="settings-name" />
+                <label>Display Name</label>
+                <input type="text" id="settings-name" />
               </div>
               <div class="form-group">
-                <label>Email</label><input type="email" id="settings-email" />
+                <label>Email</label>
+                <input type="email" id="settings-email" />
               </div>
               <div class="form-group">
-                <label>Bio</label
-                ><textarea
+                <label>Bio</label>
+                <textarea
                   style="resize: vertical"
                   rows="3"
                   placeholder="Tell your story…"
@@ -1033,22 +956,22 @@
               <h3 style="margin-bottom: 14px">Notifications</h3>
               <div style="display: flex; flex-direction: column; gap: 13px">
                 <div class="flex-between">
-                  <span style="font-size: 14px">New followers</span
-                  ><label class="toggle-switch"
+                  <span style="font-size: 14px">New followers</span>
+                  <label class="toggle-switch"
                     ><input type="checkbox" checked />
                     <div class="toggle-track"></div
                   ></label>
                 </div>
                 <div class="flex-between">
-                  <span style="font-size: 14px">Article likes</span
-                  ><label class="toggle-switch"
+                  <span style="font-size: 14px">Article likes</span>
+                  <label class="toggle-switch"
                     ><input type="checkbox" checked />
                     <div class="toggle-track"></div
                   ></label>
                 </div>
                 <div class="flex-between">
-                  <span style="font-size: 14px">Weekly digest</span
-                  ><label class="toggle-switch"
+                  <span style="font-size: 14px">Weekly digest</span>
+                  <label class="toggle-switch"
                     ><input type="checkbox" checked />
                     <div class="toggle-track"></div
                   ></label>
@@ -1189,7 +1112,11 @@
     <script src="js/views.js"></script>
     <script src="components/chat/chat.js"></script>
     <script src="components/landing-nav/landing-nav.js"></script>
+    <script src="components/carousel/carousel.js"></script>
+    <script src="components/features/features.js"></script>
     <script src="components/hero/hero.js"></script>
+    <script src="components/cta/cta.js"></script>
+    <script src="components/landing-footer/footer.js"></script>
     <script src="components/stats/stats.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/notifications/notifications.js"></script>
