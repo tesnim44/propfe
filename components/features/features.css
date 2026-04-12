@@ -8,8 +8,8 @@
   max-width: calc(var(--max-w) + var(--gutter) * 2);
 
   margin: 0 auto;
-
-  background: #fff;
+  padding-left: 50px;
+  padding-right: 50px;
 
 }
 

@@ -6,7 +6,7 @@
 .carousel-section {
   padding: 72px 0 80px;
   overflow: hidden;
-  background: #fff;
+ 
   border-top: 1px solid #e8e4dc;
   border-bottom: none;
 }
@@ -15,6 +15,7 @@
   padding: 0 var(--gutter);
   max-width: calc(var(--max-w) + var(--gutter) * 2);
   margin: 0 auto 36px;
+  padding-left: 50px;
 }
 
 .carousel-header h2 {

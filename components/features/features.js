@@ -42,10 +42,10 @@
     },
   ];
 
-  function triggerSignin() {
-    // Try all possible signin entry points
-    if (typeof showSignin === 'function') return showSignin();
-    if (window.IBlog && IBlog.Auth && IBlog.Auth.showSignin) return IBlog.Auth.showSignin();
+  function triggerSignup() {
+    // Try all possible signup entry points
+    if (typeof showSignup === 'function') return showSignup();
+    if (window.IBlog && IBlog.Auth && IBlog.Auth.showSignup) return IBlog.Auth.showSignup();
     if (typeof showSignup === 'function') return showSignup();
   }
 
@@ -68,7 +68,7 @@
     if (!grid) return;
 
     grid.innerHTML = FEATURES_DATA.map(f => `
-      <div class="feat-card ${f.premium ? 'premium-feat' : ''}" onclick="(${triggerSignin.toString()})()">
+      <div class="feat-card ${f.premium ? 'premium-feat' : ''}" onclick="(${triggerSignup.toString()})()">
         ${f.premium ? '<div class="feat-premium-label">Premium</div>' : ''}
         <div class="feat-card-top">
         </div>
