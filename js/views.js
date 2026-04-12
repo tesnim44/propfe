@@ -441,63 +441,7 @@ IBlog.Views = (() => {
   }
 
   /* ── Right Rail ──────────────────────────────────────── */
-  function buildRailTopics() {
-    const el = document.getElementById('trending-chips');
-    if (!el) return;
-    el.innerHTML = IBlog.TOPICS.map(t =>
-      `<span class="topic-chip" onclick="IBlog.Views.searchTopic('${t}')">${t}</span>`
-    ).join('');
-  }
-
-  function buildRailCommunities() {
-    const el = document.getElementById('rail-communities');
-    if (!el) return;
-    el.innerHTML = IBlog.COMMUNITIES.slice(0, 4).map((c, i) => `
-<div class="community-item">
-  <div class="com-icon">${c.icon}</div>
-  <div class="com-info">
-    <strong>${c.name}</strong>
-    <small>${c.members} members</small>
-  </div>
-  <button class="join-btn${IBlog.state.joinedCommunities.has(i) ? ' joined' : ''}"
-    id="rail-join-${i}" onclick="IBlog.Communities.toggle(${i}, this)">
-    ${IBlog.state.joinedCommunities.has(i) ? 'Joined' : 'Join'}
-  </button>
-</div>`).join('');
-  }
-
-  function buildTopAuthors() {
-    const el = document.getElementById('top-authors');
-    if (!el) return;
-    el.innerHTML = IBlog.AUTHORS.map(a => `
-<div class="author-item">
-  <div class="card-avatar" style="width:34px;height:34px;background:${a.color};">${a.initial}</div>
-  <div>
-    <div style="font-size:13px;font-weight:600;color:var(--text);">${a.name}</div>
-    <div style="font-size:11px;color:var(--text2);">${a.tag} · ${a.followers}</div>
-  </div>
-  <button class="follow-btn" onclick="this.classList.toggle('following');this.textContent=this.classList.contains('following')?'Following':'Follow';IBlog.utils.toast(this.classList.contains('following')?'✅ Following!':'Unfollowed');">Follow</button>
-</div>`).join('');
-  }
-
-  /* ── Profile ─────────────────────────────────────────── */
-  function buildProfile() {
-    const u = IBlog.state.currentUser;
-    if (!u) return;
-    const isPrem = u.plan === 'premium';
-    const nameEl = document.getElementById('profile-name');
-    const avatarEl = document.getElementById('profile-avatar-big');
-    const badgeEl = document.getElementById('profile-premium-badge');
-    if (nameEl) nameEl.textContent = u.name;
-    if (avatarEl) {
-      avatarEl.textContent = u.initial;
-      avatarEl.style.background = isPrem ? 'linear-gradient(135deg,#d4a017,#c8922a)' : 'var(--accent)';
-    }
-    if (badgeEl) badgeEl.style.display = isPrem ? 'inline-flex' : 'none';
-    const myCount = document.getElementById('profile-article-count');
-    if (myCount) myCount.textContent = IBlog.state.articles.filter(a => a.authorInitial === u.initial).length;
-  }
-
+  
   /* ── Accent Picker ───────────────────────────────────── */
   function buildAccentPicker() {
     const el = document.getElementById('accent-dots');
@@ -526,7 +470,6 @@ IBlog.Views = (() => {
     doSearch, searchTopic,
     buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle,
     buildMyArticles, buildSaved, buildNotifications,
-    buildRailTopics, buildRailCommunities, buildTopAuthors,
     buildProfile, buildAccentPicker, buildCategorySelect,
   };
 })();

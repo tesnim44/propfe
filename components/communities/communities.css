@@ -97,10 +97,9 @@
   gap: 13px;
 }
 
-/* ── Abbreviation box ─────────────────────────────────
-   White fill, dashboard-border colour border.
-   Matches the right-rail icon style exactly.
-──────────────────────────────────────────────────────*/
+
+/* ── Abbreviation box ─────────────────────────────────*/
+
 .comm-abbr-box {
   width: 46px;
   height: 46px;
@@ -119,13 +118,15 @@
   color: var(--accent);
   user-select: none;
 }
-/* dark mode: very subtle fill instead of pure white */
+
 body.dark .comm-abbr-box {
   background: rgba(255,255,255,.06);
 }
 
 .comm-card-hd-text  { flex: 1; min-width: 0; }
-.comm-card-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; }
+
+.comm-card-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
 .comm-card-name     { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.2; }
 
 /* badges */

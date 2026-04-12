@@ -1,5 +1,4 @@
 // components/right-rail/right-rail.js
-// Manages the right column: stats, trending, communities, top authors
 
 /* ── Authors data ──────────────────────────────────────── */
 const authorsData = [
@@ -51,16 +50,14 @@ function loadUserStats() {
         viewsCount     = '15.2k';
         likesCount     = '1.1k';
       }
-    } catch (e) { /* silent */ }
+    } catch (e) {}
   }
 
   const statsBoxes = document.querySelectorAll('.stats-grid .stat-box');
-  if (statsBoxes.length >= 4) {
-    [articleCount, followersCount, viewsCount, likesCount].forEach((v, i) => {
-      const el = statsBoxes[i]?.querySelector('.stat-value');
-      if (el) el.textContent = v;
-    });
-  }
+  [articleCount, followersCount, viewsCount, likesCount].forEach((v, i) => {
+    const el = statsBoxes[i]?.querySelector('.stat-value');
+    if (el) el.textContent = v;
+  });
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -92,13 +89,7 @@ function selectTrendingTopic(topic) {
 
 /* ══════════════════════════════════════════════════════════
    RAIL COMMUNITIES
-   Clicking the entire row opens the chat.
-   No Enter / Leave buttons shown — Leave is inside chat ⚙.
 ══════════════════════════════════════════════════════════ */
-
-/**
- * Derive abbreviation (strips emoji, non-letters).
- */
 function _railAbbr(name) {
   if (!name) return '?';
   const clean = name.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
@@ -108,14 +99,11 @@ function _railAbbr(name) {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-/**
- * Primary render: joined communities only, clean single-row items.
- */
 function loadRailCommunities() {
   const container = document.getElementById('rail-communities');
   if (!container) return;
 
-  /* ── IBlog integration path ───────────────────────── */
+  // IBlog path
   if (window.IBlog?.COMMUNITIES && IBlog.state?.joinedCommunities) {
     const user    = IBlog.state.currentUser;
     const joined  = IBlog.state.joinedCommunities;
@@ -137,82 +125,70 @@ function loadRailCommunities() {
       return;
     }
 
-    container.innerHTML = `<div class="rail-comm-list">${
-      joinedComms.map(({ c, idx }) => {
-        const abbr = (c.icon && c.icon.length <= 2) ? c.icon : _railAbbr(c.name);
-        return `
-          <div class="rail-comm-item"
-            onclick="IBlog.Communities.openChat(${idx})"
-            title="Open ${c.name}">
-            <div class="rail-comm-icon">${abbr}</div>
-            <div class="rail-comm-info">
-              <div class="rail-comm-name">${c.name}</div>
-              <div class="rail-comm-meta">${c.members || ''}</div>
-            </div>
-            <div class="rail-comm-dot"></div>
-          </div>`;
-      }).join('')
-    }</div>`;
-
+    container.innerHTML = joinedComms.map(({ c, idx }) => {
+      const abbr = _railAbbr(c.name);
+      return `
+        <div class="rail-comm-item">
+          <div class="rail-comm-icon">${abbr}</div>
+          <div class="rail-comm-info">
+            <div class="rail-comm-name">${c.name}</div>
+          </div>
+          <div class="rail-comm-actions">
+            <button class="rail-comm-btn rail-comm-btn-open"
+              onclick="IBlog.Communities.openChat(${idx})">Open Chat</button>
+            <button class="rail-comm-btn rail-comm-btn-leave"
+              onclick="IBlog.Communities.leave(${idx}); loadRailCommunities();">Leave</button>
+          </div>
+        </div>`;
+    }).join('');
     return;
   }
 
-  /* ── Legacy path (no IBlog) ───────────────────────── */
-  _loadRailCommunitiesLegacy(container);
-}
-
-/* ── Legacy fallback ─────────────────────────────────── */
-const _legacyCommunitiesData = [
-  { id: 'ai',      name: 'AI & Machine Learning', icon: 'AI', members: '4.2k', online: '23' },
-  { id: 'webdev',  name: 'Web Development',       icon: 'WD', members: '3.1k', online: '18' },
-  { id: 'design',  name: 'UI/UX Design',           icon: 'UX', members: '2.5k', online: '12' },
-  { id: 'data',    name: 'Data Science',           icon: 'DS', members: '1.8k', online: '9'  },
-  { id: 'startup', name: 'Startup & Growth',       icon: 'SG', members: '1.2k', online: '7'  },
-];
-
-function _loadRailCommunitiesLegacy(container) {
+  // Legacy fallback
   let joinedIds = [];
   const savedUser = localStorage.getItem('user');
   if (savedUser) {
-    try { joinedIds = JSON.parse(savedUser).joinedCommunities || []; } catch (e) { /* silent */ }
+    try { joinedIds = JSON.parse(savedUser).joinedCommunities || []; } catch (e) {}
   }
 
-  const communities = _legacyCommunitiesData.map(c => ({ ...c, joined: joinedIds.includes(c.id) }));
+  const legacyData = [
+    { id: 'ai',      name: 'AI & Machine Learning', members: '4.2k', online: '23' },
+    { id: 'webdev',  name: 'Web Development',        members: '3.1k', online: '18' },
+    { id: 'design',  name: 'UI/UX Design',           members: '2.5k', online: '12' },
+    { id: 'data',    name: 'Data Science',           members: '1.8k', online: '9'  },
+    { id: 'startup', name: 'Startup & Growth',       members: '1.2k', online: '7'  },
+  ];
 
-  container.innerHTML = `<div class="rail-comm-list">${
-    communities.map(comm => `
-      <div class="rail-comm-item">
-        <div class="rail-comm-icon">${comm.icon}</div>
-        <div class="rail-comm-info">
-          <div class="rail-comm-name">${comm.name}</div>
-          <div class="rail-comm-meta">${comm.members} members · ${comm.online} online</div>
-        </div>
-        <button class="join-btn${comm.joined ? ' joined' : ''}"
-          id="rail-join-leg-${comm.id}"
-          onclick="toggleRailCommunityLegacy('${comm.id}', this)">
-          ${comm.joined ? 'Joined' : 'Join'}
-        </button>
-      </div>`).join('')
-  }</div>`;
+  container.innerHTML = legacyData.map(c => `
+    <div class="rail-comm-item">
+      <div class="rail-comm-icon">${_railAbbr(c.name)}</div>
+      <div class="rail-comm-info">
+        <div class="rail-comm-name">${c.name}</div>
+        <div class="rail-comm-meta">${c.members} · ${c.online} online</div>
+      </div>
+      <button class="join-btn${joinedIds.includes(c.id) ? ' joined' : ''}"
+        onclick="toggleRailCommunityLegacy('${c.id}', this)">
+        ${joinedIds.includes(c.id) ? 'Joined' : 'Join'}
+      </button>
+    </div>`).join('');
 }
 
-function toggleRailCommunityLegacy(communityId, button) {
+function toggleRailCommunityLegacy(id, btn) {
   const savedUser = localStorage.getItem('user');
   if (!savedUser) { showToastMessage('Sign in to join a community'); return; }
   try {
     const user = JSON.parse(savedUser);
     let joined = user.joinedCommunities || [];
-    if (joined.includes(communityId)) {
-      joined = joined.filter(id => id !== communityId);
-      button.classList.remove('joined');
-      button.textContent = 'Join';
+    if (joined.includes(id)) {
+      joined = joined.filter(x => x !== id);
+      btn.classList.remove('joined');
+      btn.textContent = 'Join';
       showToastMessage('Left community');
     } else {
-      joined.push(communityId);
-      button.classList.add('joined');
-      button.textContent = 'Joined';
-      const comm = _legacyCommunitiesData.find(c => c.id === communityId);
-      showToastMessage(`Joined ${comm?.name || 'community'}!`);
+      joined.push(id);
+      btn.classList.add('joined');
+      btn.textContent = 'Joined';
+      showToastMessage('Joined community!');
     }
     user.joinedCommunities = joined;
     localStorage.setItem('user', JSON.stringify(user));
@@ -226,27 +202,44 @@ function loadTopAuthors() {
   const container = document.getElementById('top-authors');
   if (!container) return;
 
+  // IBlog path
+  if (window.IBlog?.AUTHORS) {
+    container.innerHTML = IBlog.AUTHORS.map(a => `
+      <div class="author-item">
+        <div class="card-avatar" style="width:34px;height:34px;background:${a.color};">${a.initial}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${a.name}</div>
+          <div style="font-size:11px;color:var(--text2);">${a.tag} · ${a.followers}</div>
+        </div>
+        <button class="follow-btn"
+          onclick="this.classList.toggle('following');
+                   this.textContent=this.classList.contains('following')?'Following':'Follow';
+                   IBlog.utils.toast(this.classList.contains('following')?'Following!':'Unfollowed');">
+          Follow
+        </button>
+      </div>`).join('');
+    return;
+  }
+
+  // Fallback
   let followingIds = [];
   const savedUser = localStorage.getItem('user');
   if (savedUser) {
-    try { followingIds = JSON.parse(savedUser).following || []; } catch (e) { /* silent */ }
+    try { followingIds = JSON.parse(savedUser).following || []; } catch (e) {}
   }
 
-  const authors = authorsData.map(a => ({ ...a, following: followingIds.includes(a.id) }));
-
-  container.innerHTML = authors.map(author => `
+  container.innerHTML = authorsData.map(a => `
     <div class="author-item">
-      <div class="com-icon" style="background:rgba(184,150,12,.1);">${author.avatar}</div>
+      <div class="com-icon" style="background:rgba(184,150,12,.1);">${a.avatar}</div>
       <div class="com-info">
-        <strong>${author.name}</strong>
-        <small>${author.field} · ${author.followers} followers</small>
+        <strong>${a.name}</strong>
+        <small>${a.field} · ${a.followers} followers</small>
       </div>
-      <button class="follow-btn${author.following ? ' following' : ''}"
-        onclick="toggleFollow('${author.id}', this)">
-        ${author.following ? 'Following' : 'Follow'}
+      <button class="follow-btn${followingIds.includes(a.id) ? ' following' : ''}"
+        onclick="toggleFollow('${a.id}', this)">
+        ${followingIds.includes(a.id) ? 'Following' : 'Follow'}
       </button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function toggleFollow(authorId, button) {
@@ -274,7 +267,7 @@ function toggleFollow(authorId, button) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   NEWSLETTER DIGEST
+   NEWSLETTER
 ══════════════════════════════════════════════════════════ */
 function subscribeToDigest() {
   const emailInput = document.querySelector('.digest-email');
@@ -282,7 +275,6 @@ function subscribeToDigest() {
   const email = emailInput.value.trim();
   if (!email) { showToastMessage('Please enter your email'); return; }
   if (!email.includes('@') || !email.includes('.')) { showToastMessage('Invalid email'); return; }
-
   const savedUser = localStorage.getItem('user');
   if (savedUser) {
     try {
@@ -290,9 +282,8 @@ function subscribeToDigest() {
       user.subscribed = true;
       user.subscribedEmail = email;
       localStorage.setItem('user', JSON.stringify(user));
-    } catch (e) { /* silent */ }
+    } catch (e) {}
   }
-
   localStorage.setItem('digest_subscriber', email);
   emailInput.value = '';
   showToastMessage('Subscribed! You will receive our weekly digest.');
@@ -310,11 +301,11 @@ function loadUserJoinedData() {
     if (user.following?.length)         loadTopAuthors();
     const digestEmail = document.querySelector('.digest-email');
     if (digestEmail && user.subscribedEmail) digestEmail.placeholder = user.subscribedEmail;
-  } catch (e) { /* silent */ }
+  } catch (e) {}
 }
 
 /* ══════════════════════════════════════════════════════════
-   RIGHT-RAIL SEARCH
+   SEARCH
 ══════════════════════════════════════════════════════════ */
 function searchFromRightRail(inputElement) {
   const query = inputElement.value.trim();
@@ -330,29 +321,21 @@ function searchFromRightRail(inputElement) {
 ══════════════════════════════════════════════════════════ */
 function showToastMessage(message) {
   if (window.IBlog?.utils?.toast) { IBlog.utils.toast(message); return; }
-
   let toast = document.getElementById('rr-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'rr-toast';
     Object.assign(toast.style, {
       position: 'fixed', bottom: '30px', right: '30px',
-      background: 'var(--surface, #fff)',
-      color: 'var(--text, #111)',
-      padding: '12px 24px',
-      borderRadius: '12px',
+      background: 'var(--surface, #fff)', color: 'var(--text, #111)',
+      padding: '12px 24px', borderRadius: '12px',
       borderLeft: '4px solid var(--accent, #b8960c)',
-      boxShadow: '0 4px 20px rgba(0,0,0,.15)',
-      zIndex: '10000',
-      opacity: '0',
-      transform: 'translateY(20px)',
-      transition: 'all .3s ease',
-      fontSize: '14px',
-      pointerEvents: 'none',
+      boxShadow: '0 4px 20px rgba(0,0,0,.15)', zIndex: '10000',
+      opacity: '0', transform: 'translateY(20px)',
+      transition: 'all .3s ease', fontSize: '14px', pointerEvents: 'none',
     });
     document.body.appendChild(toast);
   }
-
   toast.textContent = message;
   toast.style.opacity   = '1';
   toast.style.transform = 'translateY(0)';
@@ -363,8 +346,18 @@ function showToastMessage(message) {
   }, 3000);
 }
 
+
 /* ══════════════════════════════════════════════════════════
-   DOMContentLoaded
+   ALIASES — called by IBlog.Views and Dashboard.enter()
+   buildRailTopics      → loadTrendingTopics
+   buildRailCommunities → loadRailCommunities  (full version with Open Chat + Leave)
+   buildTopAuthors      → loadTopAuthors
+══════════════════════════════════════════════════════════ */
+function buildRailTopics()      { loadTrendingTopics(); }
+function buildRailCommunities() { loadRailCommunities(); }
+function buildTopAuthors()      { loadTopAuthors(); }
+/* ══════════════════════════════════════════════════════════
+   BOOT
 ══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   initRightRail();
@@ -393,19 +386,21 @@ document.addEventListener('DOMContentLoaded', () => {
    PUBLIC API
 ══════════════════════════════════════════════════════════ */
 window.RightRail = {
-  init:            initRightRail,
-  loadCommunities: loadRailCommunities,
-  search:          searchFromRightRail,
-  subscribe:       subscribeToDigest,
-  follow:          toggleFollow,
+  init:             initRightRail,
+  buildCommunities: loadRailCommunities,
+  loadCommunities:  loadRailCommunities,
+  buildTopics:      buildRailTopics,
+  buildAuthors:     buildTopAuthors,
+  search:           searchFromRightRail,
+  subscribe:        subscribeToDigest,
+  follow:           toggleFollow,
 };
 
-/* IBlog.Views.buildRailCommunities hook */
-if (window.IBlog) {
-  IBlog.Views = IBlog.Views || {};
-  const _orig = IBlog.Views.buildRailCommunities;
-  IBlog.Views.buildRailCommunities = function () {
-    loadRailCommunities();
-    if (typeof _orig === 'function') _orig();
-  };
-}
+// IBlog.Views hook so communities.js _syncRail() works
+window.IBlog = window.IBlog || {};
+IBlog.Views  = IBlog.Views  || {};
+const _origBuildRail = IBlog.Views.buildRailCommunities;
+IBlog.Views.buildRailCommunities = function () {
+  loadRailCommunities();
+  if (typeof _origBuildRail === 'function') _origBuildRail();
+};
