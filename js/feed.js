@@ -161,12 +161,12 @@ IBlog.Feed = (() => {
             </div>
           </div>
 
-          <!-- Article text -->
-          <div class="reader-text">
-            ${(article.body||article.excerpt||'')
-              .split('\n\n').filter(p=>p.trim())
-              .map(p=>`<p>${p.trim()}</p>`).join('')}
-          </div>
+          ${(() => {
+            const tplHTML = IBlog.Templates.renderForReader(article);
+            if (tplHTML) return `<div class="reader-tpl-wrap">${tplHTML}</div>`;
+            return `<div class="reader-text">
+            ${(article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${p.trim()}</p>`).join('')}</div>`;
+          })()}
 
           <!-- Tags -->
           ${(article.tags||[]).length ? `
