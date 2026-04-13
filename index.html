@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IBlog — Knowledge Without Borders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       <link rel="stylesheet" href="css/global.css" />
     <link rel="stylesheet" href="css/Darkmode.css" />
     <link rel="stylesheet" href="components/preloader/preloader.css" />
@@ -11,16 +14,13 @@
     <link rel="stylesheet" href="components/landing-nav/landing-nav.css" />
     <link rel="stylesheet" href="components/hero/hero.css" />
     <link rel="stylesheet" href="components/ticker/ticker.css" />
+    <link rel="stylesheet" href="components/landing-feat/feat.css" />
     <link rel="stylesheet" href="components/features/features.css" />
     <link rel="stylesheet" href="components/carousel/carousel.css" />
-    <link rel="stylesheet" href="components/cta/cta.css" />
-  
-
-
-    <script src="components/features/features.js"></script>
-    <script src="components/auth/auth.js"></script>
-    <script src="components/features/features.js"></script>
-    
+    <link rel="stylesheet" href="components/HIW/hiw.css" />
+    <link rel="stylesheet" href="components/pricing/pricing.css" />
+    <link rel="stylesheet" href="components/cta/cta.css" /> 
+        <link rel="stylesheet" href="components/testimonial/testimonial.css" />   
     <link
       rel="stylesheet"
       href="components/dashboard-layout/dashboard-layout.css"
@@ -36,6 +36,9 @@
       rel="stylesheet"
       href="components/article-reader/article-reader.css"
     />
+    <link rel="stylesheet" href="css/templates.css"/>
+
+   
     <link rel="stylesheet" href="components/right-rail/right-rail.css" />
     <link rel="stylesheet" href="components/map/map.css" />
     <link rel="stylesheet" href="components/activity/activity.css" />
@@ -50,6 +53,7 @@
     <link rel="stylesheet" href="components/my-articles/my-articles.css" />
   </head>
   <link rel="stylesheet" href="components/admin/admin.css">
+  <link rel="stylesheet" href="components/landing-footer/footer.css">
 </head>
 <body>
 
@@ -81,41 +85,22 @@
 
   <!-- Ticker -->
   <div class="ticker"><div class="ticker-inner" id="ticker-inner"></div></div>
-
-  <!-- Features -->
-  <section class="features-section" id="features">
-    <div class="section-eyebrow">Why IBlog</div>
-    <h2 class="section-headline">A platform built for<br><span style="color:var(--accent)">curious minds</span></h2>
-    <div class="feat-grid">
-      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(184,150,12,.12)">🤖</div><h3>AI Recommendations</h3><p>Personalized feeds based on your reading patterns and interests across 27 categories.</p></div>
-      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(232,93,58,.1)">🎙️</div><h3>Article → Podcast</h3><p>Convert any article to a podcast instantly. Choose male, female, or auto AI voice.</p></div>
-      <div class="feat-card premium-feat" onclick="showPremium()"><div class="feat-icon" style="background:rgba(212,160,23,.15)">🌍</div><h3>Global Trend Map <span class="badge badge-premium">⭐ Premium</span></h3><p>Explore what 19 countries are reading. Click any nation for local trends.</p></div>
-      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(76,175,125,.1)">🏘️</div><h3>Community Spaces</h3><p>Join topic-based communities with live chat, threads, and curated resources.</p></div>
-      <div class="feat-card" onclick="showSignup()"><div class="feat-icon" style="background:rgba(184,150,12,.12)">📊</div><h3>Activity Tracker</h3><p>GitHub-style calendar tracking your reading days, comments, and posts.</p></div>
-      <div class="feat-card premium-feat" onclick="showPremium()"><div class="feat-icon" style="background:rgba(212,160,23,.15)">✍️</div><h3>Article Templates <span class="badge badge-premium">⭐ Premium</span></h3><p>9 professional article templates. Edit your published articles anytime.</p></div>
-    </div>
-  </section>
-
+  <!-- Landing Nav -->
+  <div id="landing-feat-root"></div>
   <!-- Carousel -->
-  <section class="carousel-section" id="trending">
-    <div class="carousel-header">
-      <div class="section-eyebrow">Featured</div>
-      <h2 style="font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:var(--text)">Trending this week</h2>
-    </div>
-    <div class="carousel-track" id="landing-carousel"></div>
-  </section>
-
+  <div id="carousel-root"></div>
+  <!-- Features -->
+  <div id="features-root"></div>
+  <!-- How It Works -->
+  <div id="hit-root"></div>
+  <!-- Pricing -->
+  <div id="pricing-root"></div>
+  <!-- Testimonials -->
+  <div id="testimonial-root"></div>
   <!-- CTA -->
-  <section class="cta-section">
-    <div class="cta-box">
-      <h2>Ready to read smarter?</h2>
-      <p>Join 12,400+ readers using IBlog to stay ahead of the knowledge curve.</p>
-      <div class="cta-btns">
-        <button class="btn btn-primary" style="font-size:15px;padding:14px 40px" onclick="showSignup()">Join Free →</button>
-        <button class="btn btn-premium" style="font-size:15px;padding:14px 40px" onclick="showPremium()">⭐ Go Premium</button>
-      </div>
-    </div>
-  </section>
+  <div id="cta-root"></div>
+  <!-- Footer -->
+  <div id="footer-root"></div>
 
 </div><!-- /landing-page -->
 
@@ -1107,19 +1092,32 @@
       </div>
     </div>
 
+
+
+
     <!-- JS COMPONENTS (ordre de chargement strict) -->
     <script src="toggledark.js"></script>
     <script src="data.js"></script>
     <script src="components/admin/admin.js"></script>
+    <script src="js/podcast.js"></script>
+    <script src="js/templates.js"></script>
     <script src="js/feed.js"></script>
     <script src="js/views.js"></script>
+    <script src="components/auth/auth.js"></script>
     <script src="components/chat/chat.js"></script>
     <script src="components/landing-nav/landing-nav.js"></script>
+    <script src="components/landing-feat/feat.js"></script>
+    <script src="components/carousel/carousel.js"></script>
+    <script src="components/features/features.js"></script>
+    <script src="components/HIW/hiw.js"></script>
+    <script src="components/pricing/pricing.js"></script>
     <script src="components/hero/hero.js"></script>
+    <script src="components/cta/cta.js"></script>
+     <script src="components/testimonial/testimonial.js"></script>
+    <script src="components/landing-footer/footer.js"></script>
     <script src="components/stats/stats.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/notifications/notifications.js"></script>
-    <script src="components/auth/auth.js"></script>
   <script src="components/article-card/article-card.js"></script>
    <script src="components/my-articles/my-articles.js"></script>
    <script src="components/right-rail/right-rail.js"></script>

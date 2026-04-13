@@ -151,77 +151,109 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   // ── Hero slideshow ─────────────────────────────────────
-  const SLIDES    = document.querySelectorAll('.hslide');
-  const TRACK     = document.getElementById('heroSlides');
-  const DOTS      = document.querySelectorAll('.h-dot');
-  const THUMBS    = document.querySelectorAll('.h-thumb');
-  const PROG      = document.getElementById('heroProgBar');
-  const CUR_LABEL = document.getElementById('hero-cur');
-  const PREV_BTN  = document.getElementById('heroPrev');
-  const NEXT_BTN  = document.getElementById('heroNext');
 
-  if (!TRACK) return;
-
-  const AUTO_DELAY = 6000;
-  let current = 0, timer = null;
-
-  function goTo(idx) {
-    const prev = current;
-    current = (idx + SLIDES.length) % SLIDES.length;
-    TRACK.style.transform = `translateX(-${current * 100}%)`;
-    SLIDES[prev].classList.remove('active');
-    SLIDES[current].classList.add('active');
-    DOTS[prev]?.classList.remove('active');
-    DOTS[current]?.classList.add('active');
-    THUMBS[prev]?.classList.remove('active');
-    THUMBS[current]?.classList.add('active');
-    if (CUR_LABEL) CUR_LABEL.textContent = current + 1;
-    startAuto();
+  const slides = Array.from(document.querySelectorAll('.hslide'));
+  const dots   = Array.from(document.querySelectorAll('.h-dot'));
+  const track  = document.getElementById('heroSlides');
+  const bar    = document.getElementById('heroProgBar');
+  const curEl  = document.getElementById('hero-cur');
+  const TOTAL  = slides.length;
+  const DELAY  = 7000;        // ms between auto-advances
+  const TRANS  = 850;         // must match CSS transition duration (ms)
+ 
+  let current  = 0;
+  let busy     = false;       // blocks clicks during CSS transition
+  let autoTimer= null;
+  let barTimer = null;
+ 
+  /* ── Activate a specific slide index ── */
+  function goTo(next) {
+    if (busy) return;                          // ignore rapid clicks
+    if (next === current) return;
+    busy = true;
+ 
+    // Remove active from old
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+ 
+    current = ((next % TOTAL) + TOTAL) % TOTAL;
+ 
+    // Activate new
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+    track.style.transform = `translateX(-${current * 100}%)`;
+    if (curEl) curEl.textContent = current + 1;
+ 
+    // Unblock after CSS transition finishes
+    clearTimeout(busy._t);
+    busy._t = setTimeout(() => { busy = false; }, TRANS);
+ 
+    resetBar();
   }
-
-  function startProg() {
-    if (!PROG) return;
-    PROG.style.transition = 'none';
-    PROG.style.width = '0%';
-    requestAnimationFrame(() => {
-      PROG.style.transition = `width ${AUTO_DELAY}ms linear`;
-      PROG.style.width = '100%';
+ 
+  /* ── Progress bar (clean reset) ────── */
+  function resetBar() {
+    clearTimeout(barTimer);
+    // Kill the running transition immediately
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    // Force a reflow so the browser registers width=0 before animating
+    bar.offsetWidth; // eslint-disable-line no-unused-expressions
+    bar.style.transition = `width ${DELAY}ms linear`;
+    bar.style.width = '100%';
+  }
+ 
+  /* ── Auto-advance using setTimeout (not setInterval) ── */
+  function scheduleNext() {
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(() => {
+      goTo(current + 1);
+      scheduleNext();
+    }, DELAY);
+  }
+ 
+  /* ── Arrow buttons ──────────────────── */
+  document.getElementById('heroPrev').addEventListener('click', () => {
+    clearTimeout(autoTimer);          // pause auto on manual nav
+    goTo(current - 1);
+    scheduleNext();                   // restart countdown from now
+  });
+ 
+  document.getElementById('heroNext').addEventListener('click', () => {
+    clearTimeout(autoTimer);
+    goTo(current + 1);
+    scheduleNext();
+  });
+ 
+  /* ── Dot buttons ────────────────────── */
+  dots.forEach((d, i) => {
+    d.addEventListener('click', () => {
+      clearTimeout(autoTimer);
+      goTo(i);
+      scheduleNext();
     });
-  }
-
-  function startAuto() {
-    clearTimeout(timer);
-    startProg();
-    timer = setTimeout(() => goTo(current + 1), AUTO_DELAY);
-  }
-
-  function stopAuto() {
-    clearTimeout(timer);
-    if (PROG) { PROG.style.transition = 'none'; PROG.style.width = getComputedStyle(PROG).width; }
-  }
-
-  PREV_BTN?.addEventListener('click', () => goTo(current - 1));
-  NEXT_BTN?.addEventListener('click', () => goTo(current + 1));
-  DOTS.forEach((d, i) => d.addEventListener('click', () => goTo(i)));
-  THUMBS.forEach((t, i) => t.addEventListener('click', () => goTo(i)));
-
-  const shell = TRACK.closest('.hero-shell');
-  shell?.addEventListener('mouseenter', stopAuto);
-  shell?.addEventListener('mouseleave', startAuto);
-
-  let tx = 0;
-  shell?.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
-  shell?.addEventListener('touchend',   e => {
-    const dx = e.changedTouches[0].clientX - tx;
-    if (Math.abs(dx) > 40) goTo(dx < 0 ? current + 1 : current - 1);
   });
-
+ 
+  /* ── Touch swipe ────────────────────── */
+  let touchX = 0;
+  track.addEventListener('touchstart', e => {
+    touchX = e.touches[0].clientX;
+  }, { passive: true });
+ 
+  track.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) {
+      clearTimeout(autoTimer);
+      goTo(dx < 0 ? current + 1 : current - 1);
+      scheduleNext();
+    }
+  }, { passive: true });
+ 
+  /* ── Keyboard navigation ────────────── */
   document.addEventListener('keydown', e => {
-    if (document.getElementById('landing-page')?.style.display === 'none') return;
-    if (e.key === 'ArrowLeft')  goTo(current - 1);
-    if (e.key === 'ArrowRight') goTo(current + 1);
-  });
-
+    if (e.key === 'ArrowRight') { clearTimeout(autoTimer); goTo(current + 1); scheduleNext(); }
+    if (e.key === 'ArrowLeft')  { clearTimeout(autoTimer); goTo(current - 1); scheduleNext(); }
+  })
   goTo(0);
 
 });

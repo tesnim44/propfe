@@ -1,0 +1,148 @@
+/* ═══════════════════════════════════════════════
+   IBLOG — How It Works Component
+   components/HIW/hiw.css
+═══════════════════════════════════════════════ */
+
+.hiw-section {
+  padding: 100px 60px;
+  
+  text-align: center;
+}
+
+/* ── Header ── */
+.hiw-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c9a227;
+  margin-bottom: 20px;
+}
+
+.hiw-headline {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.15;
+  margin: 0 0 22px;
+}
+
+.hiw-headline em {
+  font-style: italic;
+  color: #c9a227;
+}
+
+.hiw-divider {
+  width: 48px;
+  height: 2px;
+  background: #c9a227;
+  margin: 0 auto 72px;
+}
+
+/* ── Steps grid ── */
+.hiw-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Connector line between step circles */
+.hiw-steps::before {
+  content: '';
+  position: absolute;
+  top: 27px;
+  left: calc(12.5%);
+  right: calc(12.5%);
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0,0,0,0.12) 10%,
+    rgba(0,0,0,0.12) 90%,
+    transparent
+  );
+}
+
+.hiw-step {
+  text-align: center;
+  padding: 0 20px;
+  cursor: default;
+}
+
+/* ── Step number circle ── */
+.hiw-step-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f5f5f5;
+  border: 1px solid #d8d0c0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c9a227;
+  margin: 0 auto 28px;
+  position: relative;
+  z-index: 1;
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+
+.hiw-step:hover .hiw-step-num {
+  background: rgba(201, 162, 39, 0.1);
+  border-color: #c9a227;
+  box-shadow: 0 0 0 6px rgba(201, 162, 39, 0.08);
+}
+
+/* ── Step icon ── */
+.hiw-step-icon {
+  font-size: 26px;
+  margin-bottom: 18px;
+  display: block;
+  transition: transform 0.25s;
+  color: #1a1a1a;
+}
+
+.hiw-step:hover .hiw-step-icon {
+  transform: scale(1.18);
+}
+
+/* ── Step text ── */
+.hiw-step h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 12px;
+  line-height: 1.35;
+}
+
+.hiw-step p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 760px) {
+  .hiw-section { padding: 70px 32px; }
+
+  .hiw-steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 44px 20px;
+  }
+
+  .hiw-steps::before { display: none; }
+}
+
+@media (max-width: 480px) {
+  .hiw-section { padding: 60px 24px; }
+  .hiw-steps { grid-template-columns: 1fr; gap: 40px; }
+}
