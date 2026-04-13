@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IBlog — Knowledge Without Borders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       <link rel="stylesheet" href="css/global.css" />
     <link rel="stylesheet" href="css/Darkmode.css" />
     <link rel="stylesheet" href="components/preloader/preloader.css" />
@@ -11,9 +14,13 @@
     <link rel="stylesheet" href="components/landing-nav/landing-nav.css" />
     <link rel="stylesheet" href="components/hero/hero.css" />
     <link rel="stylesheet" href="components/ticker/ticker.css" />
+    <link rel="stylesheet" href="components/landing-feat/feat.css" />
     <link rel="stylesheet" href="components/features/features.css" />
     <link rel="stylesheet" href="components/carousel/carousel.css" />
-    <link rel="stylesheet" href="components/cta/cta.css" />    
+    <link rel="stylesheet" href="components/HIW/hiw.css" />
+    <link rel="stylesheet" href="components/pricing/pricing.css" />
+    <link rel="stylesheet" href="components/cta/cta.css" /> 
+        <link rel="stylesheet" href="components/testimonial/testimonial.css" />   
     <link
       rel="stylesheet"
       href="components/dashboard-layout/dashboard-layout.css"
@@ -78,12 +85,18 @@
 
   <!-- Ticker -->
   <div class="ticker"><div class="ticker-inner" id="ticker-inner"></div></div>
+  <!-- Landing Nav -->
+  <div id="landing-feat-root"></div>
   <!-- Carousel -->
   <div id="carousel-root"></div>
   <!-- Features -->
   <div id="features-root"></div>
-
-
+  <!-- How It Works -->
+  <div id="hit-root"></div>
+  <!-- Pricing -->
+  <div id="pricing-root"></div>
+  <!-- Testimonials -->
+  <div id="testimonial-root"></div>
   <!-- CTA -->
   <div id="cta-root"></div>
   <!-- Footer -->
@@ -1090,20 +1103,24 @@
     <script src="js/templates.js"></script>
     <script src="js/feed.js"></script>
     <script src="js/views.js"></script>
+    <script src="components/auth/auth.js"></script>
     <script src="components/chat/chat.js"></script>
     <script src="components/landing-nav/landing-nav.js"></script>
+    <script src="components/landing-feat/feat.js"></script>
     <script src="components/carousel/carousel.js"></script>
     <script src="components/features/features.js"></script>
+    <script src="components/HIW/hiw.js"></script>
+    <script src="components/pricing/pricing.js"></script>
     <script src="components/hero/hero.js"></script>
     <script src="components/cta/cta.js"></script>
+     <script src="components/testimonial/testimonial.js"></script>
     <script src="components/landing-footer/footer.js"></script>
     <script src="components/stats/stats.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/notifications/notifications.js"></script>
-    <script src="components/auth/auth.js"></script>
-    <script src="components/article-card/article-card.js"></script>
-    <script src="components/my-articles/my-articles.js"></script>
-    <script src="components/right-rail/right-rail.js"></script>
+  <script src="components/article-card/article-card.js"></script>
+   <script src="components/my-articles/my-articles.js"></script>
+   <script src="components/right-rail/right-rail.js"></script>
     <script src="components/analytics/analytics.js"></script>
     <script src="components/trends/trends.js"></script>
     <script src="components/communities/communities.js"></script>

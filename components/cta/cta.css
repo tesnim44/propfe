@@ -10,7 +10,7 @@
 }
 
 .cta-box {
-  background: var(--surface);
+  
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-xl);
   padding: 80px 60px;
