@@ -249,14 +249,7 @@ IBlog.Views = (() => {
 
   /* ── Writer ──────────────────────────────────────────── */
   function buildTemplates() {
-    const grid = document.getElementById('template-grid');
-    if (!grid) return;
-    grid.innerHTML = IBlog.TEMPLATES.map((t, i) => `
-<div class="template-card" onclick="IBlog.Views.selectTemplate(${i})">
-  <div class="template-icon">${t.icon}</div>
-  <div class="template-name">${t.name}</div>
-  <div class="template-desc">${t.desc}</div>
-</div>`).join('');
+    IBlog.Templates.buildWriterSelector();
   }
 
   function selectTemplate(i) {
@@ -345,6 +338,8 @@ IBlog.Views = (() => {
       title,
       excerpt: text.substring(0, 160) + (text.length > 160 ? '…' : ''),
       body: text,
+
+      templateId: IBlog.Templates.selectedId() || null,
       readTime: Math.max(1, Math.ceil(text.split(' ').length / 200)) + ' min',
       likes: 0, comments: [], reposts: 0,
       bookmarked: false, liked: false,
