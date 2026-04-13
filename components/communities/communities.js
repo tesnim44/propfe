@@ -50,8 +50,15 @@ IBlog.Communities = (() => {
   const _getM    = idx => [..._ensureM(idx)];
   const _isAdmin = idx => { const u = _cu(); return u && IBlog.COMMUNITIES[idx]?.createdBy === u.name; };
 
-  function _syncRail() { IBlog.Views?.buildRailCommunities?.(); }
-
+  function _syncRail() {
+  if (typeof window.RightRail?.buildCommunities === 'function') {
+    window.RightRail.buildCommunities();
+  } else if (typeof window.loadRailCommunities === 'function') {
+    window.loadRailCommunities();
+  } else if (typeof IBlog.Views?.buildRailCommunities === 'function') {
+    IBlog.Views.buildRailCommunities();
+  }
+}
   /* ════════════════════════════════════════════════════════
      INIT
   ════════════════════════════════════════════════════════ */

@@ -372,14 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const digestBtn = document.querySelector('.digest-sub-btn');
   if (digestBtn) digestBtn.onclick = subscribeToDigest;
 
-  const observer = new MutationObserver(() => {
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard && dashboard.style.display !== 'none') {
-      loadUserStats();
-      loadRailCommunities();
-    }
-  });
-  observer.observe(document.body, { attributes: true, subtree: true });
+  // Communities refreshed via RightRail.buildCommunities() called by IBlog after state is ready
 });
 
 /* ══════════════════════════════════════════════════════════
@@ -396,11 +389,15 @@ window.RightRail = {
   follow:           toggleFollow,
 };
 
-// IBlog.Views hook so communities.js _syncRail() works
-window.IBlog = window.IBlog || {};
-IBlog.Views  = IBlog.Views  || {};
-const _origBuildRail = IBlog.Views.buildRailCommunities;
-IBlog.Views.buildRailCommunities = function () {
+// IBlog.Views hook — deferred so views.js has time to load first
+window.addEventListener('load', () => {
+  window.IBlog = window.IBlog || {};
+  IBlog.Views  = IBlog.Views  || {};
+  const _origBuildRail = IBlog.Views.buildRailCommunities;
+  IBlog.Views.buildRailCommunities = function () {
+    loadRailCommunities();
+    if (typeof _origBuildRail === 'function') _origBuildRail();
+  };
+  // Now that IBlog is ready, render communities
   loadRailCommunities();
-  if (typeof _origBuildRail === 'function') _origBuildRail();
-};
+});

@@ -470,6 +470,6 @@ IBlog.Views = (() => {
     doSearch, searchTopic,
     buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle,
     buildMyArticles, buildSaved, buildNotifications,
-    buildProfile, buildAccentPicker, buildCategorySelect,
+     buildAccentPicker, buildCategorySelect,
   };
 })();
