@@ -336,7 +336,7 @@ IBlog.SEED_ARTICLES = [
 // ─── Communities ─────────────────────────────────────────
 IBlog.COMMUNITIES = [
   {
-    icon:"🤖", name:"AI & ML", members:"4.2k", desc:"Deep dives into AI research, tools, and societal implications.",
+     name:"AI & ML", members:"4.2k", desc:"Deep dives into AI research, tools, and societal implications.",
     threads:[
       {title:"GPT-5 leaked benchmarks — what do they mean?",meta:"142 replies · 2h ago"},
       {title:"Building RAG systems: best practices 2026",meta:"87 replies · 5h ago"},
@@ -354,7 +354,7 @@ IBlog.COMMUNITIES = [
     ]
   },
   {
-    icon:"🔬", name:"Science", members:"3.1k", desc:"Latest breakthroughs in biology, physics, and chemistry.",
+     name:"Science", members:"3.1k", desc:"Latest breakthroughs in biology, physics, and chemistry.",
     threads:[
       {title:"CRISPR prime editing — clinical update",meta:"56 replies · 3h ago"},
       {title:"Dark matter: are we close to detection?",meta:"94 replies · 1d ago"},
@@ -369,7 +369,7 @@ IBlog.COMMUNITIES = [
     ]
   },
   {
-    icon:"🚀", name:"Startups", members:"2.8k", desc:"Builders helping builders. Product, growth, fundraising.",
+     name:"Startups", members:"2.8k", desc:"Builders helping builders. Product, growth, fundraising.",
     threads:[
       {title:"Cold email templates that actually convert",meta:"234 replies · 1h ago"},
       {title:"Product-led vs sales-led in 2026",meta:"112 replies · 4h ago"},
@@ -385,7 +385,7 @@ IBlog.COMMUNITIES = [
     ]
   },
   {
-    icon:"💡", name:"Tech & Future", members:"5.6k", desc:"Where technology, society, and the future converge.",
+     name:"Tech & Future", members:"5.6k", desc:"Where technology, society, and the future converge.",
     threads:[
       {title:"Spatial computing: 2026 state of play",meta:"89 replies · 6h ago"},
       {title:"Quantum internet — realistic timeline?",meta:"145 replies · 1d ago"},
@@ -400,7 +400,7 @@ IBlog.COMMUNITIES = [
     ]
   },
   {
-    icon:"⚕️", name:"Health & Longevity", members:"2.2k", desc:"Science-backed health, wellness, and longevity protocols.",
+     name:"Health & Longevity", members:"2.2k", desc:"Science-backed health, wellness, and longevity protocols.",
     threads:[
       {title:"Sleep optimisation — what the research says",meta:"143 replies · 1d ago"},
       {title:"Intermittent fasting: updated evidence 2026",meta:"97 replies · 12h ago"},
@@ -415,7 +415,7 @@ IBlog.COMMUNITIES = [
     ]
   },
   {
-    icon:"🎭", name:"Culture & Arts", members:"1.9k", desc:"Literature, film, art, and the evolving human experience.",
+     name:"Culture & Arts", members:"1.9k", desc:"Literature, film, art, and the evolving human experience.",
     threads:[
       {title:"AI-generated novels: art or automation?",meta:"167 replies · 2h ago"},
       {title:"Best non-fiction of 2026 so far",meta:"88 replies · 1d ago"},

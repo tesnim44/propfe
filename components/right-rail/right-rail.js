@@ -1,313 +1,280 @@
-// ============================================
-// RIGHT-RAIL COMPONENT
-// Gère la colonne de droite : stats, tendances, communautés, auteurs
-// ============================================
+// components/right-rail/right-rail.js
 
-// Données des communautés
-const communitiesData = [
-  { id: "ai", name: "AI & Machine Learning", icon: "🤖", members: "4.2k", online: "23", joined: false },
-  { id: "webdev", name: "Web Development", icon: "🌐", members: "3.1k", online: "18", joined: false },
-  { id: "design", name: "UI/UX Design", icon: "🎨", members: "2.5k", online: "12", joined: false },
-  { id: "data", name: "Data Science", icon: "📊", members: "1.8k", online: "9", joined: false },
-  { id: "startup", name: "Startup & Growth", icon: "🚀", members: "1.2k", online: "7", joined: false }
-];
-
-// Données des auteurs
+/* ── Authors data ──────────────────────────────────────── */
 const authorsData = [
-  { id: "marie", name: "Marie Curie", avatar: "MC", field: "Science", followers: "3.2k", following: false },
-  { id: "alan", name: "Alan Turing", avatar: "AT", field: "AI", followers: "2.8k", following: false },
-  { id: "ada", name: "Ada Lovelace", avatar: "AL", field: "Programming", followers: "2.1k", following: false },
-  { id: "nikola", name: "Nikola Tesla", avatar: "NT", field: "Physics", followers: "1.9k", following: false },
-  { id: "grace", name: "Grace Hopper", avatar: "GH", field: "Tech", followers: "1.7k", following: false }
+  { id: 'marie',  name: 'Marie Curie',    avatar: 'MC', field: 'Science',     followers: '3.2k', following: false },
+  { id: 'alan',   name: 'Alan Turing',    avatar: 'AT', field: 'AI',          followers: '2.8k', following: false },
+  { id: 'ada',    name: 'Ada Lovelace',   avatar: 'AL', field: 'Programming', followers: '2.1k', following: false },
+  { id: 'nikola', name: 'Nikola Tesla',   avatar: 'NT', field: 'Physics',     followers: '1.9k', following: false },
+  { id: 'grace',  name: 'Grace Hopper',   avatar: 'GH', field: 'Tech',        followers: '1.7k', following: false },
 ];
 
-// Données des tendances
+/* ── Trending topics ───────────────────────────────────── */
 const trendingTopics = [
-  { name: "Artificial Intelligence", count: "2.3k", active: true },
-  { name: "Web3", count: "1.8k", active: false },
-  { name: "Climate Tech", count: "1.2k", active: false },
-  { name: "Quantum Computing", count: "956", active: false },
-  { name: "BioTech", count: "789", active: false },
-  { name: "Cybersecurity", count: "654", active: false }
+  { name: 'Artificial Intelligence', count: '2.3k', active: true  },
+  { name: 'Web3',                    count: '1.8k', active: false },
+  { name: 'Climate Tech',            count: '1.2k', active: false },
+  { name: 'Quantum Computing',       count: '956',  active: false },
+  { name: 'BioTech',                 count: '789',  active: false },
+  { name: 'Cybersecurity',           count: '654',  active: false },
 ];
 
-// ============================================
-// INITIALISATION DU RIGHT-RAIL
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════ */
 function initRightRail() {
   loadUserStats();
   loadTrendingTopics();
-  loadCommunities();
+  loadRailCommunities();
   loadTopAuthors();
   loadUserJoinedData();
 }
 
-// ============================================
-// STATS UTILISATEUR
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   USER STATS
+══════════════════════════════════════════════════════════ */
 function loadUserStats() {
   const savedUser = localStorage.getItem('user');
-  let articleCount = 0;
-  let followersCount = "1.2k";
-  let viewsCount = "8.4k";
-  let likesCount = "312";
-  
+  let articleCount   = 0;
+  let followersCount = '1.2k';
+  let viewsCount     = '8.4k';
+  let likesCount     = '312';
+
   if (savedUser) {
     try {
       const user = JSON.parse(savedUser);
       const articles = localStorage.getItem(`articles_${user.email}`);
-      if (articles) {
-        articleCount = JSON.parse(articles).length;
+      if (articles) articleCount = JSON.parse(articles).length;
+      if (user.accountType === 'premium' || user.plan === 'premium') {
+        followersCount = '2.5k';
+        viewsCount     = '15.2k';
+        likesCount     = '1.1k';
       }
-      
-      // Pour premium, stats améliorées
-      if (user.accountType === 'premium') {
-        followersCount = "2.5k";
-        viewsCount = "15.2k";
-        likesCount = "1.1k";
-      }
-    } catch(e) {}
+    } catch (e) {}
   }
-  
-  // Mettre à jour les stats dans le DOM
+
   const statsBoxes = document.querySelectorAll('.stats-grid .stat-box');
-  if (statsBoxes.length >= 4) {
-    const articleStat = statsBoxes[0].querySelector('.stat-value');
-    const followersStat = statsBoxes[1].querySelector('.stat-value');
-    const viewsStat = statsBoxes[2].querySelector('.stat-value');
-    const likesStat = statsBoxes[3].querySelector('.stat-value');
-    
-    if (articleStat) articleStat.textContent = articleCount;
-    if (followersStat) followersStat.textContent = followersCount;
-    if (viewsStat) viewsStat.textContent = viewsCount;
-    if (likesStat) likesStat.textContent = likesCount;
-  }
+  [articleCount, followersCount, viewsCount, likesCount].forEach((v, i) => {
+    const el = statsBoxes[i]?.querySelector('.stat-value');
+    if (el) el.textContent = v;
+  });
 }
 
-// ============================================
-// TENDANCES
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   TRENDING TOPICS
+══════════════════════════════════════════════════════════ */
 function loadTrendingTopics() {
   const container = document.getElementById('trending-chips');
   if (!container) return;
-  
+
   container.innerHTML = trendingTopics.map(topic => `
-    <span class="topic-chip ${topic.active ? 'active' : ''}" onclick="selectTrendingTopic('${topic.name}')">
-      ${topic.name} <span style="font-size: 10px; opacity: 0.7;">(${topic.count})</span>
+    <span class="topic-chip${topic.active ? ' active' : ''}"
+      onclick="selectTrendingTopic('${topic.name}')">
+      ${topic.name}
+      <span style="font-size:10px;opacity:.65;margin-left:3px;">${topic.count}</span>
     </span>
   `).join('');
 }
 
 function selectTrendingTopic(topic) {
-  // Mettre à jour l'interface
-  const chips = document.querySelectorAll('#trending-chips .topic-chip');
-  chips.forEach(chip => {
-    chip.classList.remove('active');
-    if (chip.textContent.includes(topic)) {
-      chip.classList.add('active');
-    }
+  document.querySelectorAll('#trending-chips .topic-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.textContent.trim().startsWith(topic));
   });
-  
-  // Naviguer vers la recherche avec ce sujet
   const searchInput = document.getElementById('smart-search-input');
-  if (searchInput) {
-    searchInput.value = topic;
-    if (window.IBlog && IBlog.Views) {
-      IBlog.Views.doSearch();
-    }
-    if (window.IBlog && IBlog.Dashboard) {
-      IBlog.Dashboard.navigateTo('search');
-    }
-  }
-  
-  showToastMessage(`Recherche de "${topic}" 🔍`);
+  if (searchInput) searchInput.value = topic;
+  if (window.IBlog?.Views)     IBlog.Views.doSearch();
+  if (window.IBlog?.Dashboard) IBlog.Dashboard.navigateTo('search');
+  showToastMessage(`Searching for "${topic}"`);
 }
 
-// ============================================
-// COMMUNAUTÉS
-// ============================================
+/* ══════════════════════════════════════════════════════════
+   RAIL COMMUNITIES
+══════════════════════════════════════════════════════════ */
+function _railAbbr(name) {
+  if (!name) return '?';
+  const clean = name.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (!words.length) return name.slice(0, 2).toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
 
-function loadCommunities() {
+function loadRailCommunities() {
   const container = document.getElementById('rail-communities');
   if (!container) return;
-  
-  // Récupérer les communautés rejointes depuis localStorage
-  const savedUser = localStorage.getItem('user');
-  let joinedCommunities = [];
-  
-  if (savedUser) {
-    try {
-      const user = JSON.parse(savedUser);
-      joinedCommunities = user.joinedCommunities || [];
-    } catch(e) {}
-  }
-  
-  // Marquer les communautés rejointes
-  const communities = communitiesData.map(comm => ({
-    ...comm,
-    joined: joinedCommunities.includes(comm.id)
-  }));
-  
-  container.innerHTML = communities.map(comm => `
-    <div class="community-item">
-      <div class="com-icon">${comm.icon}</div>
-      <div class="com-info">
-        <strong>${comm.name}</strong>
-        <small>${comm.members} members · ${comm.online} online</small>
-      </div>
-      <button class="join-btn ${comm.joined ? 'joined' : ''}" 
-              onclick="toggleCommunity('${comm.id}', this)">
-        ${comm.joined ? '✓ Joined' : 'Join'}
-      </button>
-    </div>
-  `).join('');
-}
 
-function toggleCommunity(communityId, button) {
-  const savedUser = localStorage.getItem('user');
-  
-  if (!savedUser) {
-    showToastMessage("Connectez-vous pour rejoindre une communauté 🔒");
+  // IBlog path
+  if (window.IBlog?.COMMUNITIES && IBlog.state?.joinedCommunities) {
+    const user    = IBlog.state.currentUser;
+    const joined  = IBlog.state.joinedCommunities;
+    const removed = IBlog.state.removedFromCommunity || {};
+
+    const joinedComms = IBlog.COMMUNITIES
+      .map((c, idx) => ({ c, idx }))
+      .filter(({ idx }) => {
+        if (!joined.has(idx)) return false;
+        if (user) {
+          const s = removed[idx];
+          if (s instanceof Set && s.has(user.name)) return false;
+        }
+        return true;
+      });
+
+    if (!joinedComms.length) {
+      container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+      return;
+    }
+
+    container.innerHTML = joinedComms.map(({ c, idx }) => {
+      const abbr = _railAbbr(c.name);
+      return `
+        <div class="rail-comm-item">
+          <div class="rail-comm-icon">${abbr}</div>
+          <div class="rail-comm-info">
+            <div class="rail-comm-name">${c.name}</div>
+          </div>
+          <div class="rail-comm-actions">
+            <button class="rail-comm-btn rail-comm-btn-open"
+              onclick="IBlog.Communities.openChat(${idx})">Open Chat</button>
+            <button class="rail-comm-btn rail-comm-btn-leave"
+              onclick="IBlog.Communities.leave(${idx}); loadRailCommunities();">Leave</button>
+          </div>
+        </div>`;
+    }).join('');
     return;
   }
-  
-  try {
-    const user = JSON.parse(savedUser);
-    let joinedCommunities = user.joinedCommunities || [];
-    
-    if (joinedCommunities.includes(communityId)) {
-      // Quitter la communauté
-      joinedCommunities = joinedCommunities.filter(id => id !== communityId);
-      button.classList.remove('joined');
-      button.textContent = 'Join';
-      showToastMessage("Vous avez quitté la communauté 👋");
-    } else {
-      // Rejoindre la communauté
-      joinedCommunities.push(communityId);
-      button.classList.add('joined');
-      button.textContent = '✓ Joined';
-      
-      const community = communitiesData.find(c => c.id === communityId);
-      showToastMessage(`Vous avez rejoint ${community?.name || 'la communauté'} ! 🎉`);
-    }
-    
-    user.joinedCommunities = joinedCommunities;
-    localStorage.setItem('user', JSON.stringify(user));
-    
-    // Ouvrir le chat si disponible
-    if (window.IBlog && IBlog.Chat && !joinedCommunities.includes(communityId)) {
-      setTimeout(() => {
-        if (window.IBlog.Chat.open) window.IBlog.Chat.open(communityId);
-      }, 500);
-    }
-    
-  } catch(e) {
-    showToastMessage("Erreur lors de l'action ❌");
+
+  // Legacy fallback
+  let joinedIds = [];
+  const savedUser = localStorage.getItem('user');
+  if (savedUser) {
+    try { joinedIds = JSON.parse(savedUser).joinedCommunities || []; } catch (e) {}
   }
+
+  const legacyData = [
+    { id: 'ai',      name: 'AI & Machine Learning', members: '4.2k', online: '23' },
+    { id: 'webdev',  name: 'Web Development',        members: '3.1k', online: '18' },
+    { id: 'design',  name: 'UI/UX Design',           members: '2.5k', online: '12' },
+    { id: 'data',    name: 'Data Science',           members: '1.8k', online: '9'  },
+    { id: 'startup', name: 'Startup & Growth',       members: '1.2k', online: '7'  },
+  ];
+
+  container.innerHTML = legacyData.map(c => `
+    <div class="rail-comm-item">
+      <div class="rail-comm-icon">${_railAbbr(c.name)}</div>
+      <div class="rail-comm-info">
+        <div class="rail-comm-name">${c.name}</div>
+        <div class="rail-comm-meta">${c.members} · ${c.online} online</div>
+      </div>
+      <button class="join-btn${joinedIds.includes(c.id) ? ' joined' : ''}"
+        onclick="toggleRailCommunityLegacy('${c.id}', this)">
+        ${joinedIds.includes(c.id) ? 'Joined' : 'Join'}
+      </button>
+    </div>`).join('');
 }
 
-// ============================================
-// TOP AUTEURS
-// ============================================
+function toggleRailCommunityLegacy(id, btn) {
+  const savedUser = localStorage.getItem('user');
+  if (!savedUser) { showToastMessage('Sign in to join a community'); return; }
+  try {
+    const user = JSON.parse(savedUser);
+    let joined = user.joinedCommunities || [];
+    if (joined.includes(id)) {
+      joined = joined.filter(x => x !== id);
+      btn.classList.remove('joined');
+      btn.textContent = 'Join';
+      showToastMessage('Left community');
+    } else {
+      joined.push(id);
+      btn.classList.add('joined');
+      btn.textContent = 'Joined';
+      showToastMessage('Joined community!');
+    }
+    user.joinedCommunities = joined;
+    localStorage.setItem('user', JSON.stringify(user));
+  } catch (e) { showToastMessage('Action failed'); }
+}
 
+/* ══════════════════════════════════════════════════════════
+   TOP AUTHORS
+══════════════════════════════════════════════════════════ */
 function loadTopAuthors() {
   const container = document.getElementById('top-authors');
   if (!container) return;
-  
-  // Récupérer les auteurs suivis
-  const savedUser = localStorage.getItem('user');
-  let following = [];
-  
-  if (savedUser) {
-    try {
-      const user = JSON.parse(savedUser);
-      following = user.following || [];
-    } catch(e) {}
+
+  // IBlog path
+  if (window.IBlog?.AUTHORS) {
+    container.innerHTML = IBlog.AUTHORS.map(a => `
+      <div class="author-item">
+        <div class="card-avatar" style="width:34px;height:34px;background:${a.color};">${a.initial}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${a.name}</div>
+          <div style="font-size:11px;color:var(--text2);">${a.tag} · ${a.followers}</div>
+        </div>
+        <button class="follow-btn"
+          onclick="this.classList.toggle('following');
+                   this.textContent=this.classList.contains('following')?'Following':'Follow';
+                   IBlog.utils.toast(this.classList.contains('following')?'Following!':'Unfollowed');">
+          Follow
+        </button>
+      </div>`).join('');
+    return;
   }
-  
-  const authors = authorsData.map(author => ({
-    ...author,
-    following: following.includes(author.id)
-  }));
-  
-  container.innerHTML = authors.map(author => `
+
+  // Fallback
+  let followingIds = [];
+  const savedUser = localStorage.getItem('user');
+  if (savedUser) {
+    try { followingIds = JSON.parse(savedUser).following || []; } catch (e) {}
+  }
+
+  container.innerHTML = authorsData.map(a => `
     <div class="author-item">
-      <div class="com-icon" style="background: rgba(184,150,12,0.1);">
-        ${author.avatar}
-      </div>
+      <div class="com-icon" style="background:rgba(184,150,12,.1);">${a.avatar}</div>
       <div class="com-info">
-        <strong>${author.name}</strong>
-        <small>${author.field} · ${author.followers} followers</small>
+        <strong>${a.name}</strong>
+        <small>${a.field} · ${a.followers} followers</small>
       </div>
-      <button class="follow-btn ${author.following ? 'following' : ''}" 
-              onclick="toggleFollow('${author.id}', this)">
-        ${author.following ? '✓ Following' : 'Follow'}
+      <button class="follow-btn${followingIds.includes(a.id) ? ' following' : ''}"
+        onclick="toggleFollow('${a.id}', this)">
+        ${followingIds.includes(a.id) ? 'Following' : 'Follow'}
       </button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function toggleFollow(authorId, button) {
   const savedUser = localStorage.getItem('user');
-  
-  if (!savedUser) {
-    showToastMessage("Connectez-vous pour suivre des auteurs 🔒");
-    return;
-  }
-  
+  if (!savedUser) { showToastMessage('Sign in to follow authors'); return; }
   try {
     const user = JSON.parse(savedUser);
     let following = user.following || [];
-    
     if (following.includes(authorId)) {
       following = following.filter(id => id !== authorId);
       button.classList.remove('following');
       button.textContent = 'Follow';
-      showToastMessage("Vous ne suivez plus cet auteur 👋");
+      showToastMessage('Unfollowed');
     } else {
       following.push(authorId);
       button.classList.add('following');
-      button.textContent = '✓ Following';
-      
+      button.textContent = 'Following';
       const author = authorsData.find(a => a.id === authorId);
-      showToastMessage(`Vous suivez maintenant ${author?.name} ! ✨`);
+      showToastMessage(`Now following ${author?.name}!`);
     }
-    
     user.following = following;
     localStorage.setItem('user', JSON.stringify(user));
-    
-    // Mettre à jour le compteur de followers dans les stats
     loadUserStats();
-    
-  } catch(e) {
-    showToastMessage("Erreur lors de l'action ❌");
-  }
+  } catch (e) { showToastMessage('Action failed'); }
 }
 
-// ============================================
-// NEWSLETTER (DIGEST)
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   NEWSLETTER
+══════════════════════════════════════════════════════════ */
 function subscribeToDigest() {
   const emailInput = document.querySelector('.digest-email');
   if (!emailInput) return;
-  
   const email = emailInput.value.trim();
-  
-  if (!email) {
-    showToastMessage("Veuillez entrer votre email 📧");
-    return;
-  }
-  
-  if (!email.includes('@') || !email.includes('.')) {
-    showToastMessage("Email invalide ❌");
-    return;
-  }
-  
-  // Sauvegarder l'abonnement
+  if (!email) { showToastMessage('Please enter your email'); return; }
+  if (!email.includes('@') || !email.includes('.')) { showToastMessage('Invalid email'); return; }
   const savedUser = localStorage.getItem('user');
   if (savedUser) {
     try {
@@ -315,156 +282,122 @@ function subscribeToDigest() {
       user.subscribed = true;
       user.subscribedEmail = email;
       localStorage.setItem('user', JSON.stringify(user));
-    } catch(e) {}
+    } catch (e) {}
   }
-  
   localStorage.setItem('digest_subscriber', email);
   emailInput.value = '';
-  showToastMessage("📬 Abonnement confirmé ! Vous recevrez notre digest chaque semaine.");
+  showToastMessage('Subscribed! You will receive our weekly digest.');
 }
 
-// ============================================
-// CHARGER LES DONNÉES UTILISATEUR SAUVEGARDÉES
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   LOAD SAVED USER DATA
+══════════════════════════════════════════════════════════ */
 function loadUserJoinedData() {
   const savedUser = localStorage.getItem('user');
   if (!savedUser) return;
-  
   try {
     const user = JSON.parse(savedUser);
-    
-    // Charger les communautés
-    if (user.joinedCommunities && user.joinedCommunities.length > 0) {
-      loadCommunities(); // Recharger avec les nouvelles données
-    }
-    
-    // Charger les abonnements
-    if (user.following && user.following.length > 0) {
-      loadTopAuthors(); // Recharger avec les nouvelles données
-    }
-    
-    // Newsletter
+    if (user.joinedCommunities?.length) loadRailCommunities();
+    if (user.following?.length)         loadTopAuthors();
     const digestEmail = document.querySelector('.digest-email');
-    if (digestEmail && user.subscribedEmail) {
-      digestEmail.placeholder = user.subscribedEmail;
-    }
-    
-  } catch(e) {}
+    if (digestEmail && user.subscribedEmail) digestEmail.placeholder = user.subscribedEmail;
+  } catch (e) {}
 }
 
-// ============================================
-// RECHERCHE DANS RIGHT-RAIL
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════════════════ */
 function searchFromRightRail(inputElement) {
   const query = inputElement.value.trim();
   if (!query) return;
-  
-  // Naviguer vers la recherche
   const searchInput = document.getElementById('smart-search-input');
-  if (searchInput) {
-    searchInput.value = query;
-  }
-  
-  if (window.IBlog && IBlog.Views) {
-    IBlog.Views.doSearch();
-  }
-  
-  if (window.IBlog && IBlog.Dashboard) {
-    IBlog.Dashboard.navigateTo('search');
-  }
+  if (searchInput) searchInput.value = query;
+  if (window.IBlog?.Views)     IBlog.Views.doSearch();
+  if (window.IBlog?.Dashboard) IBlog.Dashboard.navigateTo('search');
 }
 
-// ============================================
-// TOAST MESSAGE
-// ============================================
-
+/* ══════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════ */
 function showToastMessage(message) {
-  let toast = document.getElementById('global-toast');
+  if (window.IBlog?.utils?.toast) { IBlog.utils.toast(message); return; }
+  let toast = document.getElementById('rr-toast');
   if (!toast) {
     toast = document.createElement('div');
-    toast.id = 'global-toast';
-    toast.className = 'toast';
+    toast.id = 'rr-toast';
+    Object.assign(toast.style, {
+      position: 'fixed', bottom: '30px', right: '30px',
+      background: 'var(--surface, #fff)', color: 'var(--text, #111)',
+      padding: '12px 24px', borderRadius: '12px',
+      borderLeft: '4px solid var(--accent, #b8960c)',
+      boxShadow: '0 4px 20px rgba(0,0,0,.15)', zIndex: '10000',
+      opacity: '0', transform: 'translateY(20px)',
+      transition: 'all .3s ease', fontSize: '14px', pointerEvents: 'none',
+    });
     document.body.appendChild(toast);
-    
-    if (!document.querySelector('#toast-style')) {
-      const style = document.createElement('style');
-      style.id = 'toast-style';
-      style.textContent = `
-        .toast {
-          position: fixed;
-          bottom: 30px;
-          right: 30px;
-          background: var(--surface);
-          color: var(--text);
-          padding: 12px 24px;
-          border-radius: 12px;
-          border-left: 4px solid var(--accent);
-          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-          z-index: 10000;
-          opacity: 0;
-          transform: translateY(20px);
-          transition: all 0.3s ease;
-          font-size: 14px;
-          pointer-events: none;
-        }
-        .toast.show {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `;
-      document.head.appendChild(style);
-    }
   }
-  
-  toast.innerHTML = message;
-  toast.classList.add('show');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
+  toast.textContent = message;
+  toast.style.opacity   = '1';
+  toast.style.transform = 'translateY(0)';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity   = '0';
+    toast.style.transform = 'translateY(20px)';
   }, 3000);
 }
 
-// ============================================
-// INITIALISATION
-// ============================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialiser le right-rail
+/* ══════════════════════════════════════════════════════════
+   ALIASES — called by IBlog.Views and Dashboard.enter()
+   buildRailTopics      → loadTrendingTopics
+   buildRailCommunities → loadRailCommunities  (full version with Open Chat + Leave)
+   buildTopAuthors      → loadTopAuthors
+══════════════════════════════════════════════════════════ */
+function buildRailTopics()      { loadTrendingTopics(); }
+function buildRailCommunities() { loadRailCommunities(); }
+function buildTopAuthors()      { loadTopAuthors(); }
+/* ══════════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
   initRightRail();
-  
-  // Ajouter l'événement pour la recherche
+
   const searchBarInput = document.querySelector('.search-bar input');
   if (searchBarInput) {
-    searchBarInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        searchFromRightRail(e.target);
-      }
+    searchBarInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') searchFromRightRail(e.target);
     });
   }
-  
-  // Ajouter l'événement pour la newsletter
+
   const digestBtn = document.querySelector('.digest-sub-btn');
-  if (digestBtn) {
-    digestBtn.onclick = subscribeToDigest;
-  }
-  
-  // Observer pour recharger quand le dashboard est visible
-  const observer = new MutationObserver(() => {
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard && dashboard.style.display !== 'none') {
-      initRightRail();
-    }
-  });
-  observer.observe(document.body, { attributes: true, subtree: true });
+  if (digestBtn) digestBtn.onclick = subscribeToDigest;
+
+  // Communities refreshed via RightRail.buildCommunities() called by IBlog after state is ready
 });
 
-// Exporter les fonctions globalement
+/* ══════════════════════════════════════════════════════════
+   PUBLIC API
+══════════════════════════════════════════════════════════ */
 window.RightRail = {
-  init: initRightRail,
-  search: searchFromRightRail,
-  subscribe: subscribeToDigest,
-  follow: toggleFollow,
-  joinCommunity: toggleCommunity
+  init:             initRightRail,
+  buildCommunities: loadRailCommunities,
+  loadCommunities:  loadRailCommunities,
+  buildTopics:      buildRailTopics,
+  buildAuthors:     buildTopAuthors,
+  search:           searchFromRightRail,
+  subscribe:        subscribeToDigest,
+  follow:           toggleFollow,
 };
+
+// IBlog.Views hook — deferred so views.js has time to load first
+window.addEventListener('load', () => {
+  window.IBlog = window.IBlog || {};
+  IBlog.Views  = IBlog.Views  || {};
+  const _origBuildRail = IBlog.Views.buildRailCommunities;
+  IBlog.Views.buildRailCommunities = function () {
+    loadRailCommunities();
+    if (typeof _origBuildRail === 'function') _origBuildRail();
+  };
+  // Now that IBlog is ready, render communities
+  loadRailCommunities();
+});
