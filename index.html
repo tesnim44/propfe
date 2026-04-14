@@ -111,169 +111,7 @@
     <div id="dashboard">
       <div class="dash-layout">
         <!-- ── LEFT RAIL ── -->
-        <div class="left-rail">
-          <div class="iblog-brand">IBlog</div>
-          <div class="user-card">
-            <div class="dash-avatar" id="dash-avatar">A</div>
-            <div class="user-info">
-              <strong id="dash-name">Amara Diallo</strong>
-              <small id="dash-plan-label">Free Member</small>
-            </div>
-          </div>
-          <button
-            class="write-btn"
-            onclick="IBlog.Dashboard.navigateTo('write')"
-          >
-            ✏️ Write Article
-          </button>
-          <div class="nav-section">
-            <div class="nav-label">Main</div>
-            <div
-              class="nav-item"
-              data-view="home"
-              onclick="IBlog.Dashboard.navigateTo('home')"
-            >
-              <span class="nav-icon">🏠</span>Home
-            </div>
-            <div
-              class="nav-item"
-              data-view="explore"
-              onclick="IBlog.Dashboard.navigateTo('explore')"
-            >
-              <span class="nav-icon">🧭</span>Explore
-            </div>
-            <div
-              class="nav-item"
-              data-view="notifications"
-              onclick="IBlog.Dashboard.navigateTo('notifications')"
-            >
-              <span class="nav-icon">🔔</span>Notifications<span
-                class="nav-badge"
-                >3</span
-              >
-            </div>
-            <div
-              class="nav-item"
-              data-view="messages"
-              onclick="IBlog.Dashboard.navigateTo('messages')"
-            >
-              <span class="nav-icon">💬</span>Messages<span class="nav-badge"
-                >1</span
-              >
-            </div>
-            <div
-              class="nav-item"
-              data-view="saved"
-              onclick="IBlog.Dashboard.navigateTo('saved')"
-            >
-              <span class="nav-icon">🔖</span>Saved
-            </div>
-            <div
-              class="nav-item"
-              id="nav-map"
-              onclick="IBlog.Dashboard.gateMap()"
-            >
-              <span class="nav-icon">🌍</span>Global Map<span
-                class="nav-lock"
-                id="map-lock"
-                >🔒</span
-              >
-            </div>
-          </div>
-          <div class="nav-section">
-            <div class="nav-label">Dashboard</div>
-            <div
-              class="nav-item"
-              data-view="articles"
-              onclick="IBlog.Dashboard.navigateTo('articles')"
-            >
-              <span class="nav-icon">📄</span>My Articles
-            </div>
-            <div
-              class="nav-item"
-              data-view="analytics"
-              onclick="IBlog.Dashboard.navigateTo('analytics')"
-            >
-              <span class="nav-icon">📊</span>Analytics
-            </div>
-            <div
-              class="nav-item"
-              data-view="activity"
-              onclick="IBlog.Dashboard.navigateTo('activity')"
-            >
-              <span class="nav-icon">🟩</span>Activity
-            </div>
-            <div
-              class="nav-item"
-              data-view="communities"
-              onclick="IBlog.Dashboard.navigateTo('communities')"
-            >
-              <span class="nav-icon">🏘️</span>Communities
-            </div>
-            <div
-              class="nav-item"
-              data-view="search"
-              onclick="IBlog.Dashboard.navigateTo('search')"
-            >
-              <span class="nav-icon">🔍</span>Smart Search
-            </div>
-            <div
-              class="nav-item"
-              data-view="trends"
-              onclick="IBlog.Dashboard.navigateTo('trends')"
-            >
-              <span class="nav-icon">📈</span>Trend Radar
-            </div>
-          </div>
-          <div class="nav-section">
-            <div class="nav-label">Account</div>
-            <div
-              class="nav-item"
-              data-view="profile"
-              onclick="IBlog.Dashboard.navigateTo('profile')"
-            >
-              <span class="nav-icon">👤</span>Profile
-            </div>
-            <div
-              class="nav-item"
-              data-view="settings"
-              onclick="IBlog.Dashboard.navigateTo('settings')"
-            >
-              <span class="nav-icon">⚙️</span>Settings
-            </div>
-            <div
-              class="nav-item"
-              id="upgrade-nav-btn"
-              onclick="IBlog.Auth.showPremium()"
-              style="display: none"
-            >
-              <span class="nav-icon">⭐</span
-              ><span style="color: var(--premium); font-weight: 600"
-                >Upgrade to Premium</span
-              >
-            </div>
-            <div class="nav-item" onclick="IBlog.Dashboard.signout()">
-              <span class="nav-icon">🚪</span>Sign Out
-            </div>
-          </div>
-          <div class="rail-bottom">
-            <div class="accent-picker">
-              <div class="accent-picker-label">Accent Color</div>
-              <div class="accent-dots" id="accent-dots"></div>
-            </div>
-            <div class="dark-toggle">
-              <label class="toggle-switch">
-                <input
-                  type="checkbox"
-                  id="dark-toggle-input"
-                  onchange="IBlog.Dashboard.toggleDark()"
-                />
-                <div class="toggle-track"></div>
-              </label>
-              <span class="toggle-label" id="dark-toggle-label">☀️ Light</span>
-            </div>
-          </div>
-        </div>
+        <div id="left-rail-root"></div>
         <!-- /left-rail -->
 
         <!-- ── CENTER FEED ── -->
@@ -545,48 +383,7 @@
           </div>
 
           <!-- SEARCH -->
-          <div class="view-panel" id="view-search">
-            <div class="view-header">
-              <h1>🔍 Smart Search</h1>
-              <p>
-                AI-powered semantic search — finds articles even when wording
-                differs
-              </p>
-            </div>
-            <div class="search-full">
-              <input
-                type="text"
-                id="smart-search-input"
-                placeholder='Try: "AI ethics" or "future of work"…'
-                onkeydown="if (event.key === 'Enter') IBlog.Views.doSearch();"
-              />
-              <button onclick="IBlog.Views.doSearch()">Search</button>
-            </div>
-            <div class="filter-row">
-              <button class="filter-chip active" onclick="toggleFilter(this)">
-                All
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Technology
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Science
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                AI
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Culture
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                &#60; 5 min
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Popular
-              </button>
-            </div>
-            <div id="search-results"></div>
-          </div>
+          <div id="search-root"></div>
 
           <!-- ANALYTICS -->
           <div id="analytics-root"></div>
@@ -1117,6 +914,8 @@
      <script src="components/testimonial/testimonial.js"></script>
     <script src="components/landing-footer/footer.js"></script>
     <script src="components/stats/stats.js"></script>
+    <script src="components/search/search.js"></script>
+    <script src="components/left-rail/left-rail.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/notifications/notifications.js"></script>
   <script src="components/article-card/article-card.js"></script>
@@ -1125,6 +924,7 @@
     <script src="components/analytics/analytics.js"></script>
     <script src="components/trends/trends.js"></script>
     <script src="components/communities/communities.js"></script>
+    <script src="components/profile/profile.js"></script>
     <script src="components/analytics/analytics.js"></script>
     <script src="components/right-rail/right-rail.js"></script>
     <script src="app.js"></script>

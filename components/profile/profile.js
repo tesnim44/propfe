@@ -1,344 +1,135 @@
-// ============================================
-// PROFILE COMPONENT
-// Affiche et gère les informations de l'utilisateur connecté
-// ============================================
+/* ============================================================
+   IBlog.Profile — Profile view builder
+   ============================================================ */
 
-// Fonction pour charger et afficher le profil
-function loadProfile() {
-  // Récupérer l'utilisateur connecté
-  const savedUser = localStorage.getItem('user');
-  
-  if (!savedUser) {
-    // Pas d'utilisateur connecté, afficher profil par défaut
-    displayDefaultProfile();
-    return;
-  }
-  
-  try {
-    const user = JSON.parse(savedUser);
-    
-    // Mettre à jour les éléments du profil
-    updateProfileUI(user);
-    
-    // Charger le nombre d'articles
-    loadArticleCount(user);
-    
-    // Charger les intérêts (topics) de l'utilisateur
-    loadUserTopics(user);
-    
-  } catch(e) {
-    console.error("Erreur lors du chargement du profil", e);
-    displayDefaultProfile();
-  }
-}
+IBlog.Profile = (function () {
 
-// Fonction pour mettre à jour l'interface utilisateur
-function updateProfileUI(user) {
-  // Avatar (initiales)
-  const avatarEl = document.getElementById('profile-avatar-big');
-  const dashAvatar = document.getElementById('dash-avatar');
-  const composeAvatar = document.getElementById('compose-avatar');
-  
-  const initials = getInitials(user.name);
-  
-  if (avatarEl) avatarEl.textContent = initials;
-  if (dashAvatar) dashAvatar.textContent = initials;
-  if (composeAvatar) composeAvatar.textContent = initials;
-  
-  // Nom
-  const nameEl = document.getElementById('profile-name');
-  const dashName = document.getElementById('dash-name');
-  
-  if (nameEl) nameEl.textContent = user.name;
-  if (dashName) dashName.textContent = user.name;
-  
-  // Badge Premium
-  const premiumBadge = document.getElementById('profile-premium-badge');
-  const dashPlanLabel = document.getElementById('dash-plan-label');
-  const premiumStatusText = document.getElementById('premium-status-text');
-  const upgradeNavBtn = document.getElementById('upgrade-nav-btn');
-  
-  if (user.accountType === 'premium') {
-    if (premiumBadge) premiumBadge.style.display = 'inline-block';
-    if (dashPlanLabel) dashPlanLabel.textContent = '⭐ Premium Member';
-    if (premiumStatusText) premiumStatusText.textContent = 'You are on the Premium plan. ⭐';
-    if (upgradeNavBtn) upgradeNavBtn.style.display = 'none';
-  } else {
-    if (premiumBadge) premiumBadge.style.display = 'none';
-    if (dashPlanLabel) dashPlanLabel.textContent = 'Free Member';
-    if (premiumStatusText) premiumStatusText.textContent = 'You are on the Free plan.';
-    if (upgradeNavBtn) upgradeNavBtn.style.display = 'flex';
+  function _cu() {
+    return IBlog.state.currentUser;
   }
-  
-  // Bio (si existante)
-  const bioEl = document.querySelector('#view-profile p');
-  if (bioEl && user.bio) {
-    bioEl.innerHTML = `@${user.username || user.name.toLowerCase().replace(' ', '')} · ${user.bio}`;
-  } else if (bioEl && !user.bio) {
-    bioEl.innerHTML = `@${user.username || user.name.toLowerCase().replace(' ', '')} · Passionate writer & knowledge explorer.`;
-  }
-  
-  // Email dans les paramètres
-  const settingsEmail = document.getElementById('settings-email');
-  const settingsName = document.getElementById('settings-name');
-  
-  if (settingsEmail) settingsEmail.value = user.email || '';
-  if (settingsName) settingsName.value = user.name || '';
-  
-  // Sauvegarder les infos de profil pour les paramètres
-  if (user.bio) {
-    const bioTextarea = document.querySelector('#view-settings textarea');
-    if (bioTextarea) bioTextarea.value = user.bio;
-  }
-}
 
-// Fonction pour obtenir les initiales
-function getInitials(name) {
-  if (!name) return 'U';
-  const parts = name.split(' ');
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
+  function _userArticles() {
+    const u = _cu();
+    if (!u) return [];
+    return IBlog.state.articles.filter(a => a.author === u.name);
+  }
 
-// Fonction pour charger le nombre d'articles
-function loadArticleCount(user) {
-  let articles = [];
-  
-  try {
-    const stored = localStorage.getItem(`articles_${user.email}`);
-    if (stored) {
-      articles = JSON.parse(stored);
+  function buildProfile() {
+    const u = _cu();
+    if (!u) return;
+
+    const articles = _userArticles();
+    const isPremium = u.plan === 'premium';
+    const initial = u.name ? u.name[0].toUpperCase() : '?';
+
+    // Avatar
+    const avatarBig = document.getElementById('profile-avatar-big');
+    if (avatarBig) avatarBig.textContent = initial;
+
+    // Name
+    const nameEl = document.getElementById('profile-name');
+    if (nameEl) nameEl.textContent = u.name || 'Unknown';
+
+    // Premium badge
+    const badge = document.getElementById('profile-premium-badge');
+    if (badge) {
+      badge.style.display = isPremium ? 'inline-flex' : 'none';
+      badge.textContent = '⭐ Premium';
     }
-  } catch(e) {
-    articles = [];
+
+    // Article count
+    const countEl = document.getElementById('profile-article-count');
+    if (countEl) countEl.textContent = articles.length;
+
+    // Topic chips — based on user's written articles tags
+    _buildTopicChips(articles);
+
+    // Articles list
+    _buildArticleList(articles);
   }
-  
-  const articleCount = articles.length;
-  const articleCountEl = document.getElementById('profile-article-count');
-  if (articleCountEl) articleCountEl.textContent = articleCount;
-  
-  // Mettre à jour aussi les stats dans right-rail
-  const statsArticles = document.querySelector('.right-rail .stat-box:first-child .stat-value');
-  if (statsArticles) statsArticles.textContent = articleCount;
-}
 
-// Fonction pour charger les topics d'intérêt
-function loadUserTopics(user) {
-  const topicsContainer = document.querySelector('#view-profile .topic-chips');
-  if (!topicsContainer) return;
-  
-  // Topics par défaut ou ceux de l'utilisateur
-  let topics = user.topics || ['AI', 'Technology', 'Science'];
-  
-  if (user.accountType === 'premium') {
-    topics = [...topics, 'Premium Content', 'Exclusive'];
+  function _buildTopicChips(articles) {
+    const container = document.querySelector('#view-profile .topic-chips');
+    if (!container) return;
+
+    // Collect unique tags from user articles, fallback to defaults
+    const tagSet = new Set();
+    articles.forEach(a => (a.tags || []).forEach(t => tagSet.add(t)));
+
+    const tags = tagSet.size > 0
+      ? [...tagSet].slice(0, 6)
+      : ['Writing', 'Knowledge', 'Ideas'];
+
+    container.innerHTML = tags
+      .map(t => `<span class="topic-chip active">${t}</span>`)
+      .join('');
   }
-  
-  topicsContainer.innerHTML = topics.map(topic => `
-    <span class="topic-chip active">${topic}</span>
-  `).join('');
-}
 
-// Fonction pour afficher un profil par défaut
-function displayDefaultProfile() {
-  const defaultUser = {
-    name: "Invité",
-    email: "guest@iblog.com",
-    accountType: "free",
-    username: "guest"
-  };
-  updateProfileUI(defaultUser);
-}
-
-// Fonction pour sauvegarder les modifications du profil
-function saveProfileSettings() {
-  const savedUser = localStorage.getItem('user');
-  if (!savedUser) {
-    showToastMessage("Veuillez vous connecter pour modifier votre profil 🔒");
-    return false;
-  }
-  
-  try {
-    const user = JSON.parse(savedUser);
-    
-    // Récupérer les valeurs des champs
-    const newName = document.getElementById('settings-name')?.value || user.name;
-    const newBio = document.querySelector('#view-settings textarea')?.value || '';
-    
-    // Mettre à jour l'utilisateur
-    user.name = newName;
-    user.bio = newBio;
-    user.username = newName.toLowerCase().replace(' ', '');
-    
-    // Sauvegarder
-    localStorage.setItem('user', JSON.stringify(user));
-    
-    // Mettre à jour l'interface
-    updateProfileUI(user);
-    
-    showToastMessage("Profil mis à jour avec succès ! ✓");
-    return true;
-    
-  } catch(e) {
-    showToastMessage("Erreur lors de la sauvegarde ❌");
-    return false;
-  }
-}
-
-// Fonction pour suivre un utilisateur
-function followUser() {
-  showToastMessage("Vous suivez maintenant cet utilisateur ! 🔔");
-}
-
-// Fonction pour modifier la photo de profil
-function changeProfilePicture() {
-  // Créer un input file caché
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const avatarEl = document.getElementById('profile-avatar-big');
-        if (avatarEl) {
-          avatarEl.style.backgroundImage = `url(${event.target.result})`;
-          avatarEl.style.backgroundSize = 'cover';
-          avatarEl.style.backgroundPosition = 'center';
-          avatarEl.textContent = '';
-          
-          // Sauvegarder l'image
-          const savedUser = localStorage.getItem('user');
-          if (savedUser) {
-            try {
-              const user = JSON.parse(savedUser);
-              user.avatar = event.target.result;
-              localStorage.setItem('user', JSON.stringify(user));
-              showToastMessage("Photo de profil mise à jour ! 📸");
-            } catch(e) {}
-          }
-        }
-      };
-      reader.readAsDataURL(file);
+  function _buildArticleList(articles) {
+    // Check if the list container exists, create it if not
+    let listEl = document.getElementById('profile-articles-list');
+    if (!listEl) {
+      listEl = document.createElement('div');
+      listEl.id = 'profile-articles-list';
+      listEl.style.cssText = 'margin-top: 24px;';
+      const profileInfo = document.querySelector('#view-profile .profile-info');
+      if (profileInfo) profileInfo.appendChild(listEl);
     }
-  };
-  
-  input.click();
-}
 
-// Fonction pour ajouter un topic d'intérêt
-function addTopic(topic) {
-  const savedUser = localStorage.getItem('user');
-  if (!savedUser) {
-    showToastMessage("Connectez-vous pour ajouter des intérêts 🔒");
-    return;
-  }
-  
-  try {
-    const user = JSON.parse(savedUser);
-    let topics = user.topics || ['AI', 'Technology', 'Science'];
-    
-    if (!topics.includes(topic)) {
-      topics.push(topic);
-      user.topics = topics;
-      localStorage.setItem('user', JSON.stringify(user));
-      loadUserTopics(user);
-      showToastMessage(`Intérêt "${topic}" ajouté ! 🎯`);
-    } else {
-      showToastMessage(`Vous suivez déjà "${topic}"`);
+    if (!articles.length) {
+      listEl.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--text2);">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.3" opacity=".35"
+            style="margin-bottom:12px;display:block;margin-left:auto;margin-right:auto">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <p style="font-size:14px">No articles published yet.</p>
+          <button class="btn btn-primary"
+            style="margin-top:14px;padding:10px 24px;font-size:13px"
+            onclick="IBlog.Dashboard.navigateTo('write')">
+            Write your first article
+          </button>
+        </div>`;
+      return;
     }
-  } catch(e) {}
-}
 
-// Fonction pour afficher un toast
-function showToastMessage(message) {
-  let toast = document.getElementById('global-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'global-toast';
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-    
-    if (!document.querySelector('#toast-style')) {
-      const style = document.createElement('style');
-      style.id = 'toast-style';
-      style.textContent = `
-        .toast {
-          position: fixed;
-          bottom: 30px;
-          right: 30px;
-          background: var(--surface);
-          color: var(--text);
-          padding: 12px 24px;
-          border-radius: 12px;
-          border-left: 4px solid var(--accent);
-          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-          z-index: 10000;
-          opacity: 0;
-          transform: translateY(20px);
-          transition: all 0.3s ease;
-          font-size: 14px;
-          pointer-events: none;
-        }
-        .toast.show {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    listEl.innerHTML = `
+      <div style="font-size:13px;font-weight:600;color:var(--text2);
+        text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">
+        Published Articles
+      </div>
+      ${articles.map(a => _articleRow(a)).join('')}`;
   }
-  
-  toast.innerHTML = message;
-  toast.classList.add('show');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3000);
-}
 
-// Initialisation - charger le profil quand la vue s'affiche
-document.addEventListener("DOMContentLoaded", () => {
-  // Observer pour détecter quand la vue profile est affichée
-  const observer = new MutationObserver(() => {
-    const profilePanel = document.getElementById('view-profile');
-    if (profilePanel && profilePanel.style.display !== 'none') {
-      loadProfile();
-    }
-  });
-  observer.observe(document.body, { attributes: true, subtree: true });
-  
-  // Charger une première fois si déjà visible
-  const profilePanel = document.getElementById('view-profile');
-  if (profilePanel && profilePanel.style.display !== 'none') {
-    loadProfile();
+  function _articleRow(a) {
+    const likes = IBlog.utils.formatNumber(a.likes || 0);
+    return `
+      <div style="display:flex;gap:14px;align-items:flex-start;
+        padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;"
+        onclick="IBlog.Feed.openReader(${a.id})">
+        ${a.img ? `
+          <img src="${a.img}" alt=""
+            style="width:72px;height:54px;object-fit:cover;
+            border-radius:8px;flex-shrink:0;" />
+        ` : ''}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);
+            margin-bottom:4px;line-height:1.35;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${a.title}
+          </div>
+          <div style="font-size:12px;color:var(--text2);display:flex;gap:14px;">
+            <span>${a.readTime || '—'}</span>
+            <span>${likes} likes</span>
+            <span>${a.date || ''}</span>
+            <span style="background:var(--bg3);border-radius:4px;
+              padding:1px 7px;font-size:11px;">${a.cat || ''}</span>
+          </div>
+        </div>
+      </div>`;
   }
-  
-  // Ajouter l'événement pour le bouton de sauvegarde des paramètres
-  const saveSettingsBtn = document.querySelector('#view-settings .btn-primary');
-  if (saveSettingsBtn) {
-    saveSettingsBtn.onclick = (e) => {
-      e.preventDefault();
-      saveProfileSettings();
-    };
-  }
-  
-  // Rendre l'avatar cliquable
-  const avatarEl = document.getElementById('profile-avatar-big');
-  if (avatarEl) {
-    avatarEl.style.cursor = 'pointer';
-    avatarEl.title = 'Changer la photo de profil';
-    avatarEl.onclick = () => changeProfilePicture();
-  }
-});
 
-// Exporter les fonctions pour les rendre accessibles globalement
-window.Profile = {
-  load: loadProfile,
-  save: saveProfileSettings,
-  follow: followUser,
-  addTopic: addTopic,
-  changePicture: changeProfilePicture
-};
+  return { buildProfile };
+})();

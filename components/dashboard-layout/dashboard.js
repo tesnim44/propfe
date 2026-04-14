@@ -1,6 +1,9 @@
 IBlog.Dashboard = (() => {
   /* ── Enter Dashboard ──────────────────────────────────── */
   function enter() {
+
+  IBlog.LeftRail.init(); 
+  IBlog.Search.init();
   const landing = document.getElementById('landing-page'); // was 'landing'
   const dash = document.getElementById('dashboard');
   if (landing) landing.style.display = 'none';
@@ -9,9 +12,6 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildAccentPicker();
     IBlog.Views.buildCategorySelect();
     IBlog.Feed.build();
-    IBlog.Views.buildRailTopics();
-    IBlog.Views.buildRailCommunities();
-    IBlog.Views.buildTopAuthors();
     IBlog.Views.buildActivity();
     IBlog.Communities.init();
     IBlog.Trends?.init();
@@ -19,6 +19,7 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildNotifications();
     IBlog.Views.buildMyArticles();
     IBlog.Views.buildTemplates();
+    IBlog.Profile.buildProfile() ;
     refreshGates();
     navigateTo('home');
 
@@ -63,7 +64,7 @@ IBlog.Dashboard = (() => {
     if (sTxt) sTxt.textContent = isPrem ? 'You are on the Premium plan. ✓' : 'You are on the Free plan.';
 
     // Profile
-    IBlog.Views.buildProfile();
+    IBlog.Profile.buildProfile();
   }
 
   function refreshGates() {
@@ -90,13 +91,14 @@ IBlog.Dashboard = (() => {
     // Lazy init for map
     if (view === 'map') IBlog.Views.initMap();
     // Profile
-    if (view === 'profile') IBlog.Views.buildProfile();
+    if (view === 'profile') IBlog.Profile.buildProfile();
     // Saved
     if (view === 'saved') _buildSavedView();
     // My articles
     if (view === 'articles') IBlog.Views.buildMyArticles();
     //communities
     if (view === 'trends') IBlog.Trends?.init();
+    if (view === 'search') IBlog.Search?.init();
    
 
 
