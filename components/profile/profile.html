@@ -1,21 +1,51 @@
 <!-- ══ PROFILE VIEW ══════════════════════════════════════ -->
 <div class="view-panel" id="view-profile">
-  <div style="position:relative;margin-bottom:70px">
+  <div style="position: relative; margin-bottom: 70px">
     <div class="profile-banner"></div>
-    <div class="profile-avatar-big" id="profile-avatar-big" style="background:var(--accent)">A</div>
+    <div
+      class="profile-avatar-big"
+      id="profile-avatar-big"
+      style="background: var(--accent)"
+    >
+      A
+    </div>
   </div>
   <div class="profile-info">
-    <div class="flex-between" style="margin-bottom:8px">
-      <h2 id="profile-name" style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text)"></h2>
-      <div id="profile-premium-badge" style="display:none" class="badge badge-premium"></div>
+    <div class="flex-between" style="margin-bottom: 8px">
+      <h2
+        id="profile-name"
+        style="
+          font-family: &quot;Playfair Display&quot;, serif;
+          font-size: 26px;
+          font-weight: 700;
+          color: var(--text);
+        "
+      ></h2>
+      <div
+        id="profile-premium-badge"
+        style="display: none"
+        class="badge badge-premium"
+      ></div>
     </div>
-    <p style="color:var(--text2);margin-bottom:18px"></p>
-    <div style="display:flex;gap:22px;margin-bottom:18px">
-      <div><strong id="profile-article-count">0</strong> <span style="color:var(--text2);font-size:13px">Articles</span></div>
-      <div><strong>0</strong> <span style="color:var(--text2);font-size:13px">Followers</span></div>
-      <div><strong>0</strong> <span style="color:var(--text2);font-size:13px">Following</span></div>
+    <p style="color: var(--text2); margin-bottom: 18px"></p>
+    <div style="display: flex; gap: 22px; margin-bottom: 18px">
+      <div>
+        <strong id="profile-article-count">0</strong>
+        <span style="color: var(--text2); font-size: 13px">Articles</span>
+      </div>
+      <div>
+        <strong>0</strong>
+        <span style="color: var(--text2); font-size: 13px">Followers</span>
+      </div>
+      <div>
+        <strong>0</strong>
+        <span style="color: var(--text2); font-size: 13px">Following</span>
+      </div>
     </div>
-    <div class="topic-chips">
-    </div>
+    <div class="topic-chips"></div>
+  </div>
+
+  <div class="profile-info" id="activity-root">
+    <span class="nav-icon"></span>Activity
   </div>
 </div>

@@ -23,7 +23,6 @@ IBlog.LeftRail = (() => {
         <div class="nav-section">
           <div class="nav-label">Main</div>
           <div class="nav-item" data-view="home" onclick="IBlog.Dashboard.navigateTo('home')">Home</div>
-          <div class="nav-item" data-view="explore" onclick="IBlog.Dashboard.navigateTo('explore')">Explore</div>
           <div class="nav-item" data-view="notifications" onclick="IBlog.Dashboard.navigateTo('notifications')">
             Notifications<span class="nav-badge">3</span>
           </div>

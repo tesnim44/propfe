@@ -177,58 +177,7 @@
           </div>
 
           <!-- EXPLORE -->
-          <div class="view-panel" id="view-explore" style="padding: 28px">
-            <div class="view-header">
-              <h1>🧭 Explore</h1>
-              <p>Discover articles from across the IBlog universe</p>
-            </div>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 22px;
-                margin-bottom: 28px;
-              "
-            >
-              <div class="feat-card" onclick="IBlog.Dashboard.gateMap()">
-                <div
-                  class="feat-icon"
-                  style="background: rgba(212, 160, 23, 0.12)"
-                >
-                  🌍
-                </div>
-                <h3>Global Map <span class="badge badge-premium">⭐</span></h3>
-                <p>Explore what every country is reading.</p>
-              </div>
-              <div
-                class="feat-card"
-                onclick="IBlog.Dashboard.navigateTo('trends')"
-              >
-                <div
-                  class="feat-icon"
-                  style="background: rgba(184, 150, 12, 0.12)"
-                >
-                  📈
-                </div>
-                <h3>Trend Radar</h3>
-                <p>Real-time emerging topics detection.</p>
-              </div>
-              <div
-                class="feat-card"
-                onclick="IBlog.Dashboard.navigateTo('communities')"
-              >
-                <div
-                  class="feat-icon"
-                  style="background: rgba(76, 175, 125, 0.1)"
-                >
-                  🏘️
-                </div>
-                <h3>Communities</h3>
-                <p>Join knowledge spaces with like-minded readers.</p>
-              </div>
-            </div>
-            <div id="explore-feed"></div>
-          </div>
+          
 
           <!-- MAP -->
           <div class="view-panel" id="view-map" style="padding: 28px">
@@ -286,101 +235,7 @@
           </div>
 
           <!-- ACTIVITY -->
-          <div class="view-panel" id="view-activity">
-            <div class="view-header">
-              <h1>🟩 Activity Tracker</h1>
-              <p>Your reading, writing, and engagement journey</p>
-            </div>
-            <div class="section-card">
-              <div class="flex-between" style="margin-bottom: 14px">
-                <div>
-                  <strong>2025–2026 Contributions</strong><br /><small
-                    style="color: var(--text2)"
-                    >Read days · Comments · Posts</small
-                  >
-                </div>
-                <div class="ai-pill"><span class="ai-dot"></span>342 total</div>
-              </div>
-              <div class="activity-grid" id="activity-grid"></div>
-              <div
-                style="
-                  display: flex;
-                  gap: 7px;
-                  align-items: center;
-                  margin-top: 10px;
-                  font-size: 11px;
-                  color: var(--text2);
-                "
-              >
-                Less
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: var(--bg3);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: rgba(184, 150, 12, 0.2);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: rgba(184, 150, 12, 0.45);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: rgba(184, 150, 12, 0.7);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: var(--accent);
-                  "
-                ></div>
-                More
-              </div>
-            </div>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 14px;
-              "
-            >
-              <div class="stat-box">
-                <span class="stat-value">89</span>
-                <div class="stat-label">🔥 Day Streak</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">47</span>
-                <div class="stat-label">📝 Posts</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">156</span>
-                <div class="stat-label">💬 Comments</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">12</span>
-                <div class="stat-label">🏘️ Communities</div>
-              </div>
-            </div>
-          </div>
+          
 
           <!-- SEARCH -->
           <div id="search-root"></div>
@@ -433,69 +288,7 @@
           </div>
 
           <!-- PROFILE -->
-          <div class="view-panel" id="view-profile">
-            <div style="position: relative; margin-bottom: 70px">
-              <div class="profile-banner"></div>
-              <script src="components/profile/profile.js"></script>
-              <div
-                class="profile-avatar-big"
-                id="profile-avatar-big"
-                style="background: var(--accent)"
-              >
-                A
-              </div>
-            </div>
-            <div class="profile-info">
-              <div class="flex-between" style="margin-bottom: 8px">
-                <h2
-                  id="profile-name"
-                  style="
-                    font-family: &quot;Playfair Display&quot;, serif;
-                    font-size: 26px;
-                    font-weight: 700;
-                    color: var(--text);
-                  "
-                >
-                  Amara Diallo
-                </h2>
-                <div
-                  id="profile-premium-badge"
-                  style="display: none"
-                  class="badge badge-premium"
-                >
-                  ⭐ Premium
-                </div>
-              </div>
-              <p style="color: var(--text2); margin-bottom: 18px">
-                @amara · Passionate writer &amp; knowledge explorer.
-              </p>
-              <div style="display: flex; gap: 22px; margin-bottom: 18px">
-                <div>
-                  <strong id="profile-article-count">0</strong>
-                  <span style="color: var(--text2); font-size: 13px"
-                    >Articles</span
-                  >
-                </div>
-                <div>
-                  <strong>1.2k</strong>
-                  <span style="color: var(--text2); font-size: 13px"
-                    >Followers</span
-                  >
-                </div>
-                <div>
-                  <strong>389</strong>
-                  <span style="color: var(--text2); font-size: 13px"
-                    >Following</span
-                  >
-                </div>
-              </div>
-              <div class="topic-chips">
-                <span class="topic-chip active">AI</span>
-                <span class="topic-chip active">Technology</span>
-                <span class="topic-chip active">Science</span>
-              </div>
-            </div>
-          </div>
+          <div id="profile-root"></div>
 
           <!-- WRITER -->
           <div class="view-panel writer-view" id="view-write">
@@ -766,81 +559,9 @@
           </div>
         </div>
         <!-- /center-feed -->
-         <!-- components/right-rail/right-rail.js -->
-       
+        
         <!-- components/right-rail/right-rail.html -->
-        <div class="right-rail">
-          <div class="search-bar">
-            <span>🔍</span>
-            <input
-              type="text"
-              placeholder="Search IBlog…"
-              onkeydown="
-                if (event.key === 'Enter') {
-                  IBlog.Dashboard.navigateTo('search');
-                  document.getElementById('smart-search-input').value =
-                    this.value;
-                  IBlog.Views.doSearch();
-                }
-              "
-            />
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Your Stats</div>
-            <div class="stats-grid">
-              <div class="stat-box">
-                <span class="stat-value">47</span>
-                <div class="stat-label">Articles</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">1.2k</span>
-                <div class="stat-label">Followers</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">8.4k</span>
-                <div class="stat-label">Views</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">312</span>
-                <div class="stat-label">Likes</div>
-              </div>
-            </div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Trending Topics</div>
-            <div class="topic-chips" id="trending-chips"></div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Communities</div>
-            <div id="rail-communities"></div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Top Authors</div>
-            <div id="top-authors"></div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Weekly Digest</div>
-            <div class="digest-widget">
-              <h4>📬 Stay in the loop</h4>
-              <p>5 best articles, curated by AI every week.</p>
-              <input
-                class="digest-email"
-                type="email"
-                placeholder="your@email.com"
-              />
-              <button
-                class="digest-sub-btn"
-                onclick="IBlog.utils.toast('📬 Subscribed!', 'success')"
-              >
-                Subscribe
-              </button>
-            </div>
-          </div>
-          <div class="footer-links">
-            <a href="#">About</a><a href="#">Blog</a><a href="#">Privacy</a
-            ><a href="#">Terms</a><a href="#">© 2026 IBlog</a>
-          </div>
-        </div>
+        <div id="right-rail-root"></div>
         <!-- /right-rail -->
       </div>
       <!-- /dash-layout -->
@@ -894,6 +615,46 @@
 
 
     <!-- JS COMPONENTS (ordre de chargement strict) -->
+<script src="toggledark.js"></script>
+<script src="data.js"></script>
+<script src="components/admin/admin.js"></script>
+<script src="js/podcast.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/views.js"></script>
+<script src="components/auth/auth.js"></script>
+<script src="components/chat/chat.js"></script>
+<script src="components/landing-nav/landing-nav.js"></script>
+<script src="components/landing-feat/feat.js"></script>
+<script src="components/carousel/carousel.js"></script>
+<script src="components/features/features.js"></script>
+<script src="components/HIW/hiw.js"></script>
+<script src="components/pricing/pricing.js"></script>
+<script src="components/hero/hero.js"></script>
+<script src="components/cta/cta.js"></script>
+<script src="components/testimonial/testimonial.js"></script>
+<script src="components/landing-footer/footer.js"></script>
+<script src="components/stats/stats.js"></script>
+<script src="components/search/search.js"></script>
+<script src="components/left-rail/left-rail.js"></script>
+<script src="components/dashboard-layout/dashboard.js"></script>
+<script src="components/notifications/notifications.js"></script>
+<script src="components/article-card/article-card.js"></script>
+<script src="components/my-articles/my-articles.js"></script>
+<script src="components/right-rail/right-rail.js"></script>
+<script src="components/analytics/analytics.js"></script>
+<script src="components/trends/trends.js"></script>
+<script src="components/communities/communities.js"></script>
+
+<!-- ✅ AJOUTER ACTIVITY ICI (avant profile.js car profile en dépend) -->
+<script src="components/activity/activity.js"></script>
+
+<script src="components/profile/profile.js"></script>
+
+<!-- ⚠️ Supprimer les doublons analytics.js et right-rail.js -->
+<script src="app.js"></script>
+
+    <!-- JS COMPONENTS (ordre de chargement strict)
     <script src="toggledark.js"></script>
     <script src="data.js"></script>
     <script src="components/admin/admin.js"></script>
@@ -927,7 +688,7 @@
     <script src="components/profile/profile.js"></script>
     <script src="components/analytics/analytics.js"></script>
     <script src="components/right-rail/right-rail.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js"></script> -->
   </body>
 </html>
 

@@ -2,6 +2,11 @@ IBlog.Dashboard = (() => {
   /* ── Enter Dashboard ──────────────────────────────────── */
   function enter() {
 
+
+  initRightRail();
+  
+  IBlog.Profile.init();
+  
   IBlog.LeftRail.init(); 
   IBlog.Search.init();
   const landing = document.getElementById('landing-page'); // was 'landing'
@@ -19,7 +24,6 @@ IBlog.Dashboard = (() => {
     IBlog.Views.buildNotifications();
     IBlog.Views.buildMyArticles();
     IBlog.Views.buildTemplates();
-    IBlog.Profile.buildProfile() ;
     refreshGates();
     navigateTo('home');
 
