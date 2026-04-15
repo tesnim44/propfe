@@ -436,13 +436,8 @@ IBlog.Templates = (() => {
 
     /* Show hint */
     const sub = document.getElementById('template-subtitle');
-    if (sub) sub.textContent = `${tpl.name} — ${tpl.writerHint}`;
+    if (sub) sub.textContent = tpl.name;
 
-    /* Show structure preview */
-    const preview   = document.getElementById('template-preview');
-    const structure = document.getElementById('template-structure');
-    if (preview)   preview.classList.add('visible');
-    if (structure) structure.innerHTML = `<div class="tpl-hint">${tpl.writerHint}</div>`;
 
     IBlog.utils.toast(`${tpl.name} template selected`, 'success');
   }
