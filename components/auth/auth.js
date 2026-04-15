@@ -130,7 +130,7 @@
   window.selectPlan = function(el, plan) {
     document.querySelectorAll('.plan-opt').forEach(p => p.classList.remove('selected'));
     if (el) el.classList.add('selected');
-    localStorage.setItem('selectedPlan', plan);
+    sessionStorage.setItem('selectedPlan', plan);
   };
 
   // ── Field Validation ──────────────────────────────────────
@@ -367,7 +367,7 @@
     const total = document.getElementById(isCard ? 'pay-total' : 'pay-total-pp');
     const promos = {
       'IBLOG2025': { label: '✓ 20% discount applied!', price: '$7.20 / month' },
-      'WELCOME50': { label: '✓ 50% discount applied!', price: '$4.50 / month' },
+      'WELCOME50': { label: '✓ 50% discount applied!', price: '$4.50 / month' }
     };
     if (promos[code]) {
       if (msg)   { msg.textContent = promos[code].label; msg.className = 'promo-msg ok'; }
@@ -416,7 +416,6 @@
     user.isPremium = true; user.plan = 'premium';
     sessionStorage.removeItem('pendingUser');
     sessionStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('user', JSON.stringify(user));
     IBlog.state.currentUser = user;
     const s2 = document.getElementById('premium-step-payment');
     const s3 = document.getElementById('premium-step-success');
@@ -577,7 +576,6 @@
     <div class="modal-overlay" id="modal-premium">
       <div class="modal modal-center">
         <button class="modal-close" onclick="closeAllModals()">✕</button>
-
         <div id="premium-step-perks">
           <div style="font-size:48px;margin-bottom:12px"></div>
           <h2 class="modal-title">Upgrade to Premium</h2>
@@ -593,7 +591,6 @@
           <button class="btn btn-premium btn-full" onclick="showPayment()">Continue — $9/month</button>
           <p class="modal-footnote">Cancel anytime. No commitment.</p>
         </div>
-
         <div id="premium-step-payment" style="display:none">
           <h2 class="modal-title" style="margin-bottom:4px">Payment</h2>
           <p class="modal-subtitle" style="margin-bottom:20px">Secure checkout · $9/month</p>
@@ -632,7 +629,6 @@
           </div>
           <button class="back-btn" onclick="showPerks()">← Back</button>
         </div>
-
         <div id="premium-step-success" style="display:none;text-align:center">
           <div style="font-size:56px;margin-bottom:16px"></div>
           <h2 class="modal-title">You are Premium!</h2>
