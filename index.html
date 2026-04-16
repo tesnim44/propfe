@@ -111,169 +111,7 @@
     <div id="dashboard">
       <div class="dash-layout">
         <!-- ── LEFT RAIL ── -->
-        <div class="left-rail">
-          <div class="iblog-brand">IBlog</div>
-          <div class="user-card">
-            <div class="dash-avatar" id="dash-avatar">A</div>
-            <div class="user-info">
-              <strong id="dash-name">Amara Diallo</strong>
-              <small id="dash-plan-label">Free Member</small>
-            </div>
-          </div>
-          <button
-            class="write-btn"
-            onclick="IBlog.Dashboard.navigateTo('write')"
-          >
-            ✏️ Write Article
-          </button>
-          <div class="nav-section">
-            <div class="nav-label">Main</div>
-            <div
-              class="nav-item"
-              data-view="home"
-              onclick="IBlog.Dashboard.navigateTo('home')"
-            >
-              <span class="nav-icon">🏠</span>Home
-            </div>
-            <div
-              class="nav-item"
-              data-view="explore"
-              onclick="IBlog.Dashboard.navigateTo('explore')"
-            >
-              <span class="nav-icon">🧭</span>Explore
-            </div>
-            <div
-              class="nav-item"
-              data-view="notifications"
-              onclick="IBlog.Dashboard.navigateTo('notifications')"
-            >
-              <span class="nav-icon">🔔</span>Notifications<span
-                class="nav-badge"
-                >3</span
-              >
-            </div>
-            <div
-              class="nav-item"
-              data-view="messages"
-              onclick="IBlog.Dashboard.navigateTo('messages')"
-            >
-              <span class="nav-icon">💬</span>Messages<span class="nav-badge"
-                >1</span
-              >
-            </div>
-            <div
-              class="nav-item"
-              data-view="saved"
-              onclick="IBlog.Dashboard.navigateTo('saved')"
-            >
-              <span class="nav-icon">🔖</span>Saved
-            </div>
-            <div
-              class="nav-item"
-              id="nav-map"
-              onclick="IBlog.Dashboard.gateMap()"
-            >
-              <span class="nav-icon">🌍</span>Global Map<span
-                class="nav-lock"
-                id="map-lock"
-                >🔒</span
-              >
-            </div>
-          </div>
-          <div class="nav-section">
-            <div class="nav-label">Dashboard</div>
-            <div
-              class="nav-item"
-              data-view="articles"
-              onclick="IBlog.Dashboard.navigateTo('articles')"
-            >
-              <span class="nav-icon">📄</span>My Articles
-            </div>
-            <div
-              class="nav-item"
-              data-view="analytics"
-              onclick="IBlog.Dashboard.navigateTo('analytics')"
-            >
-              <span class="nav-icon">📊</span>Analytics
-            </div>
-            <div
-              class="nav-item"
-              data-view="activity"
-              onclick="IBlog.Dashboard.navigateTo('activity')"
-            >
-              <span class="nav-icon">🟩</span>Activity
-            </div>
-            <div
-              class="nav-item"
-              data-view="communities"
-              onclick="IBlog.Dashboard.navigateTo('communities')"
-            >
-              <span class="nav-icon">🏘️</span>Communities
-            </div>
-            <div
-              class="nav-item"
-              data-view="search"
-              onclick="IBlog.Dashboard.navigateTo('search')"
-            >
-              <span class="nav-icon">🔍</span>Smart Search
-            </div>
-            <div
-              class="nav-item"
-              data-view="trends"
-              onclick="IBlog.Dashboard.navigateTo('trends')"
-            >
-              <span class="nav-icon">📈</span>Trend Radar
-            </div>
-          </div>
-          <div class="nav-section">
-            <div class="nav-label">Account</div>
-            <div
-              class="nav-item"
-              data-view="profile"
-              onclick="IBlog.Dashboard.navigateTo('profile')"
-            >
-              <span class="nav-icon">👤</span>Profile
-            </div>
-            <div
-              class="nav-item"
-              data-view="settings"
-              onclick="IBlog.Dashboard.navigateTo('settings')"
-            >
-              <span class="nav-icon">⚙️</span>Settings
-            </div>
-            <div
-              class="nav-item"
-              id="upgrade-nav-btn"
-              onclick="IBlog.Auth.showPremium()"
-              style="display: none"
-            >
-              <span class="nav-icon">⭐</span
-              ><span style="color: var(--premium); font-weight: 600"
-                >Upgrade to Premium</span
-              >
-            </div>
-            <div class="nav-item" onclick="IBlog.Dashboard.signout()">
-              <span class="nav-icon">🚪</span>Sign Out
-            </div>
-          </div>
-          <div class="rail-bottom">
-            <div class="accent-picker">
-              <div class="accent-picker-label">Accent Color</div>
-              <div class="accent-dots" id="accent-dots"></div>
-            </div>
-            <div class="dark-toggle">
-              <label class="toggle-switch">
-                <input
-                  type="checkbox"
-                  id="dark-toggle-input"
-                  onchange="IBlog.Dashboard.toggleDark()"
-                />
-                <div class="toggle-track"></div>
-              </label>
-              <span class="toggle-label" id="dark-toggle-label">☀️ Light</span>
-            </div>
-          </div>
-        </div>
+        <div id="left-rail-root"></div>
         <!-- /left-rail -->
 
         <!-- ── CENTER FEED ── -->
@@ -339,58 +177,7 @@
           </div>
 
           <!-- EXPLORE -->
-          <div class="view-panel" id="view-explore" style="padding: 28px">
-            <div class="view-header">
-              <h1>🧭 Explore</h1>
-              <p>Discover articles from across the IBlog universe</p>
-            </div>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 22px;
-                margin-bottom: 28px;
-              "
-            >
-              <div class="feat-card" onclick="IBlog.Dashboard.gateMap()">
-                <div
-                  class="feat-icon"
-                  style="background: rgba(212, 160, 23, 0.12)"
-                >
-                  🌍
-                </div>
-                <h3>Global Map <span class="badge badge-premium">⭐</span></h3>
-                <p>Explore what every country is reading.</p>
-              </div>
-              <div
-                class="feat-card"
-                onclick="IBlog.Dashboard.navigateTo('trends')"
-              >
-                <div
-                  class="feat-icon"
-                  style="background: rgba(184, 150, 12, 0.12)"
-                >
-                  📈
-                </div>
-                <h3>Trend Radar</h3>
-                <p>Real-time emerging topics detection.</p>
-              </div>
-              <div
-                class="feat-card"
-                onclick="IBlog.Dashboard.navigateTo('communities')"
-              >
-                <div
-                  class="feat-icon"
-                  style="background: rgba(76, 175, 125, 0.1)"
-                >
-                  🏘️
-                </div>
-                <h3>Communities</h3>
-                <p>Join knowledge spaces with like-minded readers.</p>
-              </div>
-            </div>
-            <div id="explore-feed"></div>
-          </div>
+          
 
           <!-- MAP -->
           <div class="view-panel" id="view-map" style="padding: 28px">
@@ -448,145 +235,10 @@
           </div>
 
           <!-- ACTIVITY -->
-          <div class="view-panel" id="view-activity">
-            <div class="view-header">
-              <h1>🟩 Activity Tracker</h1>
-              <p>Your reading, writing, and engagement journey</p>
-            </div>
-            <div class="section-card">
-              <div class="flex-between" style="margin-bottom: 14px">
-                <div>
-                  <strong>2025–2026 Contributions</strong><br /><small
-                    style="color: var(--text2)"
-                    >Read days · Comments · Posts</small
-                  >
-                </div>
-                <div class="ai-pill"><span class="ai-dot"></span>342 total</div>
-              </div>
-              <div class="activity-grid" id="activity-grid"></div>
-              <div
-                style="
-                  display: flex;
-                  gap: 7px;
-                  align-items: center;
-                  margin-top: 10px;
-                  font-size: 11px;
-                  color: var(--text2);
-                "
-              >
-                Less
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: var(--bg3);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: rgba(184, 150, 12, 0.2);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: rgba(184, 150, 12, 0.45);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: rgba(184, 150, 12, 0.7);
-                  "
-                ></div>
-                <div
-                  style="
-                    width: 11px;
-                    height: 11px;
-                    border-radius: 2px;
-                    background: var(--accent);
-                  "
-                ></div>
-                More
-              </div>
-            </div>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 14px;
-              "
-            >
-              <div class="stat-box">
-                <span class="stat-value">89</span>
-                <div class="stat-label">🔥 Day Streak</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">47</span>
-                <div class="stat-label">📝 Posts</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">156</span>
-                <div class="stat-label">💬 Comments</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">12</span>
-                <div class="stat-label">🏘️ Communities</div>
-              </div>
-            </div>
-          </div>
+          
 
           <!-- SEARCH -->
-          <div class="view-panel" id="view-search">
-            <div class="view-header">
-              <h1>🔍 Smart Search</h1>
-              <p>
-                AI-powered semantic search — finds articles even when wording
-                differs
-              </p>
-            </div>
-            <div class="search-full">
-              <input
-                type="text"
-                id="smart-search-input"
-                placeholder='Try: "AI ethics" or "future of work"…'
-                onkeydown="if (event.key === 'Enter') IBlog.Views.doSearch();"
-              />
-              <button onclick="IBlog.Views.doSearch()">Search</button>
-            </div>
-            <div class="filter-row">
-              <button class="filter-chip active" onclick="toggleFilter(this)">
-                All
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Technology
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Science
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                AI
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Culture
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                &#60; 5 min
-              </button>
-              <button class="filter-chip" onclick="toggleFilter(this)">
-                Popular
-              </button>
-            </div>
-            <div id="search-results"></div>
-          </div>
+          <div id="search-root"></div>
 
           <!-- ANALYTICS -->
           <div id="analytics-root"></div>
@@ -636,69 +288,7 @@
           </div>
 
           <!-- PROFILE -->
-          <div class="view-panel" id="view-profile">
-            <div style="position: relative; margin-bottom: 70px">
-              <div class="profile-banner"></div>
-              <script src="components/profile/profile.js"></script>
-              <div
-                class="profile-avatar-big"
-                id="profile-avatar-big"
-                style="background: var(--accent)"
-              >
-                A
-              </div>
-            </div>
-            <div class="profile-info">
-              <div class="flex-between" style="margin-bottom: 8px">
-                <h2
-                  id="profile-name"
-                  style="
-                    font-family: &quot;Playfair Display&quot;, serif;
-                    font-size: 26px;
-                    font-weight: 700;
-                    color: var(--text);
-                  "
-                >
-                  Amara Diallo
-                </h2>
-                <div
-                  id="profile-premium-badge"
-                  style="display: none"
-                  class="badge badge-premium"
-                >
-                  ⭐ Premium
-                </div>
-              </div>
-              <p style="color: var(--text2); margin-bottom: 18px">
-                @amara · Passionate writer &amp; knowledge explorer.
-              </p>
-              <div style="display: flex; gap: 22px; margin-bottom: 18px">
-                <div>
-                  <strong id="profile-article-count">0</strong>
-                  <span style="color: var(--text2); font-size: 13px"
-                    >Articles</span
-                  >
-                </div>
-                <div>
-                  <strong>1.2k</strong>
-                  <span style="color: var(--text2); font-size: 13px"
-                    >Followers</span
-                  >
-                </div>
-                <div>
-                  <strong>389</strong>
-                  <span style="color: var(--text2); font-size: 13px"
-                    >Following</span
-                  >
-                </div>
-              </div>
-              <div class="topic-chips">
-                <span class="topic-chip active">AI</span>
-                <span class="topic-chip active">Technology</span>
-                <span class="topic-chip active">Science</span>
-              </div>
-            </div>
-          </div>
+          <div id="profile-root"></div>
 
           <!-- WRITER -->
           <div class="view-panel writer-view" id="view-write">
@@ -969,81 +559,9 @@
           </div>
         </div>
         <!-- /center-feed -->
-         <!-- components/right-rail/right-rail.js -->
-       
+        
         <!-- components/right-rail/right-rail.html -->
-        <div class="right-rail">
-          <div class="search-bar">
-            <span>🔍</span>
-            <input
-              type="text"
-              placeholder="Search IBlog…"
-              onkeydown="
-                if (event.key === 'Enter') {
-                  IBlog.Dashboard.navigateTo('search');
-                  document.getElementById('smart-search-input').value =
-                    this.value;
-                  IBlog.Views.doSearch();
-                }
-              "
-            />
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Your Stats</div>
-            <div class="stats-grid">
-              <div class="stat-box">
-                <span class="stat-value">47</span>
-                <div class="stat-label">Articles</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">1.2k</span>
-                <div class="stat-label">Followers</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">8.4k</span>
-                <div class="stat-label">Views</div>
-              </div>
-              <div class="stat-box">
-                <span class="stat-value">312</span>
-                <div class="stat-label">Likes</div>
-              </div>
-            </div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Trending Topics</div>
-            <div class="topic-chips" id="trending-chips"></div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Communities</div>
-            <div id="rail-communities"></div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Top Authors</div>
-            <div id="top-authors"></div>
-          </div>
-          <div class="rail-section">
-            <div class="rail-title">Weekly Digest</div>
-            <div class="digest-widget">
-              <h4>📬 Stay in the loop</h4>
-              <p>5 best articles, curated by AI every week.</p>
-              <input
-                class="digest-email"
-                type="email"
-                placeholder="your@email.com"
-              />
-              <button
-                class="digest-sub-btn"
-                onclick="IBlog.utils.toast('📬 Subscribed!', 'success')"
-              >
-                Subscribe
-              </button>
-            </div>
-          </div>
-          <div class="footer-links">
-            <a href="#">About</a><a href="#">Blog</a><a href="#">Privacy</a
-            ><a href="#">Terms</a><a href="#">© 2026 IBlog</a>
-          </div>
-        </div>
+        <div id="right-rail-root"></div>
         <!-- /right-rail -->
       </div>
       <!-- /dash-layout -->
@@ -1097,6 +615,46 @@
 
 
     <!-- JS COMPONENTS (ordre de chargement strict) -->
+<script src="toggledark.js"></script>
+<script src="data.js"></script>
+<script src="components/admin/admin.js"></script>
+<script src="js/podcast.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/views.js"></script>
+<script src="components/auth/auth.js"></script>
+<script src="components/chat/chat.js"></script>
+<script src="components/landing-nav/landing-nav.js"></script>
+<script src="components/landing-feat/feat.js"></script>
+<script src="components/carousel/carousel.js"></script>
+<script src="components/features/features.js"></script>
+<script src="components/HIW/hiw.js"></script>
+<script src="components/pricing/pricing.js"></script>
+<script src="components/hero/hero.js"></script>
+<script src="components/cta/cta.js"></script>
+<script src="components/testimonial/testimonial.js"></script>
+<script src="components/landing-footer/footer.js"></script>
+<script src="components/stats/stats.js"></script>
+<script src="components/search/search.js"></script>
+<script src="components/left-rail/left-rail.js"></script>
+<script src="components/dashboard-layout/dashboard.js"></script>
+<script src="components/notifications/notifications.js"></script>
+<script src="components/article-card/article-card.js"></script>
+<script src="components/my-articles/my-articles.js"></script>
+<script src="components/right-rail/right-rail.js"></script>
+<script src="components/analytics/analytics.js"></script>
+<script src="components/trends/trends.js"></script>
+<script src="components/communities/communities.js"></script>
+
+<!-- ✅ AJOUTER ACTIVITY ICI (avant profile.js car profile en dépend) -->
+<script src="components/activity/activity.js"></script>
+
+<script src="components/profile/profile.js"></script>
+
+<!-- ⚠️ Supprimer les doublons analytics.js et right-rail.js -->
+<script src="app.js"></script>
+
+    <!-- JS COMPONENTS (ordre de chargement strict)
     <script src="toggledark.js"></script>
     <script src="data.js"></script>
     <script src="components/admin/admin.js"></script>
@@ -1117,6 +675,8 @@
      <script src="components/testimonial/testimonial.js"></script>
     <script src="components/landing-footer/footer.js"></script>
     <script src="components/stats/stats.js"></script>
+    <script src="components/search/search.js"></script>
+    <script src="components/left-rail/left-rail.js"></script>
     <script src="components/dashboard-layout/dashboard.js"></script>
     <script src="components/notifications/notifications.js"></script>
   <script src="components/article-card/article-card.js"></script>
@@ -1125,9 +685,10 @@
     <script src="components/analytics/analytics.js"></script>
     <script src="components/trends/trends.js"></script>
     <script src="components/communities/communities.js"></script>
+    <script src="components/profile/profile.js"></script>
     <script src="components/analytics/analytics.js"></script>
     <script src="components/right-rail/right-rail.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js"></script> -->
   </body>
 </html>
 
