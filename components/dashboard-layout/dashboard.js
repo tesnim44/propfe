@@ -102,7 +102,7 @@ IBlog.Dashboard = (() => {
     if (view === 'articles') IBlog.Views.buildMyArticles();
     //communities
     if (view === 'trends') IBlog.Trends?.init();
-    if (view === 'search') IBlog.Search?.init();
+    if (view === 'write') IBlog.Writer.init();
    
 
 
