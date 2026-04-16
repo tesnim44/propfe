@@ -1,44 +1,4 @@
-function toggleFilter(el) {
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  // Relancer la recherche avec le nouveau filtre
-  const input = document.getElementById('smart-search-input');
-  if (input && input.value.trim()) IBlog.Views.doSearch();
-}
 
-window.openArticleFromLanding = function(slideIndex) {
-  // Map each hero slide index to its SEED_ARTICLES id
-  const heroArticleMap = {
-    0: 13, // AI — OpenAI model
-    1: 14, // Space — James Webb
-    2: 15, // Climate — Carbon footprint
-    3: 16, // Longevity — Aging injection
-    4: 17, // Economics — $900k job
-    5: 18, // Psychology — Harvard study
-    6: 19, // Geopolitics — Silent war
-    7: 20, // Neuroscience — Dead brain
-    8: 21, // Philosophy — AI novel
-  };
-
-  const articleId = heroArticleMap[slideIndex] ?? 13;
-  const article = IBlog.SEED_ARTICLES.find(a => a.id === articleId);
-  if (!article) return;
-
-  const savedUser = sessionStorage.getItem('user');
-  if (savedUser) {
-    try {
-      const user = JSON.parse(savedUser);
-      IBlog.state.currentUser = user;
-      document.getElementById('landing-page').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      IBlog.Dashboard.enter();
-      setTimeout(() => IBlog.Feed.openReader(article.id), 300);
-    } catch(e) {}
-  } else {
-    window.setPendingArticle(article.id);
-    showSignin();
-  }
-};
 
 document.addEventListener('DOMContentLoaded', () => {
   // Clear any leftover localStorage user data so tab-close always returns to landing

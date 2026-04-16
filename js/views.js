@@ -196,151 +196,256 @@ IBlog.Views = (() => {
   }
 
   /* ── Smart Search ────────────────────────────────────── */
-  function doSearch() {
-    const q = document.getElementById('smart-search-input')?.value.trim();
-    const results = document.getElementById('search-results');
-    if (!results) return;
-    if (!q) {
-      results.innerHTML = '<div class="empty-state"><div class="emoji">🔍</div><p>Type to search the IBlog universe…</p></div>';
-      return;
-    }
-    const semantic = {
-      'ethics': ['AI ethics', 'bias', 'responsibility', 'moral'],
-      'quantum': ['quantum computing', 'physics', 'qubit'],
-      'startup': ['founder', 'bootstrapped', 'growth', 'venture'],
-      'future': ['trends', 'prediction', 'emerging', 'next decade'],
-      'climate': ['climate change', 'carbon', 'renewable', 'green'],
-      'sleep': ['sleep', 'rest', 'circadian', 'nap'],
-    };
-    const extra = Object.entries(semantic).find(([k]) => q.toLowerCase().includes(k))?.[1] || [];
-    const terms = [q, ...extra];
-    const matched = IBlog.state.articles.filter(a =>
-      terms.some(s =>
-        a.title.toLowerCase().includes(s.toLowerCase()) ||
-        a.excerpt.toLowerCase().includes(s.toLowerCase()) ||
-        (a.tags || []).some(t => t.toLowerCase().includes(s.toLowerCase())) ||
-        a.cat.toLowerCase().includes(s.toLowerCase())
-      )
-    );
-    const hl = (text, s) => text.replace(new RegExp(s, 'gi'), m => `<span class="search-highlight">${m}</span>`);
-    if (!matched.length) {
-      results.innerHTML = `<div class="search-semantic-info">🧠 Semantic expansion for "${q}" found no matches</div><div class="empty-state"><div class="emoji">😕</div><p>No results. Try: AI, Science, Startups, Climate…</p></div>`;
-      return;
-    }
-    results.innerHTML =
-      `<div class="search-semantic-info">🧠 AI found ${matched.length} semantically relevant result${matched.length > 1 ? 's' : ''} for "${q}"</div>` +
-      matched.map(a => `
-<div class="search-result" onclick="IBlog.Feed.openReader(${a.id})">
-  <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
-    <span class="card-cat">${a.cat}</span>
-    <span style="font-size:11px;color:var(--text2);">⏱ ${a.readTime}</span>
-    <span style="font-size:11px;color:var(--text2);">♥ ${a.likes}</span>
-  </div>
-  <h4>${hl(a.title, q)}</h4>
-  <p>${hl(a.excerpt.substring(0, 130) + '…', q)}</p>
-</div>`).join('');
-  }
-
-  function searchTopic(t) {
-    IBlog.Dashboard.navigateTo('search');
-    const inp = document.getElementById('smart-search-input');
-    if (inp) { inp.value = t; doSearch(); }
-  }
+  
 
   /* ── Writer ──────────────────────────────────────────── */
   function buildTemplates() {
-    IBlog.Templates.buildWriterSelector();
+    if (IBlog.Templates?.buildWriterSelector) {
+      IBlog.Templates.buildWriterSelector();
+    }
   }
 
-  function selectTemplate(i) {
-    if (IBlog.state.currentUser?.plan !== 'premium') { IBlog.Auth.showPremium(); return; }
-    const t = IBlog.TEMPLATES[i];
-    document.querySelectorAll('.template-card').forEach((c, j) => c.classList.toggle('selected', j === i));
-    const preview = document.getElementById('template-preview');
-    const structure = document.getElementById('template-structure');
-    if (preview) preview.classList.add('visible');
-    if (structure) structure.innerHTML = t.structure.map(s =>
-      `<div onclick="IBlog.Views.injectSection('${s}')">${s}</div>`
-    ).join('');
-    IBlog.utils.toast(`📋 ${t.name} template selected`, 'success');
+  function selectTemplate(id) {
+    const el = document.querySelector(`.tpl-card[data-tpl="${id}"]`);
+    IBlog.Templates?.selectTemplate(id, el);
   }
 
-  function injectSection(s) {
+  function injectSection(prefix) {
     const ed = document.getElementById('article-editor');
-    if (ed) { ed.value += (ed.value ? '\n\n' : '') + '## ' + s + '\n\n'; analyzeQuality(); }
-    IBlog.utils.toast('Section added to editor', 'success');
+    if (!ed) return;
+    const val = ed.value;
+    const pos = ed.selectionStart;
+    ed.value = val.slice(0, pos) + prefix + val.slice(pos);
+    ed.selectionStart = ed.selectionEnd = pos + prefix.length;
+    ed.focus();
+    analyzeQuality();
   }
 
-  function analyzeQuality() {
+  function insertLink() {
+    const url = prompt('Enter URL:');
+    if (!url) return;
+    const text = prompt('Link text:', url);
+    injectSection(`[${text || url}](${url})`);
+  }
+
+  function handleImgUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const imgEl = document.getElementById('article-img');
+      if (imgEl) imgEl.value = e.target.result;
+      IBlog.utils.toast('Image added as cover!', 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+function analyzeQuality() {
     const text  = document.getElementById('article-editor')?.value || '';
-    const title = document.getElementById('article-title')?.value || '';
-    if (text.length < 10) return;
-    const words     = text.split(/\s+/).length;
-    const sentences = (text.match(/[.!?]+/g) || []).length || 1;
-    const r = Math.min(100, Math.round(words / sentences * 6 + 15));
-    const o = Math.min(100, Math.round(text.length / 4.5));
-    const k = Math.min(100, Math.round(title.split(' ').length * 12 + 20));
-    const e = Math.min(100, Math.round((r + o) / 2));
-    [['read', r], ['orig', o], ['kw', k], ['eng', e]].forEach(([key, v]) => {
-      const val = document.getElementById('q-' + key);
-      const bar = document.getElementById('qb-' + key);
-      if (val) val.textContent = v + '%';
-      if (bar) bar.style.width = v + '%';
+    const title = document.getElementById('article-title')?.value  || '';
+ 
+    if (text.length < 20) {
+      /* Reset all */
+      ['read','depth','struct','eng'].forEach(k => {
+        const v = document.getElementById('q-' + k);
+        const b = document.getElementById('qb-' + k);
+        if (v) v.textContent = '—';
+        if (b) b.style.width = '0%';
+      });
+      document.getElementById('quality-overall')?.style.setProperty('display','none');
+      document.getElementById('quality-tips').innerHTML = '';
+      return;
+    }
+ 
+    const words      = text.trim().split(/\s+/).filter(Boolean);
+    const wordCount  = words.length;
+    const sentences  = text.split(/[.!?]+/).filter(s => s.trim().length > 3).length || 1;
+    const paragraphs = text.split(/\n\n+/).filter(p => p.trim()).length;
+    const hasHeaders = /^#{1,3} /m.test(text);
+    const hasLists   = /^[-*] /m.test(text) || /^\d+\. /m.test(text);
+    const hasQuotes  = /^> /m.test(text);
+    const titleWords = title.trim().split(/\s+/).filter(Boolean).length;
+    const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g,''))).size;
+    const avgSentLen = wordCount / sentences;
+ 
+    /* ── READABILITY ─────────────────────────────────────
+       Based on average sentence length.
+       Ideal: 15-20 words/sentence. Too long = hard to read.
+       Too short = choppy. */
+    let readScore = 100;
+    if (avgSentLen > 30)      readScore -= 40;
+    else if (avgSentLen > 25) readScore -= 25;
+    else if (avgSentLen > 20) readScore -= 10;
+    else if (avgSentLen < 8)  readScore -= 15;
+    /* Vocabulary diversity: unique/total ratio */
+    const diversity = uniqueWords / wordCount;
+    if (diversity > 0.7)      readScore += 10;
+    else if (diversity < 0.4) readScore -= 15;
+    /* Penalize very short articles */
+    if (wordCount < 50)  readScore -= 30;
+    if (wordCount < 150) readScore -= 15;
+    readScore = Math.max(5, Math.min(100, readScore));
+ 
+    /* ── DEPTH ───────────────────────────────────────────
+       Word count is the main signal. Also rewards long words
+       (technical vocabulary). */
+    let depthScore = 0;
+    if (wordCount >= 800)      depthScore = 100;
+    else if (wordCount >= 500) depthScore = 80 + Math.round((wordCount - 500) / 15);
+    else if (wordCount >= 300) depthScore = 55 + Math.round((wordCount - 300) / 10);
+    else if (wordCount >= 150) depthScore = 30 + Math.round((wordCount - 150) / 6);
+    else if (wordCount >= 50)  depthScore = 10 + Math.round((wordCount - 50) / 5);
+    else                        depthScore = Math.round(wordCount / 5);
+    /* Reward long/technical words */
+    const longWords = words.filter(w => w.length > 8).length;
+    const longRatio = longWords / wordCount;
+    if (longRatio > 0.2) depthScore += 8;
+    depthScore = Math.max(5, Math.min(100, depthScore));
+ 
+    /* ── STRUCTURE ───────────────────────────────────────
+       Rewards: good title, headers, lists, quotes, paragraphs */
+    let structScore = 20; /* base */
+    /* Title quality */
+    if (titleWords >= 5 && titleWords <= 12) structScore += 20;
+    else if (titleWords >= 3)                structScore += 10;
+    /* Headers */
+    if (hasHeaders)  structScore += 20;
+    /* Lists */
+    if (hasLists)    structScore += 15;
+    /* Quotes */
+    if (hasQuotes)   structScore += 10;
+    /* Multiple paragraphs */
+    if (paragraphs >= 5) structScore += 20;
+    else if (paragraphs >= 3) structScore += 10;
+    else if (paragraphs >= 2) structScore += 5;
+    structScore = Math.max(5, Math.min(100, structScore));
+ 
+    /* ── ENGAGEMENT ──────────────────────────────────────
+       Rewards: questions, exclamations, numbers/stats, 
+       strong openers, varied paragraph lengths */
+    let engScore = 20;
+    /* Questions engage readers */
+    const questions = (text.match(/\?/g) || []).length;
+    engScore += Math.min(20, questions * 5);
+    /* Numbers/stats add credibility */
+    const numbers = (text.match(/\b\d+[\d,.]*\s*[%kKmMbB]?\b/g) || []).length;
+    engScore += Math.min(20, numbers * 3);
+    /* Strong opener (first 100 chars not generic) */
+    const opener = text.trim().substring(0, 100).toLowerCase();
+    const weakOpeners = ['the ', 'this ', 'in this', 'today ', 'i will', 'i want'];
+    const isWeakOpener = weakOpeners.some(w => opener.startsWith(w));
+    if (!isWeakOpener && text.length > 50) engScore += 15;
+    /* Varied paragraph lengths (not all same size) */
+    const paraLengths = text.split(/\n\n+/).filter(p=>p.trim()).map(p=>p.split(/\s+/).length);
+    const avgLen = paraLengths.reduce((a,b)=>a+b,0) / (paraLengths.length||1);
+    const variance = paraLengths.reduce((s,l)=>s+Math.abs(l-avgLen),0) / (paraLengths.length||1);
+    if (variance > 20) engScore += 15;
+    engScore = Math.max(5, Math.min(100, engScore));
+ 
+    /* ── Overall ─────────────────────────────────────── */
+    const overall = Math.round((readScore * 0.25) + (depthScore * 0.35) + (structScore * 0.25) + (engScore * 0.15));
+ 
+    /* ── Update DOM ──────────────────────────────────── */
+    const scores = [['read',readScore],['depth',depthScore],['struct',structScore],['eng',engScore]];
+    scores.forEach(([k, v]) => {
+      const valEl = document.getElementById('q-' + k);
+      const barEl = document.getElementById('qb-' + k);
+      if (valEl) valEl.textContent = v + '%';
+      if (barEl) barEl.style.width = v + '%';
     });
-    const avg = (r + o + k + e) / 4;
-    const fb = document.getElementById('quality-feedback');
-    if (fb) fb.innerHTML = avg > 80
-      ? '✅ <span style="color:var(--green)">Excellent quality — ready to publish.</span>'
-      : avg > 55
-      ? '💡 <span style="color:var(--gold)">Good start — add more depth and unique angles.</span>'
-      : '📝 <span style="color:var(--text2)">Keep writing! More content = higher quality score.</span>';
+ 
+    /* Overall bar */
+    const overallEl = document.getElementById('quality-overall');
+    const gradeEl   = document.getElementById('quality-grade');
+    const pctEl     = document.getElementById('quality-pct');
+    const barEl     = document.getElementById('quality-bar-overall');
+    if (overallEl) overallEl.style.display = 'block';
+    if (pctEl)     pctEl.textContent = overall + '%';
+    if (barEl) {
+      barEl.style.width = overall + '%';
+      barEl.style.background = overall >= 75 ? 'var(--green)' : overall >= 50 ? 'var(--accent)' : 'var(--red)';
+    }
+    if (gradeEl) {
+      if (overall >= 85) gradeEl.textContent = '🏆 Excellent';
+      else if (overall >= 70) gradeEl.textContent = '✅ Good';
+      else if (overall >= 50) gradeEl.textContent = '💡 Developing';
+      else gradeEl.textContent = '📝 Early draft';
+    }
+ 
+    /* ── Specific actionable tips ───────────────────── */
+    const tips = [];
+    if (wordCount < 300)
+      tips.push({ type:'warn', text: `Only ${wordCount} words — aim for 300+ for a complete article` });
+    if (avgSentLen > 25)
+      tips.push({ type:'warn', text: `Average sentence is ${Math.round(avgSentLen)} words — try breaking long sentences` });
+    if (!hasHeaders && wordCount > 200)
+      tips.push({ type:'tip', text: 'Add ## headers to break your article into sections' });
+    if (!hasLists && wordCount > 150)
+      tips.push({ type:'tip', text: 'Use - bullet points or 1. numbered lists to improve scannability' });
+    if (titleWords < 5)
+      tips.push({ type:'warn', text: 'Title is too short — aim for 5–12 words for better engagement' });
+    if (titleWords > 15)
+      tips.push({ type:'warn', text: 'Title is too long — trim it to under 15 words' });
+    if (questions === 0 && wordCount > 100)
+      tips.push({ type:'tip', text: 'Add a question to engage your readers' });
+    if (numbers < 2 && wordCount > 200)
+      tips.push({ type:'tip', text: 'Add statistics or numbers to add credibility' });
+    if (overall >= 75 && tips.length === 0)
+      tips.push({ type:'good', text: 'Great quality! Your article is ready to publish.' });
+ 
+    const tipsEl = document.getElementById('quality-tips');
+    if (tipsEl) {
+      tipsEl.innerHTML = tips.slice(0,4).map(t => `
+        <div class="quality-tip quality-tip-${t.type}">
+          ${t.type === 'warn' ? '⚠️' : t.type === 'good' ? '✅' : '💡'}
+          <span>${t.text}</span>
+        </div>`).join('');
+    }
   }
-
-  function publishArticle() {
+function publishArticle() {
     const title   = document.getElementById('article-title')?.value.trim();
     const text    = document.getElementById('article-editor')?.value.trim();
     const cat     = document.getElementById('article-cat')?.value;
     const imgUrl  = document.getElementById('article-img')?.value.trim() || '';
     const tagsVal = document.getElementById('article-tags')?.value || '';
     const editId  = document.getElementById('article-editor')?.dataset?.editId;
-
+ 
     if (!title || !text) { IBlog.utils.toast('Add a title and content first!', 'error'); return; }
     const isPrem = IBlog.state.currentUser?.plan === 'premium';
     const tags   = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
-
+ 
     if (editId) {
       const existing = IBlog.state.articles.find(x => x.id === parseInt(editId));
       if (existing) {
-        existing.title   = title;
-        existing.excerpt = text.substring(0, 160) + (text.length > 160 ? '…' : '');
-        existing.body    = text;
-        existing.cat     = cat !== 'Select Category' ? cat : existing.cat;
-        if (imgUrl) existing.img = imgUrl;
-        existing.readTime = Math.max(1, Math.ceil(text.split(' ').length / 200)) + ' min';
-        existing.tags    = tags;
+        Object.assign(existing, {
+          title, body: text,
+          excerpt: text.substring(0,160) + (text.length>160?'…':''),
+          cat: cat !== 'Select Category' ? cat : existing.cat,
+          img: imgUrl || existing.img,
+          readTime: Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min',
+          tags,
+        });
         delete document.getElementById('article-editor').dataset.editId;
         _clearWriter();
         IBlog.Feed.build();
         buildMyArticles();
         IBlog.Dashboard.navigateTo('home');
-        IBlog.utils.toast('✏️ Article updated successfully!', 'success');
+        IBlog.utils.toast('Article updated!', 'success');
         return;
       }
     }
-
+ 
     const a = {
       id: Date.now(),
-      author: IBlog.state.currentUser?.name || 'Amara',
+      author:        IBlog.state.currentUser?.name || 'Amara',
       authorInitial: IBlog.state.currentUser?.initial || 'A',
-      authorColor: 'var(--accent)',
-      cat: cat !== 'Select Category' ? cat : 'General',
-      img: imgUrl || null,
+      authorColor:   'var(--accent)',
+      cat:           cat !== 'Select Category' ? cat : 'General',
+      img:           imgUrl || null,
       title,
-      excerpt: text.substring(0, 160) + (text.length > 160 ? '…' : ''),
-      body: text,
-
-      templateId: IBlog.Templates.selectedId() || null,
-      readTime: Math.max(1, Math.ceil(text.split(' ').length / 200)) + ' min',
+      excerpt:       text.substring(0,160) + (text.length>160?'…':''),
+      body:          text,
+      templateId:    IBlog.Templates?.selectedId() || null,
+      readTime:      Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min',
       likes: 0, comments: [], reposts: 0,
       bookmarked: false, liked: false,
       quality: text.length > 300 ? 'high' : 'med',
@@ -353,19 +458,31 @@ IBlog.Views = (() => {
     IBlog.Feed.build();
     buildMyArticles();
     IBlog.Dashboard.navigateTo('home');
-    IBlog.utils.toast(isPrem ? '⭐ Premium article published & featured!' : '🚀 Article published!', 'success');
+    IBlog.utils.toast(isPrem ? '⭐ Premium article published!' : '🚀 Article published!', 'success');
   }
 
   function _clearWriter() {
-    ['article-title', 'article-editor', 'article-img', 'article-tags'].forEach(id => {
+    ['article-title','article-editor','article-img','article-tags'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
     const catEl = document.getElementById('article-cat');
     if (catEl) catEl.value = 'Select Category';
-    document.getElementById('template-preview')?.classList.remove('visible');
-    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
+    const badge = document.getElementById('wtr-tpl-badge');
+    if (badge) badge.style.display = 'none';
+    /* Reset quality */
+    ['read','depth','struct','eng'].forEach(k => {
+      const v = document.getElementById('q-'+k);
+      const b = document.getElementById('qb-'+k);
+      if (v) v.textContent = '—';
+      if (b) b.style.width = '0%';
+    });
+    document.getElementById('quality-overall')?.style.setProperty('display','none');
+    document.getElementById('quality-tips').innerHTML = '';
   }
+ 
+
 
   /* ── My Articles ─────────────────────────────────────── */
   function buildMyArticles() {
@@ -436,63 +553,7 @@ IBlog.Views = (() => {
   }
 
   /* ── Right Rail ──────────────────────────────────────── */
-  function buildRailTopics() {
-    const el = document.getElementById('trending-chips');
-    if (!el) return;
-    el.innerHTML = IBlog.TOPICS.map(t =>
-      `<span class="topic-chip" onclick="IBlog.Views.searchTopic('${t}')">${t}</span>`
-    ).join('');
-  }
-
-  function buildRailCommunities() {
-    const el = document.getElementById('rail-communities');
-    if (!el) return;
-    el.innerHTML = IBlog.COMMUNITIES.slice(0, 4).map((c, i) => `
-<div class="community-item">
-  <div class="com-icon">${c.icon}</div>
-  <div class="com-info">
-    <strong>${c.name}</strong>
-    <small>${c.members} members</small>
-  </div>
-  <button class="join-btn${IBlog.state.joinedCommunities.has(i) ? ' joined' : ''}"
-    id="rail-join-${i}" onclick="IBlog.Communities.toggle(${i}, this)">
-    ${IBlog.state.joinedCommunities.has(i) ? 'Joined' : 'Join'}
-  </button>
-</div>`).join('');
-  }
-
-  function buildTopAuthors() {
-    const el = document.getElementById('top-authors');
-    if (!el) return;
-    el.innerHTML = IBlog.AUTHORS.map(a => `
-<div class="author-item">
-  <div class="card-avatar" style="width:34px;height:34px;background:${a.color};">${a.initial}</div>
-  <div>
-    <div style="font-size:13px;font-weight:600;color:var(--text);">${a.name}</div>
-    <div style="font-size:11px;color:var(--text2);">${a.tag} · ${a.followers}</div>
-  </div>
-  <button class="follow-btn" onclick="this.classList.toggle('following');this.textContent=this.classList.contains('following')?'Following':'Follow';IBlog.utils.toast(this.classList.contains('following')?'✅ Following!':'Unfollowed');">Follow</button>
-</div>`).join('');
-  }
-
-  /* ── Profile ─────────────────────────────────────────── */
-  function buildProfile() {
-    const u = IBlog.state.currentUser;
-    if (!u) return;
-    const isPrem = u.plan === 'premium';
-    const nameEl = document.getElementById('profile-name');
-    const avatarEl = document.getElementById('profile-avatar-big');
-    const badgeEl = document.getElementById('profile-premium-badge');
-    if (nameEl) nameEl.textContent = u.name;
-    if (avatarEl) {
-      avatarEl.textContent = u.initial;
-      avatarEl.style.background = isPrem ? 'linear-gradient(135deg,#d4a017,#c8922a)' : 'var(--accent)';
-    }
-    if (badgeEl) badgeEl.style.display = isPrem ? 'inline-flex' : 'none';
-    const myCount = document.getElementById('profile-article-count');
-    if (myCount) myCount.textContent = IBlog.state.articles.filter(a => a.authorInitial === u.initial).length;
-  }
-
+  
   /* ── Accent Picker ───────────────────────────────────── */
   function buildAccentPicker() {
     const el = document.getElementById('accent-dots');
@@ -518,10 +579,8 @@ IBlog.Views = (() => {
     initMap, selectCountry, openMapArticle,
     buildActivity,
     buildTrends,
-    doSearch, searchTopic,
     buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle,
     buildMyArticles, buildSaved, buildNotifications,
-    buildRailTopics, buildRailCommunities, buildTopAuthors,
-    buildProfile, buildAccentPicker, buildCategorySelect,
+     buildAccentPicker, buildCategorySelect,
   };
 })();
