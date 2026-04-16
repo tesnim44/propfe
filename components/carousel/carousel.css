@@ -1,13 +1,209 @@
-/* ── Landing Carousel ────────────────────────────────────── */
-.carousel-section{padding:70px 0;overflow:hidden;}
-.carousel-header{padding:0 72px;margin-bottom:22px;}
-.carousel-track{display:flex;gap:22px;animation:slideAnim 32s linear infinite;width:max-content;padding:8px 72px;}
-.carousel-track:hover{animation-play-state:paused;}
-@keyframes slideAnim{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-.c-card{width:300px;background:var(--surface);border:1.5px solid var(--border);border-radius:18px;overflow:hidden;flex-shrink:0;transition:.25s;cursor:pointer;}
-.c-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);}
-.c-img{height:160px;background-size:cover;background-position:center;background-color:var(--bg3);}
-.c-body{padding:18px;}
-.c-cat{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
-.c-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:6px;line-height:1.3;color:var(--text);}
-.c-meta{font-size:11px;color:var(--text2);display:flex;gap:10px;}
+/* ═══════════════════════════════════════════════
+   IBLOG — Carousel Component
+   components/carousel/carousel.css
+═══════════════════════════════════════════════ */
+
+.carousel-section {
+  padding: 72px 0 80px;
+  overflow: hidden;
+ 
+  border-top: 1px solid #e8e4dc;
+  border-bottom: none;
+}
+
+.carousel-header {
+  padding: 0 var(--gutter);
+  max-width: calc(var(--max-w) + var(--gutter) * 2);
+  margin: 0 auto 36px;
+  padding-left: 50px;
+}
+
+.carousel-header h2 {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 700;
+  color: #111;
+  margin-top: 6px;
+  letter-spacing: -0.5px;
+}
+
+.carousel-header .section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Wrapper */
+.carousel-wrapper {
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+}
+.carousel-wrapper:active { cursor: grabbing; }
+
+.carousel-wrapper::before,
+.carousel-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 100px;
+  z-index: 2;
+  pointer-events: none;
+}
+.carousel-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #fff 0%, transparent 100%);
+}
+.carousel-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, #fff 0%, transparent 100%);
+}
+
+/* Track */
+.carousel-track {
+  display: flex;
+  gap: 16px;
+  padding: 8px 40px 20px;
+  animation: carouselScroll 50s linear infinite;
+  width: max-content;
+  will-change: transform;
+}
+.carousel-track.paused { animation-play-state: paused; }
+
+@keyframes carouselScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Card */
+.c-card {
+  width: 260px;
+  background: #fff;
+  border: 1px solid #e8e4dc;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform .25s cubic-bezier(.25,.46,.45,.94),
+              box-shadow .25s cubic-bezier(.25,.46,.45,.94),
+              border-color .2s;
+  position: relative;
+}
+.c-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(0,0,0,.10);
+  border-color: #ccc;
+}
+
+/* Image */
+.c-img {
+  height: 155px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: #f0ede8;
+}
+.c-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .4s cubic-bezier(.25,.46,.45,.94);
+  pointer-events: none;
+  draggable: false;
+}
+.c-card:hover .c-img img { transform: scale(1.05); }
+
+.c-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.38) 100%);
+  z-index: 1;
+  transition: opacity .25s;
+}
+
+/* Read button — appears on hover */
+.c-read-btn {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  z-index: 3;
+  background: #fff;
+  color: #111;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.c-card:hover .c-read-btn {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Body */
+.c-body { padding: 14px 16px 16px; }
+
+.c-cat {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.c-title {
+  font-family: var(--font-serif);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.4;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.c-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #888;
+}
+.c-meta-dot { width:2px; height:2px; border-radius:50%; background:#bbb; flex-shrink:0; }
+.c-read-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: .5px;
+}
+
+/* Dark mode */
+body.dark .carousel-section { background: var(--bg2); }
+body.dark .carousel-wrapper::before { background: linear-gradient(to right, var(--bg2), transparent); }
+body.dark .carousel-wrapper::after  { background: linear-gradient(to left,  var(--bg2), transparent); }
+body.dark .c-card { background: var(--surface); border-color: var(--border); }
+body.dark .c-card:hover { border-color: var(--border-strong); box-shadow: 0 20px 48px rgba(0,0,0,.35); }
+body.dark .c-title { color: var(--text); }
+body.dark .c-img { background: var(--bg3); }
+body.dark .carousel-header h2 { color: var(--text); }
+body.dark .c-read-btn { background: var(--accent); color: #fff; }
