@@ -1,5 +1,5 @@
 <?php
-class SavedArticle {
+class savedarticle {
 
     public $id;
     public $userId;

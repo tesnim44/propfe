@@ -303,7 +303,7 @@
 
     if (email === 'admin@iblog.com' && password === 'admin2026') {
       sessionStorage.setItem('adminLoggedIn', 'true');
-      window.location.href = 'components/admin/admin.html';
+      window.location.href = 'components/admin/admin.php';
       return;
     }
 
@@ -574,7 +574,7 @@
             <a class="auth-arrow-link premium" onclick="showPremium()">Upgrade to Premium ${ARROW}</a>
           </div>
           <div class="auth-link-row">
-            <a class="auth-arrow-link admin" onclick="window.location.href='components/admin/admin.html'">Admin Panel ${ARROW}</a>
+            <a class="auth-arrow-link admin" onclick="window.location.href='components/admin/admin.php'">Admin Panel ${ARROW}</a>
           </div>
         </div>
       </div>

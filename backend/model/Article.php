@@ -1,5 +1,5 @@
 <?php
-class Article {
+class article {
 
     public $id;
     public $authorId;

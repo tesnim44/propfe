@@ -1,10 +1,14 @@
 <?php
-class User {
+
+declare(strict_types=1);
+
+class Users {
 
     public $id;
     public $name;
     public $email;
     public $password;
+    public $plan;
     public $isPremium;
     public $isAdmin;
     public $avatarUrl;
@@ -14,8 +18,10 @@ class User {
         $this->name = $name;
         $this->email = $email;
         $this->password = $password;
+        $this->plan = $plan;
         $this->isPremium = $isPremium;
         $this->isAdmin = $isAdmin;
         $this->avatarUrl = $avatarUrl;
     }
 }
+

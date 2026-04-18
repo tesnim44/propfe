@@ -1,3 +1,4 @@
+<?php declare(strict_types=1); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,53 +10,53 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/global.css" />
     <link rel="stylesheet" href="css/Darkmode.css" />
-    <link rel="stylesheet" href="components/preloader/preloader.css" />
-    <link rel="stylesheet" href="components/auth/auth.css" />
-    <link rel="stylesheet" href="components/landing-nav/landing-nav.css" />
+    <link rel="stylesheet" href="backend/view/components/preloader/preloader.css" />
+    <link rel="stylesheet" href="backend/view/components/auth/auth.css" />
+    <link rel="stylesheet" href="backend/view/components/landing-nav/landing-nav.css" />
     <link rel="stylesheet" href="css/writer.css"/>
-    <link rel="stylesheet" href="components/hero/hero.css" />
-    <link rel="stylesheet" href="components/ticker/ticker.css" />
-    <link rel="stylesheet" href="components/landing-feat/feat.css" />
-    <link rel="stylesheet" href="components/features/features.css" />
-    <link rel="stylesheet" href="components/carousel/carousel.css" />
-    <link rel="stylesheet" href="components/HIW/hiw.css" />
-    <link rel="stylesheet" href="components/pricing/pricing.css" />
-    <link rel="stylesheet" href="components/cta/cta.css" /> 
-        <link rel="stylesheet" href="components/testimonial/testimonial.css" />   
+    <link rel="stylesheet" href="backend/view/components/hero/hero.css" />
+    <link rel="stylesheet" href="backend/view/components/ticker/ticker.css" />
+    <link rel="stylesheet" href="backend/view/components/landing-feat/feat.css" />
+    <link rel="stylesheet" href="backend/view/components/features/features.css" />
+    <link rel="stylesheet" href="backend/view/components/carousel/carousel.css" />
+    <link rel="stylesheet" href="backend/view/components/HIW/hiw.css" />
+    <link rel="stylesheet" href="backend/view/components/pricing/pricing.css" />
+    <link rel="stylesheet" href="backend/view/components/cta/cta.css" /> 
+        <link rel="stylesheet" href="backend/view/components/testimonial/testimonial.css" />   
     <link
       rel="stylesheet"
-      href="components/dashboard-layout/dashboard-layout.css"
+      href="backend/view/components/dashboard-layout/dashboard-layout.css"
     />
-    <link rel="stylesheet" href="components/left-rail/left-rail.css" />
-    <link rel="stylesheet" href="components/compose-box/compose-box.css" />
-    <link rel="stylesheet" href="components/article-card/article-card.css" />
+    <link rel="stylesheet" href="backend/view/components/left-rail/left-rail.css" />
+    <link rel="stylesheet" href="backend/view/components/compose-box/compose-box.css" />
+    <link rel="stylesheet" href="backend/view/components/article-card/article-card.css" />
     <link
       rel="stylesheet"
-      href="components/podcast-player/podcast-player.css"
+      href="backend/view/components/podcast-player/podcast-player.css"
     />
     <link
       rel="stylesheet"
-      href="components/article-reader/article-reader.css"
+      href="backend/view/components/article-reader/article-reader.css"
     />
     <link rel="stylesheet" href="css/templates.css"/>
     <link rel="stylesheet" href="css/writer.css"/>
 
    
-    <link rel="stylesheet" href="components/right-rail/right-rail.css" />
-    <link rel="stylesheet" href="components/map/map.css" />
-    <link rel="stylesheet" href="components/activity/activity.css" />
-    <link rel="stylesheet" href="components/search/search.css" />
-    <link rel="stylesheet" href="components/stats/stats.css" />
-    <link rel="stylesheet" href="components/communities/communities.css" />
-    <link rel="stylesheet" href="components/chat/chat.css" />
-    <link rel="stylesheet" href="components/trends/trends.css" />
-    <link rel="stylesheet" href="components/profile/profile.css" />
-    <link rel="stylesheet" href="components/notifications/notifications.css" />
-    <link rel="stylesheet" href="components/my-articles/my-articles.css" />
-    <link rel="stylesheet" href="components/Onboarding/Onboarding.css" />
+    <link rel="stylesheet" href="backend/view/components/right-rail/right-rail.css" />
+    <link rel="stylesheet" href="backend/view/components/map/map.css" />
+    <link rel="stylesheet" href="backend/view/components/activity/activity.css" />
+    <link rel="stylesheet" href="backend/view/components/search/search.css" />
+    <link rel="stylesheet" href="backend/view/components/stats/stats.css" />
+    <link rel="stylesheet" href="backend/view/components/communities/communities.css" />
+    <link rel="stylesheet" href="backend/view/components/chat/chat.css" />
+    <link rel="stylesheet" href="backend/view/components/trends/trends.css" />
+    <link rel="stylesheet" href="backend/view/components/profile/profile.css" />
+    <link rel="stylesheet" href="backend/view/components/notifications/notifications.css" />
+    <link rel="stylesheet" href="backend/view/components/my-articles/my-articles.css" />
+    <link rel="stylesheet" href="backend/view/components/Onboarding/Onboarding.css" />
   </head>
-  <link rel="stylesheet" href="components/admin/admin.css">
-  <link rel="stylesheet" href="components/landing-footer/footer.css">
+  <link rel="stylesheet" href="backend/view/components/admin/admin.css">
+  <link rel="stylesheet" href="backend/view/components/landing-footer/footer.css">
 </head>
 <body>
 
@@ -64,17 +65,16 @@
      ════════════════════════════════════════════════════════ -->
 <div id="preloader-root"></div>
 <div id="toast-root"></div>
-<script src="components/preloader/preloader.js"></script>
+<script src="backend/view/components/preloader/preloader.js"></script>
 
 <!-- ════════════════════════════════════════════════════════
      AUTH MODALS
-     ════════════════════════════════════════════════════════ -->
+     ══════════════════════════════════════════════════════ -->
 <div id="auth-root"></div>
 
-<!-- ════════════════════════════════════════════════════════
-     ARTICLE READER OVERLAY
-     ════════════════════════════════════════════════════════ -->
-<div id="article-reader-overlay" onclick="if(event.target===this)IBlog.Feed.closeReader()">
+<!-- ═══════════════════════════════════════════════════════════
+     ARTICLE READER
+     ════════════════════════════════════════════════════════ --> 
   <div id="article-reader-content"></div>
 </div>
 
@@ -601,40 +601,40 @@
     <!-- JS COMPONENTS (ordre de chargement strict) -->
 <script src="toggledark.js"></script>
 <script src="data.js"></script>
-<script src="components/admin/admin.js"></script>
+<script src="backend/view/components/admin/admin.js"></script>
 <script src="js/podcast.js"></script>
 <script src="js/templates.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/views.js"></script>
 <script src="js/writer.js"></script>
-<script src="components/auth/auth.js"></script>
-<script src="components/chat/chat.js"></script>
-<script src="components/landing-nav/landing-nav.js"></script>
-<script src="components/landing-feat/feat.js"></script>
-<script src="components/carousel/carousel.js"></script>
-<script src="components/features/features.js"></script>
-<script src="components/HIW/hiw.js"></script>
-<script src="components/pricing/pricing.js"></script>
-<script src="components/hero/hero.js"></script>
-<script src="components/cta/cta.js"></script>
-<script src="components/testimonial/testimonial.js"></script>
-<script src="components/landing-footer/footer.js"></script>
-<script src="components/stats/stats.js"></script>
-<script src="components/search/search.js"></script>
-<script src="components/left-rail/left-rail.js"></script>
-<script src="components/dashboard-layout/dashboard.js"></script>
-<script src="components/notifications/notifications.js"></script>
-<script src="components/article-card/article-card.js"></script>
-<script src="components/my-articles/my-articles.js"></script>
-<script src="components/right-rail/right-rail.js"></script>
-<script src="components/analytics/analytics.js"></script>
-<script src="components/trends/trends.js"></script>
-<script src="components/communities/communities.js"></script>
+<script src="backend/view/components/auth/auth.js"></script>
+<script src="backend/view/components/chat/chat.js"></script>
+<script src="backend/view/components/landing-nav/landing-nav.js"></script>
+<script src="backend/view/components/landing-feat/feat.js"></script>
+<script src="backend/view/components/carousel/carousel.js"></script>
+<script src="backend/view/components/features/features.js"></script>
+<script src="backend/view/components/HIW/hiw.js"></script>
+<script src="backend/view/components/pricing/pricing.js"></script>
+<script src="backend/view/components/hero/hero.js"></script>
+<script src="backend/view/components/cta/cta.js"></script>
+<script src="backend/view/components/testimonial/testimonial.js"></script>
+<script src="backend/view/components/landing-footer/footer.js"></script>
+<script src="backend/view/components/stats/stats.js"></script>
+<script src="backend/view/components/search/search.js"></script>
+<script src="backend/view/components/left-rail/left-rail.js"></script>
+<script src="backend/view/components/dashboard-layout/dashboard.js"></script>
+<script src="backend/view/components/notifications/notifications.js"></script>
+<script src="backend/view/components/article-card/article-card.js"></script>
+<script src="backend/view/components/my-articles/my-articles.js"></script>
+<script src="backend/view/components/right-rail/right-rail.js"></script>
+<script src="backend/view/components/stats/stats.js"></script>
+<script src="backend/view/components/trends/trends.js"></script>
+<script src="backend/view/components/communities/communities.js"></script>
 
 <!-- ✅ AJOUTER ACTIVITY ICI (avant profile.js car profile en dépend) -->
-<script src="components/activity/activity.js"></script>
-<script src="components/profile/profile.js"></script>
-<script src="components/Onboarding/Onboarding.js"></script>
+<script src="backend/view/components/activity/activity.js"></script>
+<script src="backend/view/components/profile/profile.js"></script>
+<script src="backend/view/components/Onboarding/Onboarding.js"></script>
 
 <script src="app.js"></script>
 
