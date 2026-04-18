@@ -1,175 +1,135 @@
-// testimonial.js
-// Mounts the Testimonial section into a target element.
-// Usage from index.html:
-//   <div id="testimonial-root"></div>
-//   <script src="testimonial.js"></script>
+// backend/view/components/testimonial/testimonial.js
 
 (function () {
-  // ── Template ─────────────────────────────────────────────────────────────
+  'use strict';
 
+  // ── Derive this component's base path from its own <script src> ──────────────
+  // Works regardless of which page loads this script.
+  const _scriptEl  = document.querySelector('script[src*="testimonial/testimonial.js"]');
+  const _base      = _scriptEl
+    ? _scriptEl.src.replace(location.origin, '').replace(/testimonial\.js([?#].*)?$/, '')
+    : 'backend/view/components/testimonial/';
+
+  // ── Inject CSS once ──────────────────────────────────────────────────────────
+  function injectStyles() {
+    const id = 'testimonial-css';
+    if (document.getElementById(id)) return;
+    const link  = document.createElement('link');
+    link.id     = id;
+    link.rel    = 'stylesheet';
+    link.href   = _base + 'testimonial.css';   // ← was bare 'testimonial.css'
+    document.head.appendChild(link);
+  }
+
+  // ── Data ─────────────────────────────────────────────────────────────────────
   const TESTIMONIALS = [
     {
-      stars: 5,
-      text: "IBlog replaced my morning scroll entirely. The AI surfaces stories I'd never find on my own, and the podcast feature is genuinely incredible during commutes.",
-      initials: "LB",
-      avatarClass: "avatar--purple",
-      name: "Layla Benkhedda",
-      role: "Product Designer",
-      featured: false,
+      name:    'Sophia Marlowe',
+      role:    'Science Writer',
+      avatar:  'SM',
+      color:   '#6c63ff',
+      text:    'IBlog transformed how I share research. The editor is clean, the audience is engaged, and Premium templates save me hours every week.',
+      stars:   5,
+      plan:    'Premium',
     },
     {
-      stars: 5,
-      text: "I read 3× more than I used to and actually retain it. The activity tracker gamified my habits in a way that feels healthy, not addictive.",
-      initials: "MC",
-      avatarClass: "avatar--teal",
-      name: "Marcus Chen",
-      role: "Startup Founder",
-      badge: "★ PREMIUM MEMBER",
-      featured: true,
+      name:    'Luca Ferretti',
+      role:    'Tech Entrepreneur',
+      avatar:  'LF',
+      color:   '#f59e0b',
+      text:    'The Global Trend Map alone is worth the upgrade. I can see exactly what topics are heating up in any country before I write.',
+      stars:   5,
+      plan:    'Premium',
     },
     {
-      stars: 5,
-      text: "The Global Trend Map alone is worth the premium subscription. Knowing what German engineers or Japanese investors are reading is invaluable context.",
-      initials: "PN",
-      avatarClass: "avatar--brown",
-      name: "Priya Nair",
-      role: "Research Analyst",
-      featured: false,
+      name:    'Aisha Kamara',
+      role:    'Neuroscience PhD',
+      avatar:  'AK',
+      color:   '#10b981',
+      text:    'I have tried every blogging platform. IBlog is the only one built for people who care about ideas, not just clicks.',
+      stars:   5,
+      plan:    'Free',
     },
     {
-      stars: 4,
-      text: "I use the article templates for my newsletter every week. The quality bar they set has genuinely made my writing sharper.",
-      initials: "TE",
-      avatarClass: "avatar--green",
-      name: "Tom Elsworth",
-      role: "Journalist",
-      featured: false,
+      name:    'James Whitfield',
+      role:    'Geopolitics Analyst',
+      avatar:  'JW',
+      color:   '#ef4444',
+      text:    'Publishing long-form analysis used to mean fighting a clunky editor. Here it just flows. My readers noticed the difference immediately.',
+      stars:   5,
+      plan:    'Premium',
     },
     {
-      stars: 5,
-      text: "Community spaces are unlike Reddit — conversations are focused, readers are thoughtful. It feels like a private club for curious people.",
-      initials: "SR",
-      avatarClass: "avatar--red",
-      name: "Sofia Reyes",
-      role: "UX Researcher",
-      featured: false,
+      name:    'Yuki Tanaka',
+      role:    'Climate Researcher',
+      avatar:  'YT',
+      color:   '#3b82f6',
+      text:    'The community here actually reads. My article on ocean acidification reached 12 000 people in a week — on a free plan.',
+      stars:   5,
+      plan:    'Free',
     },
     {
-      stars: 5,
-      text: "The reading streak feature is stupid-addictive in the best way. I haven't missed a day in 4 months. My team lead noticed.",
-      initials: "DP",
-      avatarClass: "avatar--blue",
-      name: "David Park",
-      role: "Software Engineer",
-      featured: false,
+      name:    'Elena Vasquez',
+      role:    'Economist',
+      avatar:  'EV',
+      color:   '#8b5cf6',
+      text:    'Priority feed visibility made a real difference. My subscriber count doubled in the first month after upgrading.',
+      stars:   5,
+      plan:    'Premium',
     },
   ];
 
-  function renderStars(count) {
-    const filled = "★".repeat(count);
-    const empty = count < 5 ? `<span class="star-empty">${"★".repeat(5 - count)}</span>` : "";
-    return filled + empty;
+  // ── Render ────────────────────────────────────────────────────────────────────
+  function stars(n) {
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
   }
 
-  function renderCard(t, index) {
-    const featuredClass = t.featured ? " testimonial-card--featured" : "";
-    const badge = t.badge
-      ? `<span class="badge">${t.badge}</span>`
-      : "";
+  function render() {
+    const root = document.getElementById('testimonial-root');
+    if (!root) return;
 
-    return `
-      <div class="testimonial-card${featuredClass}" style="animation-delay:${0.05 + index * 0.1}s">
-        <div class="stars">${renderStars(t.stars)}</div>
-        <p class="testimonial-text">${t.text}</p>
-        <div class="testimonial-author">
-          <div class="avatar ${t.avatarClass}">${t.initials}</div>
-          <div class="author-info">
-            <span class="author-name">${t.name}</span>
-            <span class="author-role">${t.role}</span>
-            ${badge}
-          </div>
-        </div>
-      </div>`;
-  }
-
-  function renderSection() {
-    return `
-      <section class="testimonial-section" id="testimonials">
+    root.innerHTML = `
+      <section class="testimonial-section">
         <div class="testimonial-header">
-          <span class="testimonial-label">SOCIAL PROOF</span>
-          <h2 class="testimonial-title">Loved by <em>readers</em></h2>
-          <div class="testimonial-divider"></div>
+          <h2 class="testimonial-title">Loved by writers &amp; thinkers worldwide</h2>
+          <p class="testimonial-sub">Join thousands sharing knowledge on IBlog</p>
         </div>
         <div class="testimonial-grid">
-          ${TESTIMONIALS.map(renderCard).join("")}
+          ${TESTIMONIALS.map(t => `
+            <div class="testimonial-card">
+              <div class="testimonial-stars">${stars(t.stars)}</div>
+              <p class="testimonial-text">"${t.text}"</p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar" style="background:${t.color}">${t.avatar}</div>
+                <div>
+                  <strong class="testimonial-name">${t.name}</strong>
+                  <span class="testimonial-role">${t.role}</span>
+                </div>
+                <span class="testimonial-plan ${t.plan === 'Premium' ? 'plan-premium' : 'plan-free'}">
+                  ${t.plan === 'Premium' ? '⭐ ' : ''}${t.plan}
+                </span>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </section>`;
   }
 
-  // ── CSS injection ─────────────────────────────────────────────────────────
-
-  function injectStyles() {
-    if (document.getElementById("testimonial-styles")) return;
-    const link = document.createElement("link");
-    link.id = "testimonial-styles";
-    link.rel = "stylesheet";
-    link.href = "testimonial.css";
-    document.head.appendChild(link);
-  }
-
-  // ── Mount ─────────────────────────────────────────────────────────────────
-
-  function mount(selector) {
-    const root = document.querySelector(selector || "testimonial-root");
-    if (!root) {
-      console.warn(
-        "[testimonial.js] Root element not found. " +
-        "Add <div id=\"testimonial-root\"></div> to your HTML."
-      );
-      return;
-    }
+  // ── Mount ─────────────────────────────────────────────────────────────────────
+  function mount() {
     injectStyles();
-    root.innerHTML = renderSection();
+    render();
   }
-
-  // ── Scroll-reveal (IntersectionObserver) ──────────────────────────────────
-
-  function initReveal() {
-    if (!("IntersectionObserver" in window)) return;
-
-    const cards = document.querySelectorAll(".testimonial-card");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.style.animationPlayState = "running";
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15 }
-    );
-
-    cards.forEach((card) => {
-      card.style.animationPlayState = "paused";
-      observer.observe(card);
-    });
-  }
-
-  // ── Public API ────────────────────────────────────────────────────────────
-
-  window.Testimonial = { mount, initReveal };
-
-  // ── Auto-mount on DOMContentLoaded ────────────────────────────────────────
 
   function autoMount() {
-    mount("#testimonial-root");
-    initReveal();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mount);
+    } else {
+      mount();
+    }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", autoMount);
-  } else {
-    autoMount();
-  }
+  autoMount();
+
+  window.IBlogTestimonial = { mount, render };
 })();

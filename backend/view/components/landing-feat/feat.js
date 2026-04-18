@@ -8,7 +8,7 @@ function renderHero(onReady) {
   const root = document.getElementById('landing-feat-root');
   if (!root) return;
 
-  fetch('components/landing-feat/feat.html')
+  fetch('backend/view/components/landing-feat/feat.html')
     .then(r => {
       if (!r.ok) throw new Error('Failed to load feat.html — ' + r.status);
       return r.text();

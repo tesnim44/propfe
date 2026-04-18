@@ -187,41 +187,110 @@
 
   // ── Social Login ──────────────────────────────────────────
 
-  window.socialLogin = function(provider) {
-    const providers = {
-      google:   { name: 'Google',   color: '#4285F4' },
-      facebook: { name: 'Facebook', color: '#1877F2' },
-      twitter:  { name: 'X',        color: '#000000' },
-      github:   { name: 'GitHub',   color: '#333333' },
-    };
-    const p = providers[provider];
-    if (!p) return;
+  // ── Auth Actions ──────────────────────────────────────────
 
-    const btn = event.currentTarget;
-    const orig = btn.innerHTML;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".25"/><path d="M3 12a9 9 0 019-9"/></svg>`;
-    btn.disabled = true;
+window.doSignup = function() {
+  const name     = document.getElementById('su-name')?.value.trim();
+  const email    = document.getElementById('su-email')?.value.trim();
+  const password = document.getElementById('su-pass')?.value;
+  const pass2    = document.getElementById('su-pass2')?.value;
+  const terms    = document.getElementById('su-terms')?.checked;
+  const plan     = sessionStorage.getItem('selectedPlan') || null;
 
-    setTimeout(() => {
-      btn.innerHTML = orig;
-      btn.disabled = false;
+  let valid = true;
+  if (!plan)                                                    { IBlog.utils?.toast('Please select a plan', 'error'); return; }
+  if (!name || name.length < 2)                                 { _showErr('su-name',  'Name must be at least 2 characters'); valid = false; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || ''))         { _showErr('su-email', 'Please enter a valid email'); valid = false; }
+  if (!password || password.length < 6)                         { _showErr('su-pass',  'Password must be at least 6 characters'); valid = false; }
+  if (password !== pass2)                                       { _showErr('su-pass2', 'Passwords do not match'); valid = false; }
+  if (email === 'admin@iblog.com')                              { _showErr('su-email', 'This email is reserved'); valid = false; }
+  if (!terms)                                                   { IBlog.utils?.toast('Please agree to the terms', 'error'); valid = false; }
 
-      const user = {
-        name: `${p.name} User`,
-        email: `user@${provider}.demo`,
-        plan: 'free',
-        isPremium: false,
-        provider,
-      };
-      sessionStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('user', JSON.stringify(user));
-      IBlog.state.currentUser = user;
-      closeAllModals();
-      goToDashboard(_pendingArticleId);
-      _pendingArticleId = null;
-    }, 1200);
+  // ✅ Block duplicate email registration
+  const existing = localStorage.getItem('user');
+  if (existing) {
+    try {
+      const parsed = JSON.parse(existing);
+      if (parsed.email === email) { _showErr('su-email', 'This email is already registered. Please sign in.'); valid = false; }
+    } catch(e) {}
+  }
+
+  if (!valid) return;
+  _createAccount({ name, email, plan, password });
+};
+
+function _createAccount({ name, email, plan, password }) {
+  const user = {
+    name,
+    email,
+    password,
+    plan,
+    isPremium: false,
+    onboardingComplete: false,
+    initial: (name[0] || 'A').toUpperCase(),
   };
+  // ✅ Persist immediately so sign-in can find them
+  localStorage.setItem('user', JSON.stringify(user));
 
+  if (plan === 'premium') {
+    sessionStorage.setItem('pendingUser', JSON.stringify(user));
+    closeAllModals();
+    setTimeout(() => { showPerks(); document.getElementById('modal-premium')?.classList.add('active'); }, 0);
+  } else {
+    launchOnboarding(user);
+  }
+}
+
+window.doSignin = function() {
+  const email    = document.getElementById('si-email')?.value.trim();
+  const password = document.getElementById('si-pass')?.value;
+
+  let valid = true;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '')) { _showErr('si-email', 'Please enter a valid email'); valid = false; }
+  if (!password || password.length < 6)                 { _showErr('si-pass',  'Password must be at least 6 characters'); valid = false; }
+  if (!valid) return;
+
+  // Admin shortcut
+  if (email === 'admin@iblog.com' && password === 'admin2026') {
+    sessionStorage.setItem('adminLoggedIn', 'true');
+    window.location.href = 'components/admin/admin.php';
+    return;
+  }
+
+  // Look up registered user
+  let user = null;
+  try {
+    const saved = localStorage.getItem('user');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.email === email) user = parsed;
+    }
+  } catch(e) {}
+
+  // ✅ No account found
+  if (!user) {
+    _showErr('si-email', 'No account found. Please sign up first.');
+    return;
+  }
+
+  // ✅ Wrong password
+  if (user.password !== password) {
+    _showErr('si-pass', 'Incorrect password.');
+    return;
+  }
+
+  // ✅ Mark onboarding done if they're signing back in (returning user)
+  if (user.onboardingComplete === false) {
+    user.onboardingComplete = true;
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+
+  sessionStorage.setItem('user', JSON.stringify(user));
+  IBlog.state.currentUser = user;
+  closeAllModals();
+  goToDashboard(_pendingArticleId);
+  _pendingArticleId = null;
+};
   // ── Forgot Password ───────────────────────────────────────
 
   window.doForgotPassword = function() {
@@ -271,18 +340,20 @@
     if (!terms)                                                   { IBlog.utils?.toast('Please agree to the terms', 'error'); valid = false; }
     if (!valid) return;
 
-    _createAccount({ name, email, plan });
+   // in doSignup(), change the last line:
+_createAccount({ name, email, plan, password });  // ← add password
   };
 
-  function _createAccount({ name, email, plan }) {
-    const user = {
-      name,
-      email,
-      plan,
-      isPremium: false,
-      onboardingComplete: false,
-      initial: (name[0] || 'A').toUpperCase(),
-    };
+function _createAccount({ name, email, plan, password }) {  // ← add password param
+  const user = {
+    name,
+    email,
+    password,   // ← persist it
+    plan,
+    isPremium: false,
+    onboardingComplete: false,
+    initial: (name[0] || 'A').toUpperCase(),
+  };
     if (plan === 'premium') {
       sessionStorage.setItem('pendingUser', JSON.stringify(user));
       closeAllModals();
@@ -292,41 +363,56 @@
     }
   }
 
-  window.doSignin = function() {
-    const email    = document.getElementById('si-email')?.value.trim();
-    const password = document.getElementById('si-pass')?.value;
+ window.doSignin = function() {
+  const email    = document.getElementById('si-email')?.value.trim();
+  const password = document.getElementById('si-pass')?.value;
 
-    let valid = true;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '')) { _showErr('si-email', 'Please enter a valid email'); valid = false; }
-    if (!password || password.length < 6)                 { _showErr('si-pass',  'Password must be at least 6 characters'); valid = false; }
-    if (!valid) return;
+  let valid = true;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '')) { _showErr('si-email', 'Please enter a valid email'); valid = false; }
+  if (!password || password.length < 6)                 { _showErr('si-pass',  'Password must be at least 6 characters'); valid = false; }
+  if (!valid) return;
 
-    if (email === 'admin@iblog.com' && password === 'admin2026') {
-      sessionStorage.setItem('adminLoggedIn', 'true');
-      window.location.href = 'components/admin/admin.php';
-      return;
-    }
+  // Admin shortcut
+  if (email === 'admin@iblog.com' && password === 'admin2026') {
+    sessionStorage.setItem('adminLoggedIn', 'true');
+    window.location.href = 'components/admin/admin.php';
+    return;
+  }
 
-    let user;
-    const saved = localStorage.getItem('user');
-    if (saved) {
-      try { const p = JSON.parse(saved); if (p.email === email) user = p; } catch(e) {}
-    }
-    if (!user) user = { name: email.split('@')[0], email, plan: 'free', isPremium: false };
+  // Look up registered user
+  const saved = localStorage.getItem('user');
+  let user = null;
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.email === email) user = parsed;
+    } catch(e) {}
+  }
 
-    if (user.onboardingComplete === false) {
-      launchOnboarding(user);
-      return;
-    }
+  // ✅ Block sign-in if no matching account found
+  if (!user) {
+    _showErr('si-email', 'No account found with this email. Please sign up first.');
+    return;
+  }
 
-    sessionStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('user', JSON.stringify(user));
-    IBlog.state.currentUser = user;
-    closeAllModals();
-    goToDashboard(_pendingArticleId);
-    _pendingArticleId = null;
-  };
+  // ✅ Block sign-in if password doesn't match
+  if (user.password && user.password !== password) {
+    _showErr('si-pass', 'Incorrect password.');
+    return;
+  }
 
+  if (user.onboardingComplete === false) {
+    launchOnboarding(user);
+    return;
+  }
+
+  sessionStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('user', JSON.stringify(user));
+  IBlog.state.currentUser = user;
+  closeAllModals();
+  goToDashboard(_pendingArticleId);
+  _pendingArticleId = null;
+};
   window.demoLogin = function(plan = 'free') {
     const user = {
       name: plan === 'premium' ? 'Demo Premium' : 'Demo Free',

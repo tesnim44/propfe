@@ -4,47 +4,56 @@
 const IBlogAdmin = (() => {
   'use strict';
 
-  const ADMIN_EMAIL    = 'admin@iblog.com';
-  const ADMIN_PASSWORD = 'admin2026';
+  // ── API path: resolve relative to wherever admin.js is loaded from ──────────
+  // Works correctly whether admin.php is opened directly OR embedded via index.php
+  const API = (() => {
+    const tag = document.querySelector('script[src*="admin.js"]');
+    if (tag) {
+      // e.g. "http://localhost/iblog/backend/view/components/admin/admin.js"
+      // → replace filename with admin_api.php, strip the origin prefix
+      const abs = tag.src.replace(/admin\.js([?#].*)?$/, 'admin_api.php');
+      // Make it root-relative so fetch() works from any page depth
+      return abs.startsWith(location.origin)
+        ? abs.slice(location.origin.length)
+        : abs;
+    }
+    // Hard fallback
+    return 'backend/view/components/admin/admin_api.php';
+  })();
 
-  const MOCK_USERS = [
-    { id:1,  name:'Léa Moreau',    email:'lea@iblog.com',    plan:'premium', articles:12, joined:'Jan 12, 2026', status:'active', color:'hsl(280,55%,55%)' },
-    { id:2,  name:'Karim Osei',    email:'karim@iblog.com',  plan:'free',    articles:8,  joined:'Feb 3, 2026',  status:'active', color:'hsl(200,55%,45%)' },
-    { id:3,  name:'Yuki Tanaka',   email:'yuki@iblog.com',   plan:'premium', articles:21, joined:'Jan 5, 2026',  status:'active', color:'hsl(30,65%,50%)'  },
-    { id:4,  name:'Sofia Reyes',   email:'sofia@iblog.com',  plan:'free',    articles:5,  joined:'Mar 1, 2026',  status:'active', color:'hsl(160,50%,40%)' },
-    { id:5,  name:'Marcus Jin',    email:'marcus@iblog.com', plan:'premium', articles:17, joined:'Dec 20, 2025', status:'active', color:'hsl(350,55%,50%)' },
-    { id:6,  name:'Priya Nair',    email:'priya@iblog.com',  plan:'free',    articles:3,  joined:'Mar 10, 2026', status:'active', color:'hsl(240,50%,55%)' },
-    { id:7,  name:'Carlos Mendez', email:'carlos@iblog.com', plan:'premium', articles:9,  joined:'Feb 14, 2026', status:'active', color:'hsl(195,55%,45%)' },
-    { id:8,  name:'Amara Diallo',  email:'amara@iblog.com',  plan:'free',    articles:2,  joined:'Mar 15, 2026', status:'active', color:'hsl(45,65%,45%)'  },
-    { id:9,  name:'Sara Okonkwo',  email:'sara@iblog.com',   plan:'free',    articles:0,  joined:'Mar 18, 2026', status:'active', color:'hsl(320,55%,50%)' },
-    { id:10, name:'Dr. E. Marsh',  email:'elena@iblog.com',  plan:'premium', articles:7,  joined:'Jan 28, 2026', status:'active', color:'hsl(340,55%,50%)' },
-    { id:11, name:'Spam Account',  email:'spam@fake.com',    plan:'free',    articles:0,  joined:'Mar 19, 2026', status:'banned', color:'hsl(0,0%,55%)'    },
-    { id:12, name:'Bot User',      email:'bot@scraper.io',   plan:'free',    articles:0,  joined:'Mar 20, 2026', status:'banned', color:'hsl(0,0%,42%)'    },
-  ];
+  async function api(action, postData = null) {
+    const url  = `${API}?action=${encodeURIComponent(action)}`;
+    const opts = { method: postData ? 'POST' : 'GET' };
+    if (postData) {
+      opts.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+      opts.body    = new URLSearchParams(postData).toString();
+    }
+    const res = await fetch(url, opts);
+    if (!res.ok) {
+      // Surface the real PHP error message in the console
+      const text = await res.text();
+      console.error(`admin_api [${action}] HTTP ${res.status}:`, text);
+      throw new Error(`HTTP ${res.status}: ${text.substring(0, 200)}`);
+    }
+    return res.json();
+  }
 
-  const MOCK_ARTICLES = [
-    { id:1, title:"OpenAI's New Model Lied to Its Trainers to Avoid Being Shut Down",           author:'James Reyes',   authorInitial:'J', authorColor:'hsl(350,55%,50%)', cat:'AI',          views:28400, date:'Mar 10, 2026', label:'featured' },
-    { id:2, title:'Scientists Recorded a Dead Human Brain Reactivating',                         author:'Dr. E. Marsh',  authorInitial:'E', authorColor:'hsl(340,55%,50%)', cat:'Neuroscience', views:19200, date:'Feb 19, 2026', label:'pinned'   },
-    { id:3, title:"James Webb Found Something That Shouldn't Exist at the Edge of the Universe", author:'Carlos Mendez', authorInitial:'C', authorColor:'hsl(195,55%,45%)', cat:'Space',        views:31000, date:'Jan 28, 2026', label:'boosted'  },
-    { id:4, title:'A Single Injection Reversed 20 Years of Aging in Mice',                       author:'Priya Nair',    authorInitial:'P', authorColor:'hsl(240,50%,55%)', cat:'Longevity',    views:42100, date:'Mar 1, 2026',  label:'featured' },
-    { id:5, title:"The Job That Pays $900,000 a Year and AI Still Can't Touch It",               author:'Sara Okonkwo',  authorInitial:'S', authorColor:'hsl(320,55%,50%)', cat:'Economics',    views:9870,  date:'Feb 14, 2026', label:'none'     },
-    { id:6, title:'Harvard Studied 700 People for 85 Years — One Habit Separated the Happy',    author:'Léa Moreau',    authorInitial:'L', authorColor:'hsl(280,55%,55%)', cat:'Psychology',   views:16540, date:'Jan 5, 2026',  label:'boosted'  },
-    { id:7, title:'The Country That Eliminated Its Carbon Footprint in 11 Years',                author:'Yuki Tanaka',   authorInitial:'Y', authorColor:'hsl(30,65%,50%)',  cat:'Climate',      views:21030, date:'Feb 22, 2026', label:'none'     },
-    { id:8, title:'The Silent War No One Is Talking About: How Three Nations Are Rewriting the World Order', author:'Léa Moreau', authorInitial:'L', authorColor:'hsl(280,55%,55%)', cat:'Geopolitics', views:5400, date:'Mar 5, 2026', label:'hidden' },
-  ];
-
-  const CATS = ['AI','Neuroscience','Space','Longevity','Economics','Psychology','Climate','Geopolitics','Technology','Culture','Science','Health'];
-
-  let _users         = MOCK_USERS.map(u => ({ ...u }));
-  let _articles      = MOCK_ARTICLES.map(a => ({ ...a }));
+  let _users         = [];
+  let _articles      = [];
   let _articleFilter = 'all';
   let _userFilter    = 'all';
 
-  // ── Init ────────────────────────────────────────────────
+  const CATS = ['AI','Neuroscience','Space','Longevity','Economics','Psychology',
+                'Climate','Geopolitics','Technology','Culture','Science','Health'];
+
+  // ── Init ────────────────────────────────────────────────────────────────────
   function init() {
     updateClock();
     setInterval(updateClock, 1000);
-    if (sessionStorage.getItem('adminLoggedIn') === 'true') showDashboard();
+    const dash = document.getElementById('admin-dashboard');
+    if (dash && dash.style.display !== 'none' && dash.innerHTML.trim() !== '') {
+      loadDashboard();
+    }
   }
 
   function updateClock() {
@@ -54,189 +63,168 @@ const IBlogAdmin = (() => {
     });
   }
 
-  // ── Auth ────────────────────────────────────────────────
-  function login() {
-    const email = document.getElementById('admin-email')?.value.trim();
-    const pass  = document.getElementById('admin-password')?.value;
-    const errEl = document.getElementById('admin-login-error');
-    if (email === ADMIN_EMAIL && pass === ADMIN_PASSWORD) {
-      errEl?.classList.remove('show');
-      sessionStorage.setItem('adminLoggedIn', 'true');
-      showDashboard();
-    } else {
-      errEl?.classList.add('show');
-      document.getElementById('admin-password').value = '';
+  async function loadDashboard() {
+    try {
+      await Promise.all([loadStats(), loadUsers(), loadArticles(), loadRevenue()]);
+      buildActivityLog();
+      buildCharts();
+    } catch(e) {
+      console.error('Dashboard load error:', e);
+      toast('Failed to load dashboard data — see console for details.', 'danger');
     }
   }
 
-  function logout() {
-    sessionStorage.removeItem('adminLoggedIn');
-    document.getElementById('admin-dashboard').style.display = 'none';
-    document.getElementById('admin-login').style.display     = 'flex';
-    document.getElementById('admin-email').value    = '';
-    document.getElementById('admin-password').value = '';
-  }
-
-  function showDashboard() {
-    document.getElementById('admin-login').style.display     = 'none';
-    document.getElementById('admin-dashboard').style.display = 'block';
-    buildOverview();
-    buildUsersTable();
-    buildArticlesTable();
-    buildRevenueTable();
-    buildActivityLog();
-    buildCharts();
-  }
-
-  // ── Navigation ──────────────────────────────────────────
-  function navigate(view) {
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  function navigate(view, el) {
     document.querySelectorAll('.admin-view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.admin-nav-item').forEach(n => n.classList.remove('active'));
     const viewEl = document.getElementById('view-' + view);
     if (viewEl) viewEl.classList.add('active');
-    event?.currentTarget?.classList.add('active');
+    if (el) el.classList.add('active');
   }
 
-  // ── Overview ────────────────────────────────────────────
-  function buildOverview() {
-    const premium = _users.filter(u => u.plan === 'premium').length;
-    _setText('stat-users',    _users.length);
-    _setText('stat-articles', _articles.filter(a => a.status !== 'removed').length);
-    _setText('stat-premium',  premium);
-    _setText('stat-revenue',  '$' + (premium * 9).toLocaleString());
-    _setText('users-badge',   _users.filter(u => u.status === 'banned').length);
-    _setText('articles-badge', _articles.filter(a => a.status === 'pending').length);
+  // ── Stats ────────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    const data = await api('get_stats');
+    _setText('stat-users',    data.total_users     ?? '—');
+    _setText('stat-articles', data.total_articles  ?? '—');
+    _setText('stat-premium',  data.premium_count   ?? '—');
+    _setText('stat-revenue',  data.monthly_revenue ?? '—');
   }
 
-  function buildActivityLog() {
-    const log = [
-      { event:'🆕 New signup',         user:'Sara Okonkwo',  time:'2 min ago',   status:'active'   },
-      { event:'⭐ Upgraded to Premium', user:'Carlos Mendez', time:'15 min ago',  status:'premium'  },
-      { event:'📄 Article published',  user:'Léa Moreau',    time:'32 min ago',  status:'approved' },
-      { event:'📄 Article flagged',    user:'Bot User',       time:'1 hour ago',  status:'pending'  },
-      { event:'🚫 User banned',        user:'Spam Account',   time:'2 hours ago', status:'banned'   },
-      { event:'⭐ Upgraded to Premium', user:'Yuki Tanaka',   time:'3 hours ago', status:'premium'  },
-    ];
-    const badge = {
-      active:   '<span class="abadge abadge-active">Active</span>',
-      premium:  '<span class="abadge abadge-premium">Premium</span>',
-      approved: '<span class="abadge abadge-active">Approved</span>',
-      pending:  '<span class="abadge abadge-pending">Pending</span>',
-      banned:   '<span class="abadge abadge-banned">Banned</span>',
-    };
-    const tbody = document.getElementById('activity-log');
-    if (tbody) tbody.innerHTML = log.map(l => `
-      <tr>
-        <td><strong>${l.event}</strong></td>
-        <td>${l.user}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${l.time}</td>
-        <td>${badge[l.status] || ''}</td>
-      </tr>`).join('');
+  // ── Users ────────────────────────────────────────────────────────────────────
+  async function loadUsers() {
+    const data = await api('get_users');
+    _users = data.users ?? [];
+    _setText('users-badge', _users.filter(u => u.status === 'banned').length);
+    buildUsersTable();
   }
 
-  function buildCharts() {
-    _buildChart('chart-users',   [45,62,58,71,84,96,108,124], 'W');
-    _buildChart('chart-revenue', [405,558,522,639,756,864,972,1116], 'W');
-  }
-
-  function _buildChart(id, data, prefix) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const max = Math.max(...data);
-    el.innerHTML = data.map((v, i) => `
-      <div class="admin-bar-wrap">
-        <div class="admin-bar" style="height:${Math.round((v/max)*100)}%" title="${v}"></div>
-        <div class="admin-bar-label">${prefix}${i+1}</div>
-      </div>`).join('');
-  }
-
-  // ── Users ───────────────────────────────────────────────
   function buildUsersTable(filter = '') {
     const tbody = document.getElementById('users-table');
     if (!tbody) return;
-    let users = _users;
-    if (_userFilter === 'banned')        users = users.filter(u => u.status === 'banned');
-    else if (_userFilter !== 'all')      users = users.filter(u => u.plan === _userFilter && u.status !== 'banned');
+
+    let users = [..._users];
+    if      (_userFilter === 'banned')  users = users.filter(u => u.status === 'banned');
+    else if (_userFilter === 'premium') users = users.filter(u => u.plan === 'premium' && u.status !== 'banned');
+    else if (_userFilter === 'free')    users = users.filter(u => u.plan === 'free'    && u.status !== 'banned');
+
     if (filter) {
       const q = filter.toLowerCase();
-      users = users.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      users = users.filter(u =>
+        (u.name  ?? '').toLowerCase().includes(q) ||
+        (u.email ?? '').toLowerCase().includes(q)
+      );
     }
-    tbody.innerHTML = users.map(u => `
+
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No users found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      const initial = (u.name || '?')[0].toUpperCase();
+      const color   = stringToColor(u.email);
+      const rawDate = u.created_at || u.createdAt || null;
+      const joined  = rawDate
+        ? new Date(rawDate).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+        : '—';
+      return `
       <tr>
         <td>
           <div class="admin-user-cell">
-            <div class="admin-tbl-avatar" style="background:${u.color}">${u.name[0]}</div>
+            <div class="admin-tbl-avatar" style="background:${color}">${initial}</div>
             <div>
-              <strong>${u.name}</strong>
-              <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${u.email}</div>
+              <strong>${esc(u.name)}</strong>
+              <div style="font-size:11px;color:var(--text3);font-family:monospace">${esc(u.email)}</div>
             </div>
           </div>
         </td>
         <td>${u.plan === 'premium'
           ? '<span class="abadge abadge-premium">⭐ Premium</span>'
           : '<span class="abadge abadge-free">Free</span>'}</td>
-        <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${u.articles}</td>
-        <td style="font-size:12px;color:var(--text3)">${u.joined}</td>
+        <td style="font-weight:600">${u.article_count ?? 0}</td>
+        <td style="font-size:12px;color:var(--text3)">${joined}</td>
         <td>${u.status === 'banned'
           ? '<span class="abadge abadge-banned">🚫 Banned</span>'
           : '<span class="abadge abadge-active">● Active</span>'}</td>
         <td>
           <div class="admin-actions">
             ${u.status !== 'banned'
-              ? `<button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.toggleBan(${u.id})">🚫 Ban</button>`
-              : `<button class="admin-btn admin-btn-success" onclick="IBlogAdmin.toggleBan(${u.id})">✓ Unban</button>`}
-            <button class="admin-btn admin-btn-danger" onclick="IBlogAdmin.deleteUser(${u.id})">🗑</button>
+              ? `<button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.toggleBan(${u.id},'${esc(u.name)}')">🚫 Ban</button>`
+              : `<button class="admin-btn admin-btn-success" onclick="IBlogAdmin.toggleBan(${u.id},'${esc(u.name)}')">✓ Unban</button>`}
+            <button class="admin-btn admin-btn-danger" onclick="IBlogAdmin.deleteUser(${u.id},'${esc(u.name)}')">🗑</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
   function filterUsers(q) { buildUsersTable(q); }
 
   function filterUsersByPlan(el, plan) {
     document.querySelectorAll('#view-users .admin-filter-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
+    if (el) el.classList.add('active');
     _userFilter = plan;
     buildUsersTable();
   }
 
-  function toggleBan(id) {
-    const u = _users.find(x => x.id === id);
-    if (!u) return;
-    const action = u.status === 'banned' ? 'unban' : 'ban';
-    confirm_(
-      `${action === 'ban' ? '🚫 Ban' : '✅ Unban'} User?`,
-      `Are you sure you want to ${action} <strong>${u.name}</strong>?`,
-      () => {
-        u.status = u.status === 'banned' ? 'active' : 'banned';
-        buildUsersTable(); buildOverview();
-        toast(`User ${action}ned successfully`, action === 'ban' ? 'danger' : 'success');
+  async function toggleBan(id, name) {
+    confirm_('Ban / Unban User?', `Update status for <strong>${esc(name)}</strong>?`, async () => {
+      const data = await api('toggle_ban', { id });
+      if (data.ok) {
+        const u = _users.find(x => x.id == id);
+        if (u) u.status = data.new_status;
+        buildUsersTable();
+        loadStats();
+        toast(`User ${data.new_status === 'banned' ? 'banned' : 'unbanned'}`,
+              data.new_status === 'banned' ? 'danger' : 'success');
+      } else {
+        toast('Error: ' + (data.error ?? 'unknown'), 'danger');
       }
-    );
+    });
   }
 
-  function deleteUser(id) {
-    const u = _users.find(x => x.id === id);
-    if (!u) return;
-    confirm_('🗑 Delete User?',
-      `Permanently delete <strong>${u.name}</strong>? This cannot be undone.`,
-      () => {
-        _users = _users.filter(x => x.id !== id);
-        buildUsersTable(); buildOverview();
+  async function deleteUser(id, name) {
+    confirm_('🗑 Delete User?', `Permanently delete <strong>${esc(name)}</strong>? This cannot be undone.`, async () => {
+      const data = await api('delete_user', { id });
+      if (data.ok) {
+        _users = _users.filter(x => x.id != id);
+        buildUsersTable();
+        loadStats();
         toast('User deleted permanently', 'danger');
+      } else {
+        toast('Error: ' + (data.error ?? 'unknown'), 'danger');
       }
-    );
+    });
   }
 
-  // ── Articles ────────────────────────────────────────────
+  // ── Articles ──────────────────────────────────────────────────────────────────
+  async function loadArticles() {
+    const data = await api('get_articles');
+    // KEY FIX: API now returns 'articles' (old code had 'article')
+    _articles = data.articles ?? [];
+    _setText('articles-badge', _articles.filter(a => a.label === 'hidden').length);
+    buildArticlesTable();
+  }
+
   function buildArticlesTable(filter = '') {
     const tbody = document.getElementById('articles-table');
     if (!tbody) return;
-    let arts = _articles;
+
+    let arts = [..._articles];
     if (_articleFilter !== 'all') arts = arts.filter(a => a.label === _articleFilter);
     if (filter) {
       const q = filter.toLowerCase();
-      arts = arts.filter(a => a.title.toLowerCase().includes(q) || a.author.toLowerCase().includes(q));
+      arts = arts.filter(a =>
+        (a.title  ?? '').toLowerCase().includes(q) ||
+        (a.author ?? '').toLowerCase().includes(q)
+      );
+    }
+
+    if (arts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No articles found.</td></tr>';
+      return;
     }
 
     const labelBadge = {
@@ -247,138 +235,203 @@ const IBlogAdmin = (() => {
       none:     '<span class="abadge abadge-none">— None</span>',
     };
 
-    const catOptions = CATS.map(c => `<option value="${c}">${c}</option>`).join('');
-
-    tbody.innerHTML = arts.map(a => `
+    tbody.innerHTML = arts.map(a => {
+      const initial = (a.author || '?')[0].toUpperCase();
+      const color   = stringToColor(a.author ?? '');
+      const date    = a.created_at
+        ? new Date(a.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+        : '—';
+      const title   = (a.title ?? '').length > 55 ? a.title.substring(0, 55) + '…' : (a.title ?? '—');
+      return `
       <tr>
         <td style="max-width:250px">
-          <strong style="display:block;line-height:1.35;margin-bottom:3px;font-size:13px">${a.title.length>55 ? a.title.substring(0,55)+'…' : a.title}</strong>
-          <span style="font-size:11px;color:var(--text3)">${a.date}</span>
+          <strong style="display:block;line-height:1.35;margin-bottom:3px;font-size:13px">${esc(title)}</strong>
+          <span style="font-size:11px;color:var(--text3)">${date}</span>
         </td>
         <td>
           <div class="admin-user-cell">
-            <div class="admin-tbl-avatar" style="background:${a.authorColor};width:26px;height:26px;font-size:11px">${a.authorInitial}</div>
-            <span style="font-size:13px">${a.author}</span>
+            <div class="admin-tbl-avatar" style="background:${color};width:26px;height:26px;font-size:11px">${initial}</div>
+            <span style="font-size:13px">${esc(a.author ?? '—')}</span>
           </div>
         </td>
         <td>
           <select class="admin-cat-select" onchange="IBlogAdmin.changeCat(${a.id}, this.value)">
-            ${CATS.map(c => `<option value="${c}"${c===a.cat?' selected':''}>${c}</option>`).join('')}
+            ${CATS.map(c => `<option value="${c}"${c === a.category ? ' selected' : ''}>${c}</option>`).join('')}
           </select>
         </td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${a.views.toLocaleString()}</td>
-        <td>${labelBadge[a.label] || labelBadge.none}</td>
+        <td style="font-family:monospace;font-size:12px">${Number(a.views || 0).toLocaleString()}</td>
+        <td>${labelBadge[a.label] ?? labelBadge.none}</td>
         <td>
-          <div class="admin-actions">
-            <select class="admin-cat-select" onchange="IBlogAdmin.setLabel(${a.id}, this.value)" style="min-width:110px">
-              <option value="">Set label…</option>
-              <option value="featured">⭐ Feature</option>
-              <option value="pinned">📌 Pin</option>
-              <option value="boosted">🚀 Boost</option>
-              <option value="hidden">🙈 Hide</option>
-              <option value="none">— Clear</option>
-            </select>
-            <button class="admin-btn admin-btn-ghost" onclick="IBlogAdmin.viewStats(${a.id})">📊 Stats</button>
-          </div>
+          <select class="admin-cat-select" onchange="IBlogAdmin.setLabel(${a.id}, this.value)" style="min-width:110px">
+            <option value="">Set label…</option>
+            <option value="featured">⭐ Feature</option>
+            <option value="pinned">📌 Pin</option>
+            <option value="boosted">🚀 Boost</option>
+            <option value="hidden">🙈 Hide</option>
+            <option value="none">— Clear</option>
+          </select>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
   function filterArticles(q) { buildArticlesTable(q); }
 
   function filterArticlesByStatus(el, status) {
     document.querySelectorAll('#view-articles .admin-filter-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
+    if (el) el.classList.add('active');
     _articleFilter = status;
     buildArticlesTable();
   }
 
-  function changeCat(id, cat) {
-    const a = _articles.find(x => x.id === id);
-    if (a) { a.cat = cat; toast(`Category updated to ${cat}`, 'success'); }
+  async function changeCat(id, cat) {
+    const data = await api('change_cat', { id, cat });
+    if (data.ok) {
+      const a = _articles.find(x => x.id == id);
+      if (a) a.category = cat;
+      toast(`Category → ${cat}`, 'success');
+    }
   }
 
-  function setLabel(id, label) {
+  async function setLabel(id, label) {
     if (!label) return;
-    const a = _articles.find(x => x.id === id);
-    if (!a) return;
-    a.label = label;
-    buildArticlesTable();
-    const names = { featured:'⭐ Featured', pinned:'📌 Pinned', boosted:'🚀 Boosted', hidden:'🙈 Hidden', none:'cleared' };
-    toast(`Label set to ${names[label] || label}`, 'success');
+    const data = await api('set_label', { id, label });
+    if (data.ok) {
+      const a = _articles.find(x => x.id == id);
+      if (a) a.label = label;
+      buildArticlesTable();
+      const names = { featured:'⭐ Featured', pinned:'📌 Pinned', boosted:'🚀 Boosted', hidden:'🙈 Hidden', none:'cleared' };
+      toast(`Label → ${names[label] ?? label}`, 'success');
+    }
   }
 
-  function viewStats(id) {
-    const a = _articles.find(x => x.id === id);
-    if (!a) return;
-    confirm_(
-      '📊 Article Stats',
-      `<strong>${a.title.substring(0,50)}…</strong><br><br>
-       <div style="text-align:left;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;font-size:13px">
-         <div><span style="color:var(--text3)">Views</span><br><strong>${a.views.toLocaleString()}</strong></div>
-         <div><span style="color:var(--text3)">Category</span><br><strong>${a.cat}</strong></div>
-         <div><span style="color:var(--text3)">Author</span><br><strong>${a.author}</strong></div>
-         <div><span style="color:var(--text3)">Label</span><br><strong>${a.label}</strong></div>
-         <div><span style="color:var(--text3)">Published</span><br><strong>${a.date}</strong></div>
-         <div><span style="color:var(--text3)">Est. reads</span><br><strong>${Math.round(a.views * 0.62).toLocaleString()}</strong></div>
-       </div>`,
-      () => {}
-    );
-    // Rename confirm button to "Close"
-    const btn = document.getElementById('confirm-ok-btn');
-    if (btn) { btn.textContent = 'Close'; btn.className = 'admin-btn admin-btn-ghost'; }
+  // ── Revenue ───────────────────────────────────────────────────────────────────
+  async function loadRevenue() {
+    const data = await api('get_revenue');
+    buildRevenueTable(data.members ?? []);
   }
 
-  // ── Revenue ─────────────────────────────────────────────
-  function buildRevenueTable() {
-    const premium = _users.filter(u => u.plan === 'premium');
-    const tbody   = document.getElementById('revenue-table');
+  function buildRevenueTable(members) {
+    const tbody = document.getElementById('revenue-table');
     if (!tbody) return;
-    const dates = ['Jan 5, 2026','Dec 20, 2025','Jan 12, 2026','Feb 3, 2026','Jan 28, 2026','Feb 14, 2026'];
-    tbody.innerHTML = premium.map((u, i) => `
+    if (members.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">No premium members yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = members.map(u => {
+      const color   = stringToColor(u.email);
+      const initial = (u.name || '?')[0].toUpperCase();
+      const since   = u.created_at
+        ? new Date(u.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+        : '—';
+      return `
       <tr>
         <td>
           <div class="admin-user-cell">
-            <div class="admin-tbl-avatar" style="background:${u.color}">${u.name[0]}</div>
+            <div class="admin-tbl-avatar" style="background:${color}">${initial}</div>
             <div>
-              <strong>${u.name}</strong>
-              <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${u.email}</div>
+              <strong>${esc(u.name)}</strong>
+              <div style="font-size:11px;color:var(--text3);font-family:monospace">${esc(u.email)}</div>
             </div>
           </div>
         </td>
-        <td style="font-size:12px;color:var(--text3)">${dates[i] || 'Mar 1, 2026'}</td>
-        <td style="font-family:'JetBrains Mono',monospace;color:var(--green);font-weight:600">$9.00/mo</td>
+        <td style="font-size:12px;color:var(--text3)">${since}</td>
+        <td style="font-family:monospace;color:var(--green);font-weight:600">$9.00/mo</td>
         <td><span class="abadge abadge-active">● Active</span></td>
         <td>
-          <button class="admin-btn admin-btn-danger" onclick="IBlogAdmin.cancelSubscription('${u.name}')">Cancel</button>
+          <button class="admin-btn admin-btn-danger"
+                  onclick="IBlogAdmin.cancelSubscription(${u.id},'${esc(u.name)}')">Cancel</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
-  function cancelSubscription(name) {
-    confirm_('Cancel Subscription?',
-      `Cancel premium subscription for <strong>${name}</strong>? They will be downgraded to Free.`,
-      () => {
-        const u = _users.find(x => x.name === name);
-        if (u) { u.plan = 'free'; buildRevenueTable(); buildOverview(); }
+  async function cancelSubscription(id, name) {
+    confirm_('Cancel Subscription?', `Downgrade <strong>${esc(name)}</strong> to Free?`, async () => {
+      const data = await api('cancel_sub', { id });
+      if (data.ok) {
+        const u = _users.find(x => x.id == id);
+        if (u) { u.plan = 'free'; u.isPremium = 0; }
+        loadRevenue(); loadStats();
         toast(`Subscription cancelled for ${name}`, 'danger');
       }
-    );
+    });
   }
 
-  // ── Confirm ─────────────────────────────────────────────
+  // ── Activity log ──────────────────────────────────────────────────────────────
+  function buildActivityLog() {
+    const tbody = document.getElementById('activity-log');
+    if (!tbody) return;
+    const rows = [];
+    [..._users].slice(0, 4).forEach(u => {
+      const rawDate = u.created_at || u.createdAt || null;
+      const time    = rawDate ? timeAgo(new Date(rawDate)) : '';
+      rows.push({ event: '🆕 New signup', user: u.name, time, badge: 'active' });
+      if (u.plan === 'premium') rows.push({ event: '⭐ Premium member', user: u.name, time, badge: 'premium' });
+    });
+    [..._articles].slice(0, 3).forEach(a => {
+      const time = a.created_at ? timeAgo(new Date(a.created_at)) : '';
+      rows.push({ event: '📄 Article published', user: a.author ?? '—', time, badge: 'approved' });
+    });
+    const badgeHtml = {
+      active:   '<span class="abadge abadge-active">Active</span>',
+      premium:  '<span class="abadge abadge-premium">Premium</span>',
+      approved: '<span class="abadge abadge-active">Published</span>',
+    };
+    tbody.innerHTML = rows.slice(0, 8).map(r => `
+      <tr>
+        <td><strong>${r.event}</strong></td>
+        <td>${esc(r.user)}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--text3)">${r.time}</td>
+        <td>${badgeHtml[r.badge] ?? ''}</td>
+      </tr>`).join('')
+      || '<tr><td colspan="4" style="text-align:center;color:var(--text3)">No recent activity.</td></tr>';
+  }
+
+  // ── Charts ─────────────────────────────────────────────────────────────────────
+  function buildCharts() {
+    const weeks = Array(8).fill(0);
+    _users.forEach(u => {
+      const rawDate = u.created_at || u.createdAt || null;
+      if (!rawDate) return;
+      const daysAgo = Math.floor((Date.now() - new Date(rawDate)) / 86400000);
+      const idx     = Math.min(7, Math.floor(daysAgo / 7));
+      weeks[7 - idx]++;
+    });
+    for (let i = 1; i < weeks.length; i++) weeks[i] += weeks[i - 1];
+    _buildChart('chart-users', weeks.map((v, i) => Math.max(1, v * (i + 1))), 'W');
+    const premium = _users.filter(u => u.plan === 'premium').length;
+    const ratio   = premium / Math.max(_users.length, 1);
+    _buildChart('chart-revenue', weeks.map(w => Math.max(1, Math.round(w * ratio * 9))), 'W');
+  }
+
+  function _buildChart(id, data, prefix) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const max = Math.max(...data, 1);
+    el.innerHTML = data.map((v, i) => `
+      <div class="admin-bar-wrap">
+        <div class="admin-bar" style="height:${Math.round((v / max) * 100)}%" title="${v}"></div>
+        <div class="admin-bar-label">${prefix}${i + 1}</div>
+      </div>`).join('');
+  }
+
+  // ── Confirm dialog ────────────────────────────────────────────────────────────
   function confirm_(title, msg, onOk) {
     document.getElementById('confirm-title').innerHTML = title;
     document.getElementById('confirm-msg').innerHTML   = msg;
     document.getElementById('admin-confirm').classList.add('show');
-    document.getElementById('confirm-ok-btn').onclick  = () => { closeConfirm(); onOk(); };
+    const btn = document.getElementById('confirm-ok-btn');
+    btn.textContent = 'Confirm';
+    btn.className   = 'admin-btn admin-btn-danger';
+    btn.onclick     = () => { closeConfirm(); onOk(); };
   }
 
   function closeConfirm() {
     document.getElementById('admin-confirm').classList.remove('show');
   }
 
-  // ── Toast ────────────────────────────────────────────────
+  // ── Toast ──────────────────────────────────────────────────────────────────────
   function toast(msg, type = '') {
     const t = document.getElementById('admin-toast');
     if (!t) return;
@@ -388,16 +441,35 @@ const IBlogAdmin = (() => {
     t._t = setTimeout(() => { t.className = ''; }, 3000);
   }
 
-  // ── Helpers ─────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────────────────
   function _setText(id, val) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   }
 
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function stringToColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    return `hsl(${Math.abs(hash) % 360},55%,50%)`;
+  }
+
+  function timeAgo(date) {
+    const s = Math.floor((Date.now() - date) / 1000);
+    if (s < 60)    return 'just now';
+    if (s < 3600)  return Math.floor(s / 60)   + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600)  + ' hr ago';
+    return Math.floor(s / 86400) + ' days ago';
+  }
+
   return {
-    init, login, logout, navigate,
+    init, navigate,
     filterUsers, filterUsersByPlan, toggleBan, deleteUser,
-    filterArticles, filterArticlesByStatus, changeCat, setLabel, viewStats,
+    filterArticles, filterArticlesByStatus, changeCat, setLabel,
     cancelSubscription, closeConfirm, toast,
   };
 })();
