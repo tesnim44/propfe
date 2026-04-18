@@ -16,7 +16,7 @@
           <p>Join 12,400+ readers using IBlog to stay ahead of the knowledge curve.</p>
           <div class="cta-btns">
             <button class="btn btn-primary" style="font-size:15px;padding:14px 40px" onclick="showSignup()">Join Free →</button>
-            <button class="btn btn-premium" style="font-size:15px;padding:14px 40px" onclick="showPremium()">⭐ Go Premium</button>
+            <button class="btn btn-premium" style="font-size:15px;padding:14px 40px" onclick="showPremium()"> Go Premium</button>
           </div>
         </div>
       </section>

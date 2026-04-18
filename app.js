@@ -10,6 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const user = JSON.parse(savedUser);
       if (user && user.name && user.email) {
         IBlog.state.currentUser = user;
+        if (user.onboardingComplete === false && window.IBlogOnboarding?.start) {
+          document.getElementById('dashboard').style.display = 'none';
+          document.getElementById('landing-page').style.display = 'block';
+          IBlogOnboarding.start(user, {
+            onComplete: () => {
+              IBlog.Dashboard.enter();
+            }
+          });
+          return;
+        }
         IBlog.Dashboard.enter();
         return;
       } else {

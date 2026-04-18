@@ -85,3 +85,25 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:1px;text-trans
 .stat-label{font-size:11px;color:var(--text2);}
 #landing-page{display:none;}
 #dashboard{display:none;}
+/* ── Onboarding: edit interests button (Premium only) ── */
+.ob-edit-interests-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: 'DM Sans', sans-serif;
+  margin-top: 4px;
+}
+.ob-edit-interests-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(184,150,12,.06);
+}

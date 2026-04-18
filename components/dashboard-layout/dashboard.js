@@ -34,11 +34,12 @@ IBlog.Dashboard = (() => {
     const u = IBlog.state.currentUser;
     if (!u) return;
     const isPrem = u.plan === 'premium';
+    const initial = u.initial || (u.name ? u.name[0].toUpperCase() : 'A');
 
     // Left rail
     const avatar = document.getElementById('dash-avatar');
     if (avatar) {
-      avatar.textContent = u.initial;
+      _applyAvatar(avatar, u.avatar, initial);
       avatar.className = 'dash-avatar' + (isPrem ? ' premium' : '');
     }
     _setTextContent('dash-name', u.name);
@@ -46,7 +47,7 @@ IBlog.Dashboard = (() => {
 
     // Compose avatar
     const ca = document.getElementById('compose-avatar');
-    if (ca) ca.textContent = u.initial;
+    if (ca) _applyAvatar(ca, u.avatar, initial);
 
     // Upgrade nav item
     const upgBtn = document.getElementById('upgrade-nav-btn');
@@ -59,8 +60,10 @@ IBlog.Dashboard = (() => {
     // Settings
     const settingsNameEl = document.getElementById('settings-name');
     const settingsEmailEl = document.getElementById('settings-email');
+    const settingsBioEl = document.getElementById('settings-bio');
     if (settingsNameEl) settingsNameEl.value = u.name;
     if (settingsEmailEl) settingsEmailEl.value = u.email || '';
+    if (settingsBioEl) settingsBioEl.value = u.bio || '';
 
     const sBtn = document.getElementById('premium-settings-btn');
     const sTxt = document.getElementById('premium-status-text');
@@ -184,6 +187,23 @@ function toggleDark() {
   function _setTextContent(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
+  }
+
+  function _applyAvatar(el, image, fallback) {
+    if (!el) return;
+    if (image) {
+      el.textContent = '';
+      el.style.backgroundImage = `url("${image}")`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundColor = 'transparent';
+    } else {
+      el.textContent = fallback || 'A';
+      el.style.backgroundImage = '';
+      el.style.backgroundSize = '';
+      el.style.backgroundPosition = '';
+      el.style.backgroundColor = 'var(--accent)';
+    }
   }
 
   /* ── Landing Hero Slideshow ───────────────────────────── */

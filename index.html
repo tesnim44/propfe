@@ -52,6 +52,7 @@
     <link rel="stylesheet" href="components/profile/profile.css" />
     <link rel="stylesheet" href="components/notifications/notifications.css" />
     <link rel="stylesheet" href="components/my-articles/my-articles.css" />
+    <link rel="stylesheet" href="components/Onboarding/Onboarding.css" />
   </head>
   <link rel="stylesheet" href="components/admin/admin.css">
   <link rel="stylesheet" href="components/landing-footer/footer.css">
@@ -474,6 +475,7 @@
               <div class="form-group">
                 <label>Bio</label>
                 <textarea
+                  id="settings-bio"
                   style="resize: vertical"
                   rows="3"
                   placeholder="Tell your story…"
@@ -604,6 +606,7 @@
 <script src="js/templates.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/views.js"></script>
+<script src="js/writer.js"></script>
 <script src="components/auth/auth.js"></script>
 <script src="components/chat/chat.js"></script>
 <script src="components/landing-nav/landing-nav.js"></script>
@@ -630,48 +633,11 @@
 
 <!-- ✅ AJOUTER ACTIVITY ICI (avant profile.js car profile en dépend) -->
 <script src="components/activity/activity.js"></script>
-
 <script src="components/profile/profile.js"></script>
+<script src="components/Onboarding/Onboarding.js"></script>
 
-<!-- ⚠️ Supprimer les doublons analytics.js et right-rail.js -->
 <script src="app.js"></script>
 
-    <!-- JS COMPONENTS (ordre de chargement strict)
-    <script src="toggledark.js"></script>
-    <script src="data.js"></script>
-    <script src="components/admin/admin.js"></script>
-    <script src="js/podcast.js"></script>
-    <script src="js/templates.js"></script>
-    <script src="js/writer.js"></script>
-    <script src="js/feed.js"></script>
-    <script src="js/views.js"></script>
-    <script src="components/auth/auth.js"></script>
-    <script src="components/chat/chat.js"></script>
-    <script src="components/landing-nav/landing-nav.js"></script>
-    <script src="components/landing-feat/feat.js"></script>
-    <script src="components/carousel/carousel.js"></script>
-    <script src="components/features/features.js"></script>
-    <script src="components/HIW/hiw.js"></script>
-    <script src="components/pricing/pricing.js"></script>
-    <script src="components/hero/hero.js"></script>
-    <script src="components/cta/cta.js"></script>
-     <script src="components/testimonial/testimonial.js"></script>
-    <script src="components/landing-footer/footer.js"></script>
-    <script src="components/stats/stats.js"></script>
-    <script src="components/search/search.js"></script>
-    <script src="components/left-rail/left-rail.js"></script>
-    <script src="components/dashboard-layout/dashboard.js"></script>
-    <script src="components/notifications/notifications.js"></script>
-  <script src="components/article-card/article-card.js"></script>
-   <script src="components/my-articles/my-articles.js"></script>
-   <script src="components/right-rail/right-rail.js"></script>
-    <script src="components/analytics/analytics.js"></script>
-    <script src="components/trends/trends.js"></script>
-    <script src="components/communities/communities.js"></script>
-    <script src="components/profile/profile.js"></script>
-    <script src="components/analytics/analytics.js"></script>
-    <script src="components/right-rail/right-rail.js"></script>
-    <script src="app.js"></script> -->
-  </body>
+</body>
 </html>
 

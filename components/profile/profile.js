@@ -1,5 +1,5 @@
 /* ============================================================
-   IBlog.Profile — Profile view builder
+   IBlog.Profile - Profile view builder
    ============================================================ */
 
 IBlog.Profile = (function () {
@@ -10,7 +10,6 @@ IBlog.Profile = (function () {
 
     root.innerHTML = `
       <div class="view-panel" id="view-profile">
-
         <div style="position:relative;margin-bottom:70px">
           <div class="profile-banner"></div>
           <div class="profile-avatar-big" id="profile-avatar-big" style="background:var(--accent)">A</div>
@@ -19,21 +18,22 @@ IBlog.Profile = (function () {
         <div class="profile-info">
           <div class="flex-between" style="margin-bottom:8px">
             <h2 id="profile-name" style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text)"></h2>
-            <div id="profile-premium-badge" style="display:none" class="badge badge-premium">⭐ Premium</div>
+            <div id="profile-premium-badge" style="display:none" class="badge badge-premium">Premium</div>
           </div>
-          <p id="profile-bio" style="color:var(--text2);margin-bottom:18px"></p>
+          <p id="profile-pseudo" style="color:var(--text3);margin-bottom:6px"></p>
+          <p id="profile-bio-text" style="color:var(--text2);margin-bottom:18px"></p>
           <div style="display:flex;gap:22px;margin-bottom:18px">
             <div><strong id="profile-article-count">0</strong> <span style="color:var(--text2);font-size:13px">Articles</span></div>
             <div><strong>1.2k</strong> <span style="color:var(--text2);font-size:13px">Followers</span></div>
             <div><strong>389</strong> <span style="color:var(--text2);font-size:13px">Following</span></div>
           </div>
-          <div class="topic-chips" id="profile-topic-chips"></div>
+          <div class="topic-chips" id="profile-interests"></div>
         </div>
 
         <div class="section-card" style="margin-top:22px">
           <div class="flex-between" style="margin-bottom:14px">
             <div>
-              <strong>2025–2026 Contributions</strong><br>
+              <strong>2025-2026 Contributions</strong><br>
               <small style="color:var(--text2)">Read days · Comments · Posts</small>
             </div>
             <div class="ai-pill"><span class="ai-dot"></span>342 total</div>
@@ -58,7 +58,6 @@ IBlog.Profile = (function () {
         </div>
 
         <div id="profile-articles-list" style="margin-top:24px"></div>
-
       </div>`;
 
     _buildActivityGrid();
@@ -70,7 +69,7 @@ IBlog.Profile = (function () {
     grid.innerHTML = Array.from({ length: 364 }, () => {
       const r = Math.random();
       const lvl = r > .82 ? 'l4' : r > .62 ? 'l3' : r > .42 ? 'l2' : r > .22 ? 'l1' : '';
-      return `<div class="activity-cell ${lvl}" title="${lvl ? Math.floor(Math.random()*4+1) + ' activities' : 'No activity'}"></div>`;
+      return `<div class="activity-cell ${lvl}" title="${lvl ? Math.floor(Math.random() * 4 + 1) + ' activities' : 'No activity'}"></div>`;
     }).join('');
   }
 
@@ -90,36 +89,39 @@ IBlog.Profile = (function () {
 
     const articles = _userArticles();
     const isPremium = u.plan === 'premium';
-    const initial = u.name ? u.name[0].toUpperCase() : '?';
+    const initial = u.initial || (u.name ? u.name[0].toUpperCase() : '?');
 
-    const avatarBig = document.getElementById('profile-avatar-big');
-    if (avatarBig) avatarBig.textContent = initial;
+    _applyAvatar(document.getElementById('profile-avatar-big'), u.avatar, initial);
 
     const nameEl = document.getElementById('profile-name');
     if (nameEl) nameEl.textContent = u.name || 'Unknown';
 
-    const bioEl = document.getElementById('profile-bio');
-    if (bioEl) {
-      const handle = u.name ? '@' + u.name.split(' ')[0].toLowerCase() : '@user';
-      bioEl.textContent = handle + ' · Passionate writer & knowledge explorer.';
-    }
+    const pseudoEl = document.getElementById('profile-pseudo');
+    if (pseudoEl) pseudoEl.textContent = `@${u.pseudo || (u.name ? u.name.split(' ')[0].toLowerCase() : 'user')}`;
+
+    const bioEl = document.getElementById('profile-bio-text');
+    if (bioEl) bioEl.textContent = u.bio || 'No bio yet.';
 
     const badge = document.getElementById('profile-premium-badge');
-    if (badge) {
-      badge.style.display = isPremium ? 'inline-flex' : 'none';
-      badge.textContent = '⭐ Premium';
-    }
+    if (badge) badge.style.display = isPremium ? 'inline-flex' : 'none';
 
     const countEl = document.getElementById('profile-article-count');
     if (countEl) countEl.textContent = articles.length;
 
-    _buildTopicChips(articles);
+    _buildTopicChips(u, articles);
     _buildArticleList(articles);
   }
 
-  function _buildTopicChips(articles) {
-    const container = document.getElementById('profile-topic-chips');
+  function _buildTopicChips(user, articles) {
+    const container = document.getElementById('profile-interests');
     if (!container) return;
+
+    const profileTags = [...(user.fields || []), ...(user.subjects || [])];
+    if (profileTags.length) {
+      container.innerHTML = profileTags.map(t => `<span class="topic-chip active">${t}</span>`).join('');
+      return;
+    }
+
     const tagSet = new Set();
     articles.forEach(a => (a.tags || []).forEach(t => tagSet.add(t)));
     const tags = tagSet.size > 0 ? [...tagSet].slice(0, 6) : ['Writing', 'Knowledge', 'Ideas'];
@@ -172,13 +174,30 @@ IBlog.Profile = (function () {
             ${a.title}
           </div>
           <div style="font-size:12px;color:var(--text2);display:flex;gap:14px;">
-            <span>${a.readTime || '—'}</span>
+            <span>${a.readTime || '-'}</span>
             <span>${likes} likes</span>
             <span>${a.date || ''}</span>
             <span style="background:var(--bg3);border-radius:4px;padding:1px 7px;font-size:11px;">${a.cat || ''}</span>
           </div>
         </div>
       </div>`;
+  }
+
+  function _applyAvatar(el, image, fallback) {
+    if (!el) return;
+    if (image) {
+      el.textContent = '';
+      el.style.backgroundImage = `url("${image}")`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundColor = 'transparent';
+    } else {
+      el.textContent = fallback || 'A';
+      el.style.backgroundImage = '';
+      el.style.backgroundSize = '';
+      el.style.backgroundPosition = '';
+      el.style.backgroundColor = 'var(--accent)';
+    }
   }
 
   return { init, buildProfile, build: buildProfile };

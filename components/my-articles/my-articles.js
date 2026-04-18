@@ -1,334 +1,259 @@
-// ============================================
-// MY-ARTICLES COMPONENT
-// Gère l'affichage et la gestion des articles de l'utilisateur
-// ============================================
+// ============================================================
+// MY-ARTICLES COMPONENT — IBlog
+// Gère l'affichage, la suppression et l'édition des articles
+// Namespace : window.MyArticles + intégration IBlog.Auth.toast
+// ============================================================
 
-// Données d'exemple pour tester
-const sampleArticles = [
-  {
-    id: "1",
-    title: "Comprendre l'intelligence artificielle",
-    excerpt: "Une introduction simple à l'IA et ses applications...",
-    date: "15 mars 2025",
-    views: 234,
-    likes: 45,
-    image: "🤖"
-  },
-  {
-    id: "2",
-    title: "Les bases du développement web",
-    excerpt: "HTML, CSS et JavaScript pour les débutants...",
-    date: "10 mars 2025",
-    views: 567,
-    likes: 89,
-    image: "🌐"
-  },
-  {
-    id: "3",
-    title: "Pourquoi écrire sur IBlog ?",
-    excerpt: "Les avantages de partager vos connaissances...",
-    date: "5 mars 2025",
-    views: 123,
-    likes: 34,
-    image: "✍️"
+window.IBlog = window.IBlog || {};
+
+IBlog.MyArticles = (() => {
+
+  // ── Articles de démonstration ─────────────────────────
+  const DEMO_ARTICLES = [
+    {
+      id: 'demo-1',
+      title: 'Understanding Artificial Intelligence',
+      excerpt: 'A simple introduction to AI and its real-world applications.',
+      category: 'AI',
+      date: 'Mar 15, 2026',
+      views: 234,
+      likes: 45,
+    },
+    {
+      id: 'demo-2',
+      title: 'Web Development Fundamentals',
+      excerpt: 'HTML, CSS and JavaScript essentials for beginners.',
+      category: 'Technology',
+      date: 'Mar 10, 2026',
+      views: 567,
+      likes: 89,
+    },
+    {
+      id: 'demo-3',
+      title: 'Why Write on IBlog?',
+      excerpt: 'The benefits of sharing your knowledge with a global audience.',
+      category: 'Culture',
+      date: 'Mar 5, 2026',
+      views: 123,
+      likes: 34,
+    },
+  ];
+
+  // ── Clé de stockage ───────────────────────────────────
+  function _storageKey() {
+    const user = _getUser();
+    return user ? `iblog_articles_${user.email}` : null;
   }
-];
 
-// Fonction pour charger les articles de l'utilisateur
-function loadMyArticles() {
-  const container = document.getElementById('my-articles-list');
-  if (!container) return;
-  
-  // Récupérer l'utilisateur connecté
-  const savedUser = localStorage.getItem('user');
-  let userArticles = [];
-  
-  if (savedUser) {
+  function _getUser() {
+    try { return JSON.parse(sessionStorage.getItem('user')); }
+    catch { return null; }
+  }
+
+  // ── Lire les articles depuis sessionStorage ───────────
+  function _readArticles() {
+    const key = _storageKey();
+    if (!key) return [...DEMO_ARTICLES];
     try {
-      const user = JSON.parse(savedUser);
-      // Récupérer les articles de cet utilisateur
-      const storedArticles = localStorage.getItem(`articles_${user.email}`);
-      if (storedArticles) {
-        userArticles = JSON.parse(storedArticles);
-      } else {
-        // Si pas d'articles, utiliser les exemples pour la démo
-        userArticles = [...sampleArticles];
-        // Sauvegarder les exemples
-        localStorage.setItem(`articles_${user.email}`, JSON.stringify(userArticles));
-      }
-    } catch(e) {
-      userArticles = [...sampleArticles];
-    }
-  } else {
-    // Pas d'utilisateur connecté, afficher les exemples
-    userArticles = [...sampleArticles];
+      const stored = sessionStorage.getItem(key);
+      if (stored) return JSON.parse(stored);
+    } catch { /* silently fail */ }
+    // Premier accès → initialiser avec les démos
+    _writeArticles([...DEMO_ARTICLES]);
+    return [...DEMO_ARTICLES];
   }
-  
-  // Afficher les articles
-  displayArticles(userArticles);
-}
 
-// Fonction pour afficher les articles
-function displayArticles(articles) {
-  const container = document.getElementById('my-articles-list');
-  if (!container) return;
-  
-  if (!articles || articles.length === 0) {
-    container.innerHTML = `
-      <div class="empty-articles" style="text-align: center; padding: 60px 20px; background: var(--surface); border-radius: 20px; border: 1px solid var(--border);">
-        <div style="font-size: 48px; margin-bottom: 16px;">📝</div>
-        <h3 style="font-size: 20px; margin-bottom: 8px; color: var(--text);">Aucun article pour le moment</h3>
-        <p style="color: var(--text2); margin-bottom: 24px;">Commencez à écrire votre premier article !</p>
-        <button class="btn btn-primary" onclick="IBlog.Dashboard.navigateTo('write')" style="padding: 10px 24px;">
-          ✏️ Écrire un article
-        </button>
-      </div>
-    `;
-    return;
+  // ── Écrire les articles dans sessionStorage ───────────
+  function _writeArticles(articles) {
+    const key = _storageKey();
+    if (!key) return;
+    sessionStorage.setItem(key, JSON.stringify(articles));
   }
-  
-  // Afficher la liste des articles
-  container.innerHTML = articles.map(article => `
-    <div class="my-article-row" data-id="${article.id}">
-      <div class="my-article-thumb" style="background: rgba(184,150,12,0.1);">
-        ${article.image || '📄'}
-      </div>
-      <div class="my-article-info">
-        <div class="my-article-title">${escapeHtml(article.title)}</div>
-        <div class="my-article-meta">
-          📅 ${article.date || new Date().toLocaleDateString()} · 
-          👁️ ${article.views || 0} vues · 
-          ❤️ ${article.likes || 0} likes
-        </div>
-      </div>
-      <div class="my-article-actions">
-        <button class="edit-btn-small" onclick="editArticle('${article.id}')">
-          ✏️ Modifier
-        </button>
-        <button class="delete-btn-small" onclick="deleteArticle('${article.id}')">
-          🗑️ Supprimer
-        </button>
-      </div>
-    </div>
-  `).join('');
-}
 
-// Fonction pour échapper le HTML (sécurité)
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+  // ── Échapper le HTML (sécurité XSS) ──────────────────
+  function _esc(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
 
-// Fonction pour supprimer un article
-function deleteArticle(articleId) {
-  if (!confirm('Voulez-vous vraiment supprimer cet article ? Cette action est irréversible.')) return;
-  
-  const savedUser = localStorage.getItem('user');
-  let articles = [];
-  
-  if (savedUser) {
-    try {
-      const user = JSON.parse(savedUser);
-      const stored = localStorage.getItem(`articles_${user.email}`);
-      if (stored) {
-        articles = JSON.parse(stored);
-      } else {
-        articles = [...sampleArticles];
-      }
-    } catch(e) {
-      articles = [...sampleArticles];
-    }
-  } else {
-    articles = [...sampleArticles];
-  }
-  
-  // Filtrer pour supprimer l'article
-  const newArticles = articles.filter(a => a.id !== articleId);
-  
-  // Sauvegarder
-  if (savedUser) {
-    try {
-      const user = JSON.parse(savedUser);
-      localStorage.setItem(`articles_${user.email}`, JSON.stringify(newArticles));
-    } catch(e) {}
-  }
-  
-  // Recharger l'affichage
-  displayArticles(newArticles);
-  
-  // Afficher un message
-  showToastMessage("Article supprimé avec succès 🗑️");
-}
-
-// Fonction pour modifier un article
-function editArticle(articleId) {
-  // Sauvegarder l'ID de l'article à modifier
-  localStorage.setItem('editArticleId', articleId);
-  
-  // Récupérer l'article
-  const savedUser = localStorage.getItem('user');
-  let articles = [];
-  
-  if (savedUser) {
-    try {
-      const user = JSON.parse(savedUser);
-      const stored = localStorage.getItem(`articles_${user.email}`);
-      if (stored) {
-        articles = JSON.parse(stored);
-      } else {
-        articles = [...sampleArticles];
-      }
-    } catch(e) {
-      articles = [...sampleArticles];
-    }
-  } else {
-    articles = [...sampleArticles];
-  }
-  
-  const article = articles.find(a => a.id === articleId);
-  if (article) {
-    // Sauvegarder les données de l'article pour l'éditeur
-    localStorage.setItem('articleToEdit', JSON.stringify(article));
-    showToastMessage("Chargement de l'article pour modification ✏️");
-  }
-  
-  // Aller à l'éditeur
-  if (window.IBlog && IBlog.Dashboard) {
-    IBlog.Dashboard.navigateTo('write');
-  }
-}
-
-// Fonction pour sauvegarder un article modifié
-function saveEditedArticle(articleId, updatedData) {
-  const savedUser = localStorage.getItem('user');
-  if (!savedUser) return false;
-  
-  try {
-    const user = JSON.parse(savedUser);
-    let articles = localStorage.getItem(`articles_${user.email}`);
-    articles = articles ? JSON.parse(articles) : [...sampleArticles];
-    
-    const index = articles.findIndex(a => a.id === articleId);
-    if (index !== -1) {
-      articles[index] = { ...articles[index], ...updatedData };
-      localStorage.setItem(`articles_${user.email}`, JSON.stringify(articles));
-      showToastMessage("Article modifié avec succès ! ✏️");
-      return true;
-    }
-  } catch(e) {
-    return false;
-  }
-  return false;
-}
-
-// Fonction pour publier un nouvel article
-function publishNewArticle(articleData) {
-  const savedUser = localStorage.getItem('user');
-  if (!savedUser) {
-    showToastMessage("Veuillez vous connecter pour publier un article 🔒");
-    return false;
-  }
-  
-  try {
-    const user = JSON.parse(savedUser);
-    let articles = localStorage.getItem(`articles_${user.email}`);
-    articles = articles ? JSON.parse(articles) : [];
-    
-    const newArticle = {
-      id: Date.now().toString(),
-      title: articleData.title || "Sans titre",
-      excerpt: (articleData.content || "").substring(0, 100) + "...",
-      content: articleData.content || "",
-      date: new Date().toLocaleDateString('fr-FR'),
-      views: 0,
-      likes: 0,
-      image: articleData.image || "📄"
+  // ── Générer l'icône SVG selon la catégorie ────────────
+  function _categoryIcon(cat = '') {
+    const icons = {
+      AI:         `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1" fill="currentColor" stroke="none"/></svg>`,
+      Technology: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+      Science:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>`,
+      default:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
     };
-    
-    articles.unshift(newArticle);
-    localStorage.setItem(`articles_${user.email}`, JSON.stringify(articles));
-    
-    showToastMessage("Article publié avec succès ! 🚀");
+    return icons[cat] || icons.default;
+  }
+
+  // ── Charger et afficher les articles ──────────────────
+  function load() {
+    const container = document.getElementById('my-articles-list');
+    if (!container) return;
+    _render(container, _readArticles());
+  }
+
+  // ── Mettre à jour les stats rapides ──────────────────
+  function _updateStats(articles) {
+    const totalViews = articles.reduce((s, a) => s + (a.views ?? 0), 0);
+    const totalLikes = articles.reduce((s, a) => s + (a.likes ?? 0), 0);
+    const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+    const el = id => document.getElementById(id);
+    if (el('ma-count')) el('ma-count').textContent = articles.length;
+    if (el('ma-views')) el('ma-views').textContent = fmt(totalViews);
+    if (el('ma-likes')) el('ma-likes').textContent = fmt(totalLikes);
+  }
+
+  // ── Rendu HTML de la liste ────────────────────────────
+  function _render(container, articles) {
+    _updateStats(articles);
+    if (!articles.length) {
+      container.innerHTML = `
+        <div class="empty-articles">
+          <div class="empty-articles__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <h3>No articles yet</h3>
+          <p>Start writing and share your knowledge with the world.</p>
+          <button class="btn btn-primary"
+                  onclick="IBlog.Dashboard.navigateTo('write')">
+            Write your first article
+          </button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = articles.map(article => `
+      <div class="my-article-row" data-id="${_esc(article.id)}">
+
+        <!-- Icône catégorie -->
+        <div class="my-article-thumb" data-cat="${_esc(article.category ?? '')}">
+          ${_categoryIcon(article.category)}
+        </div>
+
+        <!-- Infos -->
+        <div class="my-article-info">
+          <div class="my-article-title">${_esc(article.title)}</div>
+          <div class="my-article-excerpt">${_esc(article.excerpt)}</div>
+          <div class="my-article-meta">
+            <span class="meta-item">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${_esc(article.date ?? '')}
+            </span>
+            <span class="meta-item">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              ${article.views ?? 0}
+            </span>
+            <span class="meta-item">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              ${article.likes ?? 0}
+            </span>
+            ${article.category
+              ? `<span class="my-article-cat">${_esc(article.category)}</span>`
+              : ''}
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="my-article-actions">
+          <button class="edit-btn-small"
+                  onclick="IBlog.MyArticles.edit('${_esc(article.id)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Edit
+          </button>
+          <button class="delete-btn-small"
+                  onclick="IBlog.MyArticles.delete('${_esc(article.id)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete
+          </button>
+        </div>
+
+      </div>`).join('');
+  }
+
+  // ── Supprimer un article ──────────────────────────────
+  function deleteArticle(id) {
+    if (!confirm('Delete this article? This action cannot be undone.')) return;
+
+    const articles = _readArticles().filter(a => a.id !== id);
+    _writeArticles(articles);
+
+    const container = document.getElementById('my-articles-list');
+    if (container) _render(container, articles);
+
+    IBlog.Auth?.toast('Article deleted.', 'info');
+  }
+
+  // ── Éditer un article ─────────────────────────────────
+  function editArticle(id) {
+    const article = _readArticles().find(a => a.id === id);
+    if (!article) return;
+
+    // Stocker l'article à éditer pour l'éditeur
+    sessionStorage.setItem('iblog_edit_article', JSON.stringify(article));
+    IBlog.Auth?.toast('Loading article for editing…', 'info');
+    IBlog.Dashboard?.navigateTo('write');
+  }
+
+  // ── Publier un nouvel article ─────────────────────────
+  function publish(data) {
+    const user = _getUser();
+    if (!user) {
+      IBlog.Auth?.toast('Please sign in to publish.', 'error');
+      return false;
+    }
+
+    const article = {
+      id:       Date.now().toString(),
+      title:    data.title  || 'Untitled',
+      excerpt:  (data.body  || '').substring(0, 120) + '…',
+      body:     data.body   || '',
+      category: data.category || 'General',
+      tags:     data.tags   || '',
+      date:     new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      views:    0,
+      likes:    0,
+    };
+
+    const articles = [article, ..._readArticles()];
+    _writeArticles(articles);
+    IBlog.Auth?.toast('Article published.', 'success');
     return true;
-  } catch(e) {
-    showToastMessage("Erreur lors de la publication ❌");
-    return false;
   }
-}
 
-// Fonction pour afficher un toast
-function showToastMessage(message) {
-  let toast = document.getElementById('global-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'global-toast';
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-    
-    // Ajouter le style si pas déjà présent
-    if (!document.querySelector('#toast-style')) {
-      const style = document.createElement('style');
-      style.id = 'toast-style';
-      style.textContent = `
-        .toast {
-          position: fixed;
-          bottom: 30px;
-          right: 30px;
-          background: var(--surface);
-          color: var(--text);
-          padding: 12px 24px;
-          border-radius: 12px;
-          border-left: 4px solid var(--accent);
-          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-          z-index: 10000;
-          opacity: 0;
-          transform: translateY(20px);
-          transition: all 0.3s ease;
-          font-size: 14px;
-          pointer-events: none;
-        }
-        .toast.show {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `;
-      document.head.appendChild(style);
-    }
+  // ── Sauvegarder les modifications ─────────────────────
+  function saveEdit(id, updated) {
+    const articles = _readArticles().map(a =>
+      a.id === id ? { ...a, ...updated } : a
+    );
+    _writeArticles(articles);
+    IBlog.Auth?.toast('Article updated.', 'success');
+    return true;
   }
-  
-  toast.innerHTML = message;
-  toast.classList.add('show');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3000);
-}
 
-// Initialisation - charger les articles quand la vue s'affiche
-document.addEventListener("DOMContentLoaded", () => {
-  // Observer pour détecter quand la vue my-articles est affichée
-  const observer = new MutationObserver(() => {
-    const articlesPanel = document.getElementById('view-articles');
-    if (articlesPanel && articlesPanel.style.display !== 'none') {
-      loadMyArticles();
+  // ── Init : observer la vue pour la charger ────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    // Charger si déjà visible
+    const panel = document.getElementById('view-articles');
+    if (panel && !panel.classList.contains('view-panel') || panel?.classList.contains('active')) {
+      load();
     }
+
+    // Observer les changements de classe (navigateTo ajoute 'active')
+    const observer = new MutationObserver(() => {
+      const p = document.getElementById('view-articles');
+      if (p && p.classList.contains('active')) load();
+    });
+    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
   });
-  observer.observe(document.body, { attributes: true, subtree: true });
-  
-  // Charger une première fois si déjà visible
-  const articlesPanel = document.getElementById('view-articles');
-  if (articlesPanel && articlesPanel.style.display !== 'none') {
-    loadMyArticles();
-  }
-});
 
-// Exporter les fonctions pour les rendre accessibles globalement
-window.MyArticles = {
-  load: loadMyArticles,
-  delete: deleteArticle,
-  edit: editArticle,
-  save: saveEditedArticle,
-  publish: publishNewArticle
-};
+  // ── API publique ──────────────────────────────────────
+  return { load, delete: deleteArticle, edit: editArticle, publish, saveEdit };
+
+})();
+
+// Alias global (compatibilité avec window.MyArticles)
+window.MyArticles = IBlog.MyArticles;

@@ -41,7 +41,7 @@
     if (s2) s2.style.display = 'none';
     if (s3) s3.style.display = 'none';
 
-    localStorage.removeItem('selectedPlan');
+    sessionStorage.removeItem('selectedPlan');
     document.querySelectorAll('.plan-opt').forEach(p => p.classList.remove('selected'));
 
     ['su-name','su-email','su-pass','su-pass2','si-email','si-pass','fp-email'].forEach(id => {
@@ -50,8 +50,7 @@
     });
     document.querySelectorAll('.field-err').forEach(e => e.classList.remove('show'));
 
-    if (!sessionStorage.getItem('user')) {
-      sessionStorage.removeItem('pendingUser');
+    if (!sessionStorage.getItem('user') && !sessionStorage.getItem('pendingUser')) {
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('landing-page').style.display = 'block';
     }
@@ -59,7 +58,7 @@
 
   window.showSignup = function() {
     closeAllModals();
-    localStorage.removeItem('selectedPlan');
+    sessionStorage.removeItem('selectedPlan');
     injectModalsIfNeeded();
     setTimeout(() => document.getElementById('modal-signup')?.classList.add('active'), 0);
   };
@@ -260,7 +259,7 @@
     const password = document.getElementById('su-pass')?.value;
     const pass2    = document.getElementById('su-pass2')?.value;
     const terms    = document.getElementById('su-terms')?.checked;
-    const plan     = localStorage.getItem('selectedPlan') || null;
+    const plan     = sessionStorage.getItem('selectedPlan') || null;
 
     let valid = true;
     if (!plan)                                                    { IBlog.utils?.toast('Please select a plan', 'error'); return; }
@@ -276,18 +275,20 @@
   };
 
   function _createAccount({ name, email, plan }) {
-    const user = { name, email, plan, isPremium: false };
+    const user = {
+      name,
+      email,
+      plan,
+      isPremium: false,
+      onboardingComplete: false,
+      initial: (name[0] || 'A').toUpperCase(),
+    };
     if (plan === 'premium') {
       sessionStorage.setItem('pendingUser', JSON.stringify(user));
       closeAllModals();
       setTimeout(() => { showPerks(); document.getElementById('modal-premium')?.classList.add('active'); }, 0);
     } else {
-      sessionStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('user', JSON.stringify(user));
-      IBlog.state.currentUser = user;
-      closeAllModals();
-      goToDashboard(_pendingArticleId);
-      _pendingArticleId = null;
+      launchOnboarding(user);
     }
   }
 
@@ -313,6 +314,11 @@
     }
     if (!user) user = { name: email.split('@')[0], email, plan: 'free', isPremium: false };
 
+    if (user.onboardingComplete === false) {
+      launchOnboarding(user);
+      return;
+    }
+
     sessionStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('user', JSON.stringify(user));
     IBlog.state.currentUser = user;
@@ -327,6 +333,8 @@
       email: plan === 'premium' ? 'demo.premium@iblog.com' : 'demo@iblog.com',
       plan,
       isPremium: plan === 'premium',
+      onboardingComplete: true,
+      initial: 'D',
     };
     sessionStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('user', JSON.stringify(user));
@@ -423,7 +431,34 @@
     if (s3) s3.style.display = 'block';
     _premiumFromLanding = false;
     window.dispatchEvent(new CustomEvent('auth:premium', { detail: { success: true } }));
-    setTimeout(() => { closeAllModals(); goToDashboard(); }, 1500);
+    setTimeout(() => {
+      closeAllModals();
+      if (user.onboardingComplete === false) {
+        launchOnboarding(user);
+      } else {
+        goToDashboard();
+      }
+    }, 1500);
+  }
+
+  function launchOnboarding(user) {
+    sessionStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify(user));
+    IBlog.state.currentUser = user;
+    closeAllModals();
+
+    if (window.IBlogOnboarding?.start) {
+      IBlogOnboarding.start(user, {
+        onComplete: () => {
+          goToDashboard(_pendingArticleId);
+          _pendingArticleId = null;
+        }
+      });
+      return;
+    }
+
+    goToDashboard(_pendingArticleId);
+    _pendingArticleId = null;
   }
 
   function goToDashboard(pendingId = null) {
@@ -643,5 +678,14 @@
     </style>
     `;
   }
+
+  window.IBlog = window.IBlog || {};
+  IBlog.Auth = {
+    showSignup: () => window.showSignup(),
+    showSignin: () => window.showSignin(),
+    showPremium: () => window.showPremium(),
+    demoLogin: (plan) => window.demoLogin(plan),
+    toast: (msg, type) => IBlog.utils?.toast(msg, type),
+  };
 
 })();
