@@ -601,7 +601,7 @@
     <!-- JS COMPONENTS (ordre de chargement strict) -->
 <script src="toggledark.js"></script>
 <script src="data.js"></script>
-<script src="backend/view/components/admin/admin.js"></script>
+
 <script src="js/podcast.js"></script>
 <script src="js/templates.js"></script>
 <script src="js/feed.js"></script>

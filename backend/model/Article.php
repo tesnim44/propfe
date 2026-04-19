@@ -12,8 +12,10 @@ class article {
     public $coverImage;
     public $readingTime;
     public $createdAt;
+    public $views;
+    public $label;
 
-    public function __construct($authorId,$title,$body,$category,$tags,$status,$coverImage,$readingTime){
+    public function __construct($authorId,$title,$body,$category,$tags,$status,$coverImage,$readingTime,$views,$label){
         $this->authorId = $authorId;
         $this->title = $title;
         $this->body = $body;
@@ -22,6 +24,8 @@ class article {
         $this->status = $status;
         $this->coverImage = $coverImage;
         $this->readingTime = $readingTime;
+        $this->views = $views;
+        $this->label = $label;
     }
 }
 ?>

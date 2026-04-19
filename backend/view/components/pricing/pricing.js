@@ -12,19 +12,7 @@
 /* ─────────────────────────────────────────────
    BACKEND INTEGRATION GUIDE (Tunisia)
    ─────────────────────────────────────────────
-   Option 1 — Konnect (konnect.network)
-     - Create account at konnect.network
-     - Use their JS SDK or REST API
-     - POST /api/payments/init → get paymentRef
-     - Redirect user to Konnect hosted page
-     - Webhook on /api/payments/webhook confirms payment
-     - Supports: Carte bancaire, D17, Flouci, Sobflous
-
-   Option 2 — Paymee (paymee.tn)
-     - REST API, hosted checkout page
-     - POST https://app.paymee.tn/api/v2/payments/create
-     - Supports: Visa/Mastercard (TPE virtuel), Flouci
-
+   
    Option 3 — Manual bank transfer (CCP / BIAT / STB)
      - Collect order via form below
      - Send payment details by email (nodemailer / emailjs)

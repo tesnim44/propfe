@@ -10,7 +10,7 @@ function getDatabaseConnection(): PDO
     }
 
     $host   = 'localhost';
-    $dbname = 'iblog_bd';
+    $dbname = 'blogdyn';
     $user   = 'root';
     $pass   = '';
 

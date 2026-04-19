@@ -2,81 +2,147 @@
 declare(strict_types=1);
 session_start();
 
-require_once __DIR__ . '/../../backend/config/database.php';
-require_once __DIR__ . '/../../backend/model/users.php';
+// ── Si déjà connecté, rediriger directement ──────────────────────────────
+if (isset($_SESSION['user_id'])) {
+    $dest = ($_SESSION['isAdmin'] ?? 0) === 1
+        ? 'admin.php'
+        : '../../index.php';
+    header('Location: ' . $dest);
+    exit();
+}
 
-$mode = $_GET['mode'] ?? 'signin';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../model/users.php';
+require_once __DIR__ . '/../../controller/UserController.php';
+
+$mode   = $_GET['mode'] ?? 'signin';
 $errors = [];
 $success = '';
 
+// ── Helpers ───────────────────────────────────────────────────────────────
 function authRedirect(string $location): never {
     header('Location: ' . $location);
     exit();
 }
 
 function authSetSession(Users $user): void {
-    $_SESSION['user_id'] = $user->id;
-    $_SESSION['name'] = $user->name;
-    $_SESSION['email'] = $user->email;
-    $_SESSION['plan'] = $user->plan;
+    session_regenerate_id(true);
+    $_SESSION['user_id']   = $user->id;
+    $_SESSION['name']      = $user->name;
+    $_SESSION['email']     = $user->email;
+    $_SESSION['plan']      = $user->plan;
     $_SESSION['isPremium'] = (int) $user->isPremium;
-    $_SESSION['isAdmin'] = (int) $user->isAdmin;
-   
+    $_SESSION['isAdmin']   = (int) $user->isAdmin;
 }
 
+// ── Traitement POST ───────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    $email = trim((string)($_POST['email'] ?? ''));
+    $action   = $_POST['action'] ?? '';
+    $email    = trim((string)($_POST['email']    ?? ''));
     $password = (string)($_POST['password'] ?? '');
 
+    // ════ SIGNIN ════
     if ($action === 'signin') {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Please enter a valid email address.';
         }
+        if (strlen($password) < 6) {
+            $errors[] = 'Password must be at least 6 characters.';
+        }
+
         if (empty($errors)) {
+            // Raccourci admin codé en dur (optionnel, gardé pour compatibilité auth.js)
+            if ($email === 'admin@iblog.com' && $password === 'admin2026') {
+                $adminUser = getUserByEmail($cnx, $email);
+                if ($adminUser) {
+                    authSetSession($adminUser);
+                } else {
+                    // Créer l'admin à la volée s'il n'existe pas en BDD
+                    createUser($cnx, [
+                        'name'      => 'Admin',
+                        'email'     => 'admin@iblog.com',
+                        'password'  => 'admin2026',
+                        'plan'      => 'premium',
+                        'isPremium' => 1,
+                        'isAdmin'   => 1,
+                    ]);
+                    $adminUser = getUserByEmail($cnx, $email);
+                    if ($adminUser) authSetSession($adminUser);
+                }
+                authRedirect('admin.php');
+            }
+
             $user = getUserByEmail($cnx, $email);
             if ($user !== null && password_verify($password, $user->password)) {
                 authSetSession($user);
-                authRedirect($user->isAdmin === 1 ? '../admin/admin.php' : '../profile/profile.php');
+                // Sync sessionStorage côté JS via cookie lisible en JS
+                setcookie('iblog_user', json_encode([
+                    'name'      => $user->name,
+                    'email'     => $user->email,
+                    'plan'      => $user->plan,
+                    'isPremium' => (bool)$user->isPremium,
+                    'isAdmin'   => (bool)$user->isAdmin,
+                    'initial'   => strtoupper($user->name[0] ?? 'A'),
+                    'onboardingComplete' => true,
+                ]), 0, '/', '', false, false); // httpOnly=false pour JS
+
+                $dest = $user->isAdmin === 1 ? 'admin.php' : '../../index.php';
+                authRedirect($dest);
             } else {
                 $errors[] = 'Invalid email or password.';
             }
         }
-    } elseif ($action === 'signup') {
-        $name = trim((string)($_POST['name'] ?? ''));
-        $confirmPassword = (string)($_POST['confirm_password'] ?? '');
-        $plan = ($_POST['plan'] ?? 'free') === 'premium' ? 'premium' : 'free';
 
-        if (mb_strlen($name) < 2) $errors[] = 'Name is too short.';
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email.';
-        if (strlen($password) < 6) $errors[] = 'Password must be at least 6 characters.';
-        if ($password !== $confirmPassword) $errors[] = 'Passwords do not match.';
-        
-        // Use your model function to check existence
-        if (getUserByEmail($cnx, $email) !== null) {
-            $errors[] = 'Email already registered.';
-        }
+    // ════ SIGNUP ════
+    } elseif ($action === 'signup') {
+        $name            = trim((string)($_POST['name']             ?? ''));
+        $confirmPassword = (string)($_POST['confirm_password'] ?? '');
+        $plan            = ($_POST['plan'] ?? 'free') === 'premium' ? 'premium' : 'free';
+
+        if (mb_strlen($name) < 2)                                   $errors[] = 'Name must be at least 2 characters.';
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL))             $errors[] = 'Please enter a valid email address.';
+        if (strlen($password) < 6)                                  $errors[] = 'Password must be at least 6 characters.';
+        if ($password !== $confirmPassword)                         $errors[] = 'Passwords do not match.';
+        if ($email === 'admin@iblog.com')                           $errors[] = 'This email address is reserved.';
+        if (getUserByEmail($cnx, $email) !== null)                  $errors[] = 'This email is already registered. Please sign in.';
 
         if (empty($errors)) {
             $created = createUser($cnx, [
-                'name' => $name,
-                'email' => $email,
-                'password' => $password,
-                'plan' => $plan,
+                'name'      => $name,
+                'email'     => $email,
+                'password'  => $password,
+                'plan'      => $plan,
                 'isPremium' => $plan === 'premium' ? 1 : 0,
-                'isAdmin' => 0,
-              
+                'isAdmin'   => 0,
             ]);
 
             if ($created) {
                 $user = getUserByEmail($cnx, $email);
                 if ($user) {
                     authSetSession($user);
-                    authRedirect('../profile/profile.php');
+                    setcookie('iblog_user', json_encode([
+                        'name'      => $user->name,
+                        'email'     => $user->email,
+                        'plan'      => $user->plan,
+                        'isPremium' => (bool)$user->isPremium,
+                        'isAdmin'   => false,
+                        'initial'   => strtoupper($user->name[0] ?? 'A'),
+                        'onboardingComplete' => false,
+                    ]), 0, '/', '', false, false);
+                    authRedirect('../../index.php');
                 }
             } else {
-                $errors[] = 'Database error during registration.';
+                $errors[] = 'A database error occurred. Please try again.';
             }
+        }
+
+    // ════ FORGOT PASSWORD ════
+    } elseif ($action === 'forgot') {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Please enter a valid email address.';
+        } else {
+            // En production : envoyer un vrai email avec mail()
+            $success = 'If this email exists, a reset link has been sent.';
         }
     }
 }
@@ -86,94 +152,228 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IBlog Auth</title>
+  <title>IBlog — <?= $mode === 'signup' ? 'Create Account' : ($mode === 'forgot' ? 'Reset Password' : 'Sign In') ?></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="auth.css">
+  <style>
+    /* ── page wrapper ── */
+    body {
+      margin: 0; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 60%, #24243e 100%);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .auth-page-card {
+      background: var(--bg, #fff);
+      border-radius: 20px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.45);
+      width: 100%; max-width: 480px;
+      padding: 40px 36px;
+      position: relative;
+    }
+    .auth-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px; font-weight: 700;
+      color: var(--accent, #7c5cbf);
+      margin-bottom: 6px;
+    }
+    .auth-mode-tabs {
+      display: flex; gap: 6px; margin-bottom: 24px;
+    }
+    .auth-mode-tabs a {
+      flex: 1; text-align: center;
+      padding: 9px 0; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      text-decoration: none;
+      color: #888;
+      border: 2px solid transparent;
+      transition: .2s;
+    }
+    .auth-mode-tabs a.active {
+      color: var(--accent, #7c5cbf);
+      border-color: var(--accent, #7c5cbf);
+      background: rgba(124,92,191,.08);
+    }
+    .auth-mode-tabs a:hover:not(.active) { background: #f5f5f5; }
+
+    .alert-error {
+      background: #fff0f0; border: 1px solid #ffb3b3;
+      color: #c0392b; border-radius: 10px;
+      padding: 12px 16px; font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .alert-success {
+      background: #f0fff4; border: 1px solid #9be7af;
+      color: #217a3c; border-radius: 10px;
+      padding: 12px 16px; font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .back-link {
+      display: block; text-align: center;
+      margin-top: 20px; font-size: 14px;
+      color: #888; text-decoration: none;
+    }
+    .back-link:hover { color: var(--accent, #7c5cbf); }
+
+    /* plan picker radio style */
+    .plan-opt input[type="radio"] { display: none; }
+    .plan-opt { cursor: pointer; }
+    .plan-opt:has(input:checked) { border-color: var(--accent, #7c5cbf); background: rgba(124,92,191,.08); }
+  </style>
 </head>
 <body>
-  <div class="modal-overlay active" style="position:static;min-height:100vh;padding:24px;">
-    <div class="modal" style="max-width:520px;width:100%;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h2 class="modal-title" style="margin:0;">IBlog Account</h2>
-        <a href="../../index.php" class="auth-arrow-link">Back</a>
-      </div>
 
-      <div class="modal-switch" style="justify-content:flex-start;gap:16px;margin-bottom:18px;">
-        <a class="auth-arrow-link" href="?mode=signin">Sign In</a>
-        <a class="auth-arrow-link" href="?mode=signup">Sign Up</a>
-        <a class="auth-arrow-link" href="?mode=forgot">Forgot Password</a>
-      </div>
+<div class="auth-page-card">
+  <!-- Logo -->
+  <div class="auth-logo">IBlog</div>
+  <p style="color:#888;font-size:14px;margin-bottom:22px;">Knowledge Without Borders</p>
 
-      <?php if ($errors !== []): ?>
-        <div class="field-err show" style="display:block;margin-bottom:14px;">
-          <?= htmlspecialchars(implode(' ', $errors), ENT_QUOTES, 'UTF-8') ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($success !== ''): ?>
-        <div class="promo-msg ok" style="display:block;margin-bottom:14px;">
-          <?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($mode === 'signup'): ?>
-        <form method="post" action="auth.php?mode=signup">
-          <input type="hidden" name="action" value="signup">
-
-          <div class="plan-picker" style="margin-bottom:16px;">
-            <label class="plan-opt" style="cursor:pointer;">
-              <input type="radio" name="plan" value="free" checked style="display:none;">
-              <div class="plan-icon"></div><strong>Free</strong><small>Read and write, basic tools</small>
-            </label>
-            <label class="plan-opt premium-plan" style="cursor:pointer;">
-              <input type="radio" name="plan" value="premium" style="display:none;">
-              <div class="plan-icon"></div><strong>Premium</strong><small>Templates, map, priority</small>
-              <div class="plan-price">$9 / mo</div>
-            </label>
-          </div>
-
-          <div class="field-float">
-            <input type="text" id="name" name="name" placeholder=" " value="<?= htmlspecialchars((string) ($_POST['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label for="name">Full Name</label>
-          </div>
-          <div class="field-float">
-            <input type="email" id="email" name="email" placeholder=" " value="<?= htmlspecialchars((string) ($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label for="email">Email address</label>
-          </div>
-          <div class="field-float">
-            <input type="password" id="password" name="password" placeholder=" ">
-            <label for="password">Password</label>
-          </div>
-          <div class="field-float">
-            <input type="password" id="confirm_password" name="confirm_password" placeholder=" ">
-            <label for="confirm_password">Repeat Password</label>
-          </div>
-
-          <button class="btn btn-primary btn-full" type="submit">Create Account</button>
-        </form>
-      <?php elseif ($mode === 'forgot'): ?>
-        <form method="post" action="auth.php?mode=forgot">
-          <input type="hidden" name="action" value="forgot">
-          <div class="field-float">
-            <input type="email" id="forgot_email" name="email" placeholder=" " value="<?= htmlspecialchars((string) ($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label for="forgot_email">Email address</label>
-          </div>
-          <button class="btn btn-primary btn-full" type="submit">Send Reset Link</button>
-        </form>
-      <?php else: ?>
-        <form method="post" action="auth.php?mode=signin">
-          <input type="hidden" name="action" value="signin">
-          <div class="field-float">
-            <input type="email" id="signin_email" name="email" placeholder=" " value="<?= htmlspecialchars((string) ($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            <label for="signin_email">Email address</label>
-          </div>
-          <div class="field-float">
-            <input type="password" id="signin_password" name="password" placeholder=" ">
-            <label for="signin_password">Password</label>
-          </div>
-          <button class="btn btn-primary btn-full" type="submit">Sign In</button>
-        </form>
-      <?php endif; ?>
-    </div>
+  <!-- Tabs -->
+  <div class="auth-mode-tabs">
+    <a href="?mode=signin" class="<?= $mode === 'signin' ? 'active' : '' ?>">Sign In</a>
+    <a href="?mode=signup" class="<?= $mode === 'signup' ? 'active' : '' ?>">Sign Up</a>
+    <a href="?mode=forgot" class="<?= $mode === 'forgot' ? 'active' : '' ?>">Forgot?</a>
   </div>
+
+  <!-- Errors -->
+  <?php if ($errors !== []): ?>
+    <div class="alert-error">
+      <?= htmlspecialchars(implode(' ', $errors), ENT_QUOTES, 'UTF-8') ?>
+    </div>
+  <?php endif; ?>
+
+  <!-- Success -->
+  <?php if ($success !== ''): ?>
+    <div class="alert-success">
+      <?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?>
+    </div>
+  <?php endif; ?>
+
+
+  <!-- ════ SIGNUP FORM ════ -->
+  <?php if ($mode === 'signup'): ?>
+    <form method="POST" action="auth.php?mode=signup" novalidate>
+      <input type="hidden" name="action" value="signup">
+
+      <!-- Plan picker -->
+      <div class="plan-picker" style="margin-bottom:18px;">
+        <label class="plan-opt">
+          <input type="radio" name="plan" value="free"
+            <?= ($_POST['plan'] ?? 'free') !== 'premium' ? 'checked' : '' ?>>
+          <div class="plan-icon">🆓</div>
+          <strong>Free</strong>
+          <small>Read &amp; write, basic tools</small>
+        </label>
+        <label class="plan-opt premium-plan">
+          <input type="radio" name="plan" value="premium"
+            <?= ($_POST['plan'] ?? '') === 'premium' ? 'checked' : '' ?>>
+          <div class="plan-icon">⭐</div>
+          <strong>Premium</strong>
+          <small>Templates · Map · Priority</small>
+          <div class="plan-price">$9 / mo</div>
+        </label>
+      </div>
+
+      <div class="field-float">
+        <input type="text" id="name" name="name" placeholder=" "
+               value="<?= htmlspecialchars((string)($_POST['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        <label for="name">Full Name</label>
+      </div>
+
+      <div class="field-float">
+        <input type="email" id="email" name="email" placeholder=" "
+               value="<?= htmlspecialchars((string)($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        <label for="email">Email address</label>
+      </div>
+
+      <div class="field-float">
+        <input type="password" id="password" name="password" placeholder=" " required>
+        <label for="password">Password</label>
+      </div>
+
+      <div class="field-float">
+        <input type="password" id="confirm_password" name="confirm_password" placeholder=" " required>
+        <label for="confirm_password">Repeat Password</label>
+      </div>
+
+      <button class="btn btn-primary btn-full" type="submit" style="margin-top:8px;">
+        Create Account
+      </button>
+    </form>
+
+
+  <!-- ════ FORGOT PASSWORD FORM ════ -->
+  <?php elseif ($mode === 'forgot'): ?>
+    <form method="POST" action="auth.php?mode=forgot" novalidate>
+      <input type="hidden" name="action" value="forgot">
+
+      <p style="font-size:14px;color:#888;margin-bottom:16px;">
+        Enter your email and we'll send you a reset link.
+      </p>
+
+      <div class="field-float">
+        <input type="email" id="fp_email" name="email" placeholder=" "
+               value="<?= htmlspecialchars((string)($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        <label for="fp_email">Email address</label>
+      </div>
+
+      <button class="btn btn-primary btn-full" type="submit">Send Reset Link</button>
+    </form>
+
+
+  <!-- ════ SIGNIN FORM ════ -->
+  <?php else: ?>
+    <form method="POST" action="auth.php?mode=signin" novalidate>
+      <input type="hidden" name="action" value="signin">
+
+      <div class="field-float">
+        <input type="email" id="si_email" name="email" placeholder=" "
+               value="<?= htmlspecialchars((string)($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        <label for="si_email">Email address</label>
+      </div>
+
+      <div class="field-float">
+        <input type="password" id="si_password" name="password" placeholder=" " required>
+        <label for="si_password">Password</label>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+        <a href="?mode=forgot" style="font-size:13px;color:#888;text-decoration:none;">
+          Forgot password?
+        </a>
+      </div>
+
+      <button class="btn btn-primary btn-full" type="submit">Sign In</button>
+
+      <!-- Accès direct admin panel -->
+      <div style="text-align:center;margin-top:16px;">
+        <a href="admin.php" style="font-size:13px;color:#888;text-decoration:none;">
+          🔒 Admin Panel
+        </a>
+      </div>
+    </form>
+  <?php endif; ?>
+
+  <a href="../../index.php" class="back-link">← Back to IBlog</a>
+</div>
+
+<!-- ── Sync BDD → sessionStorage pour auth.js ── -->
+<script>
+  <?php if (isset($_SESSION['user_id'])): ?>
+    const _phpUser = {
+      name:      <?= json_encode($_SESSION['name']      ?? '') ?>,
+      email:     <?= json_encode($_SESSION['email']     ?? '') ?>,
+      plan:      <?= json_encode($_SESSION['plan']       ?? 'free') ?>,
+      isPremium: <?= json_encode((bool)($_SESSION['isPremium'] ?? false)) ?>,
+      isAdmin:   <?= json_encode((bool)($_SESSION['isAdmin']   ?? false)) ?>,
+      initial:   <?= json_encode(strtoupper(substr($_SESSION['name'] ?? 'A', 0, 1))) ?>,
+      onboardingComplete: true,
+    };
+    sessionStorage.setItem('user', JSON.stringify(_phpUser));
+    localStorage.setItem('user',   JSON.stringify(_phpUser));
+  <?php endif; ?>
+</script>
+
 </body>
 </html>
