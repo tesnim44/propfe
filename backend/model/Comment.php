@@ -1,5 +1,5 @@
 <?php
-class Comment {
+class comment {
 
     public $id;
     public $articleId;

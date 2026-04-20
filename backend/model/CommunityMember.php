@@ -1,5 +1,5 @@
 <?php
-class CommunityMember {
+class communitymember {
 
     public $id;
     public $communityId;
