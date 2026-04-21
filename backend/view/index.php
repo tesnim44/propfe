@@ -220,7 +220,7 @@
                   reading.
                 </p>
                 <button class="premium-upgrade-btn" onclick="showPremium()">
-                  ⭐ Upgrade to Premium
+                   Upgrade to Premium
                 </button>
               </div>
             </div>

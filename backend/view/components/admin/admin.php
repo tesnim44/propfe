@@ -2,79 +2,115 @@
 declare(strict_types=1);
 session_start();
 
-/*
- * File location : iblog/backend/view/components/admin/admin.php
- * BACKEND_PATH  : iblog/backend   (3 dirs up from admin/)
- */
-define('BACKEND_PATH', realpath(__DIR__ . '/../../..'));
-
+// Check if admin
 if (!isset($_SESSION['isAdmin']) || (int)$_SESSION['isAdmin'] !== 1) {
     header('Location: admin-login.php');
     exit();
 }
 
-require_once BACKEND_PATH . '/config/database.php';
-require_once BACKEND_PATH . '/model/users.php';
-require_once BACKEND_PATH . '/controller/UserController.php';
+include __DIR__ . "/../../../config/database.php";
+include __DIR__ . "/../../../model/users.php";
+include __DIR__ . "/../../../controller/UserController.php";
 
-$toast = ''; $toastType = 'success';
+$toast = '';
+$toastType = 'success';
 
+// Handle success/error messages from redirects
+if (isset($_GET['modif']) && $_GET['modif'] == 'ok') {
+    $toast = 'User updated successfully';
+}
+if (isset($_GET['delete']) && $_GET['delete'] == 'ok') {
+    $toast = 'User deleted successfully';
+    $toastType = 'success';
+}
+if (isset($_GET['delete']) && $_GET['delete'] == 'error') {
+    $toast = 'Error deleting user';
+    $toastType = 'error';
+}
+
+// Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // DELETE
     if ($action === 'delete' && isset($_POST['user_id'])) {
         $id = (int)$_POST['user_id'];
         if ($id !== (int)$_SESSION['user_id']) {
-            deleteUser($cnx, $id) ? ($toast = 'User deleted.') : ($toast = 'Delete error.' and $toastType = 'error');
-        } else { $toast = 'Cannot delete your own account.'; $toastType = 'error'; }
+            if (deleteUser($cnx, $id)) {
+                header('location:admin.php?delete=ok');
+            } else {
+                header('location:admin.php?delete=error');
+            }
+            exit();
+        }
     }
 
+    // UPDATE
     if ($action === 'update' && isset($_POST['user_id'])) {
         $id = (int)$_POST['user_id'];
         $data = [
-            'name'      => trim($_POST['name']  ?? ''),
+            'name'      => trim($_POST['name'] ?? ''),
             'email'     => trim($_POST['email'] ?? ''),
-            'plan'      => ($_POST['plan'] ?? 'free') === 'premium' ? 'premium' : 'free',
+            'plan'      => $_POST['plan'] ?? 'free',
             'isPremium' => isset($_POST['isPremium']) ? 1 : 0,
-            'isAdmin'   => isset($_POST['isAdmin'])   ? 1 : 0,
+            'isAdmin'   => isset($_POST['isAdmin']) ? 1 : 0,
         ];
-        if (!empty($_POST['password'])) $data['password'] = $_POST['password'];
-        updateUser($cnx, $id, $data) ? ($toast = 'User updated.') : ($toast = 'Update error.' and $toastType = 'error');
+        if (!empty($_POST['password'])) {
+            $data['password'] = $_POST['password'];
+        }
+        
+        if (updateUser($cnx, $id, $data)) {
+            header('location:admin.php?modif=ok');
+        } else {
+            echo "Erreur lors de la mise à jour";
+        }
+        exit();
     }
 
+    // CREATE
     if ($action === 'create') {
         $data = [
-            'name'      => trim($_POST['name']  ?? ''),
+            'name'      => trim($_POST['name'] ?? ''),
             'email'     => trim($_POST['email'] ?? ''),
             'password'  => $_POST['password'] ?? '',
-            'plan'      => ($_POST['plan'] ?? 'free') === 'premium' ? 'premium' : 'free',
+            'plan'      => $_POST['plan'] ?? 'free',
             'isPremium' => isset($_POST['isPremium']) ? 1 : 0,
-            'isAdmin'   => isset($_POST['isAdmin'])   ? 1 : 0,
+            'isAdmin'   => isset($_POST['isAdmin']) ? 1 : 0,
         ];
+        
         if (getUserByEmail($cnx, $data['email'])) {
-            $toast = 'Email already exists.'; $toastType = 'error';
+            $toast = 'Email already exists';
+            $toastType = 'error';
         } elseif (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
-            $toast = 'All fields required.'; $toastType = 'error';
+            $toast = 'All fields required';
+            $toastType = 'error';
         } else {
-            createUser($cnx, $data) ? ($toast = 'User created.') : ($toast = 'DB error.' and $toastType = 'error');
+            if (AddUser($cnx, $data)) {
+                header('location:admin.php?modif=ok');
+                exit();
+            } else {
+                $toast = 'Database error';
+                $toastType = 'error';
+            }
         }
     }
 }
 
-$search   = trim($_GET['search'] ?? '');
-$allUsers = getAllUsers($cnx);
+// Get users
+$search = trim($_GET['search'] ?? '');
 if ($search !== '') {
-    $allUsers = array_filter($allUsers, fn(Users $u) =>
-        stripos($u->name, $search) !== false || stripos($u->email, $search) !== false
-    );
+    $allUsers = searchUsers($cnx, $search);
+} else {
+    $allUsers = getAllUsers($cnx);
 }
 
-$allForStats  = getAllUsers($cnx);
-$totalUsers   = count($allForStats);
+// Stats
+$allForStats = getAllUsers($cnx);
+$totalUsers = count($allForStats);
 $premiumUsers = count(array_filter($allForStats, fn($u) => (int)$u->isPremium === 1));
-$adminUsers   = count(array_filter($allForStats, fn($u) => (int)$u->isAdmin  === 1));
-$freeUsers    = $totalUsers - $premiumUsers;
-$adminName    = htmlspecialchars($_SESSION['name'] ?? 'Admin', ENT_QUOTES, 'UTF-8');
+$adminUsers = count(array_filter($allForStats, fn($u) => (int)$u->isAdmin === 1));
+$freeUsers = $totalUsers - $premiumUsers;
+$adminName = htmlspecialchars($_SESSION['name'] ?? 'Admin', ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 class Users {
     public $id;
@@ -13,20 +12,23 @@ class Users {
     public $status;
 
     public function __construct(
-        string $name,
-        string $email,
-        string $password,
-        string $plan,
-        int    $isPremium,
-        int    $isAdmin
-        // avatarUrl REMOVED — not a DB column, was causing fatal arg-count mismatch
+        string  $name,
+        string  $email,
+        string  $password,
+        string  $plan,
+        int     $isPremium = 0,
+        int     $isAdmin   = 0,
+        ?int    $id        = null,
+        ?string $createdAt = null
     ) {
         $this->name      = $name;
         $this->email     = $email;
         $this->password  = $password;
-        $this->plan      = $plan;
+        $this->plan      = $plan;       // ✅ use the parameter, not 'free'
         $this->isPremium = $isPremium;
         $this->isAdmin   = $isAdmin;
+        $this->id        = $id;         // ✅ assign it
+        $this->createdAt = $createdAt;  // ✅ assign it
         $this->status    = 'active';
     }
 }

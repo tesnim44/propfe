@@ -1,138 +1,104 @@
 <?php
 declare(strict_types=1);
+
+include __DIR__ . "/../config/database.php";
+include __DIR__ . "/../controller/UserController.php";
+
 session_start();
 
-// ── Si déjà connecté, rediriger directement ──────────────────────────────
-if (isset($_SESSION['user_id'])) {
-    $dest = ($_SESSION['isAdmin'] ?? 0) === 1
-        ? 'admin.php'
-        : '../../index.php';
-    header('Location: ' . $dest);
-    exit();
-}
-
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../model/users.php';
-require_once __DIR__ . '/../../controller/UserController.php';
-
-$mode   = $_GET['mode'] ?? 'signin';
+// Get mode from URL
+$mode = $_GET['mode'] ?? 'signin';
 $errors = [];
 $success = '';
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-function authRedirect(string $location): never {
-    header('Location: ' . $location);
+// Redirect if already logged in
+if (isset($_SESSION['email']) && $mode !== 'logout') {
+    header("Location: dashboard.php");
     exit();
 }
 
-function authSetSession(Users $user): void {
-    session_regenerate_id(true);
-    $_SESSION['user_id']   = $user->id;
-    $_SESSION['name']      = $user->name;
-    $_SESSION['email']     = $user->email;
-    $_SESSION['plan']      = $user->plan;
-    $_SESSION['isPremium'] = (int) $user->isPremium;
-    $_SESSION['isAdmin']   = (int) $user->isAdmin;
-}
-
-// ── Traitement POST ───────────────────────────────────────────────────────
+// ── Handle POST Requests ─────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action   = $_POST['action'] ?? '';
-    $email    = trim((string)($_POST['email']    ?? ''));
-    $password = (string)($_POST['password'] ?? '');
-
+    
     // ════ SIGNIN ════
-    if ($action === 'signin') {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Please enter a valid email address.';
-        }
-        if (strlen($password) < 6) {
-            $errors[] = 'Password must be at least 6 characters.';
-        }
-
-        if (empty($errors)) {
-            // Raccourci admin codé en dur (optionnel, gardé pour compatibilité auth.js)
-            if ($email === 'admin@iblog.com' && $password === 'admin2026') {
-                $adminUser = getUserByEmail($cnx, $email);
-                if ($adminUser) {
-                    authSetSession($adminUser);
-                } else {
-                    // Créer l'admin à la volée s'il n'existe pas en BDD
-                    createUser($cnx, [
-                        'name'      => 'Admin',
-                        'email'     => 'admin@iblog.com',
-                        'password'  => 'admin2026',
-                        'plan'      => 'premium',
-                        'isPremium' => 1,
-                        'isAdmin'   => 1,
-                    ]);
-                    $adminUser = getUserByEmail($cnx, $email);
-                    if ($adminUser) authSetSession($adminUser);
-                }
-                authRedirect('admin.php');
-            }
-
-            $user = getUserByEmail($cnx, $email);
-            if ($user !== null && password_verify($password, $user->password)) {
-                authSetSession($user);
-                // Sync sessionStorage côté JS via cookie lisible en JS
-                setcookie('iblog_user', json_encode([
-                    'name'      => $user->name,
-                    'email'     => $user->email,
-                    'plan'      => $user->plan,
-                    'isPremium' => (bool)$user->isPremium,
-                    'isAdmin'   => (bool)$user->isAdmin,
-                    'initial'   => strtoupper($user->name[0] ?? 'A'),
-                    'onboardingComplete' => true,
-                ]), 0, '/', '', false, false); // httpOnly=false pour JS
-
-                $dest = $user->isAdmin === 1 ? 'admin.php' : '../../index.php';
-                authRedirect($dest);
+    if ($mode === 'signin' && isset($_POST['email'], $_POST['password'])) {
+        
+        $user = ConnectUser($cnx, $_POST);
+        
+        if ($user) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['plan'] = $user['plan'];
+            $_SESSION['isPremium'] = $user['isPremium'];
+            $_SESSION['isAdmin'] = $user['isAdmin'];
+            
+            // Redirect admin to admin panel
+            if ($user['isAdmin'] == 1) {
+                header("Location: components/admin/admin.php");
             } else {
-                $errors[] = 'Invalid email or password.';
+                header("Location: dashboard.php");
             }
+            exit();
+        } else {
+            $errors[] = "Email ou mot de passe incorrect";
         }
-
+    }
+    
     // ════ SIGNUP ════
-    } elseif ($action === 'signup') {
-        $name            = trim((string)($_POST['name']             ?? ''));
-        $confirmPassword = (string)($_POST['confirm_password'] ?? '');
-        $plan            = ($_POST['plan'] ?? 'free') === 'premium' ? 'premium' : 'free';
-
-        if (mb_strlen($name) < 2)                                   $errors[] = 'Name must be at least 2 characters.';
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL))             $errors[] = 'Please enter a valid email address.';
-        if (strlen($password) < 6)                                  $errors[] = 'Password must be at least 6 characters.';
-        if ($password !== $confirmPassword)                         $errors[] = 'Passwords do not match.';
-        if ($email === 'admin@iblog.com')                           $errors[] = 'This email address is reserved.';
-        if (getUserByEmail($cnx, $email) !== null)                  $errors[] = 'This email is already registered. Please sign in.';
-
+    if ($mode === 'signup' && isset($_POST['name'], $_POST['email'], $_POST['password'])) {
+        
+        // Validation
+        if (strlen($_POST['name']) < 2) {
+            $errors[] = "Name must be at least 2 characters";
+        }
+        if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Please enter a valid email address";
+        }
+        if (strlen($_POST['password']) < 6) {
+            $errors[] = "Password must be at least 6 characters";
+        }
+        if ($_POST['password'] !== ($_POST['confirm_password'] ?? '')) {
+            $errors[] = "Passwords do not match";
+        }
+        if ($_POST['email'] === 'admin@iblog.com') {
+            $errors[] = "This email address is reserved";
+        }
+        
+        // Check if email exists
+        $existingUser = getUserByEmail($cnx, $_POST['email']);
+        if ($existingUser) {
+            $errors[] = "This email is already registered";
+        }
+        
         if (empty($errors)) {
-            $created = createUser($cnx, [
-                'name'      => $name,
-                'email'     => $email,
-                'password'  => $password,
-                'plan'      => $plan,
-                'isPremium' => $plan === 'premium' ? 1 : 0,
-                'isAdmin'   => 0,
-            ]);
-
-            if ($created) {
-                $user = getUserByEmail($cnx, $email);
+            $plan = $_POST['plan'] ?? 'free';
+            
+            $userData = [
+                'name' => $_POST['name'],
+                'email' => $_POST['email'],
+                'password' => $_POST['password'],
+                'plan' => $plan,
+                'isPremium' => ($plan === 'premium') ? 1 : 0,
+                'isAdmin' => 0
+            ];
+            
+            if (AddUser($cnx, $userData)) {
+                $user = getUserByEmail($cnx, $_POST['email']);
+                
                 if ($user) {
-                    authSetSession($user);
-                    setcookie('iblog_user', json_encode([
-                        'name'      => $user->name,
-                        'email'     => $user->email,
-                        'plan'      => $user->plan,
-                        'isPremium' => (bool)$user->isPremium,
-                        'isAdmin'   => false,
-                        'initial'   => strtoupper($user->name[0] ?? 'A'),
-                        'onboardingComplete' => false,
-                    ]), 0, '/', '', false, false);
-                    authRedirect('../../index.php');
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['name'] = $user['name'];
+                    $_SESSION['email'] = $user['email'];
+                    $_SESSION['plan'] = $user['plan'];
+                    $_SESSION['isPremium'] = $user['isPremium'];
+                    $_SESSION['isAdmin'] = $user['isAdmin'];
+                    
+                    header("Location: ../../index.php");
+                    exit();
                 }
             } else {
-                $errors[] = 'A database error occurred. Please try again.';
+                $errors[] = "Database error. Please try again.";
             }
         }
 
@@ -143,6 +109,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // En production : envoyer un vrai email avec mail()
             $success = 'If this email exists, a reset link has been sent.';
+        }
+    }
+    
+    // ════ FORGOT PASSWORD ════
+    if ($mode === 'forgot' && isset($_POST['email'])) {
+        if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Please enter a valid email address";
+        } else {
+            $success = "If this email exists, a reset link has been sent.";
         }
     }
 }

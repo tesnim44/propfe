@@ -322,19 +322,94 @@
     if (!e.includes('@')) { alert('Invalid PayPal email.'); return; }
     processSuccess();
   };
+   /*
+ * ══════════════════════════════════════════════════════════════
+ *  PATCH for auth.js — replace ONLY these 2 functions
+ *
+ *  In your existing auth.js:
+ *    1. Find:  function processSuccess() {
+ *       Replace the entire function body with the version below
+ *
+ *    2. The const API = ... line at the top should already be:
+ *       const API = 'backend/view/components/auth/api-auth.php';
+ *       If it's missing, add it at the top of the IIFE.
+ * ══════════════════════════════════════════════════════════════
+ */
+
+/* ══ REPLACEMENT for processSuccess() ══════════════════════ */
+
   function processSuccess() {
     const raw  = sessionStorage.getItem('pendingUser') || sessionStorage.getItem('user');
-    const user = raw ? JSON.parse(raw) : { name: 'New Member', email: 'member@iblog.com' };
-    user.isPremium = true; user.plan = 'premium';
+    let user   = raw ? JSON.parse(raw) : { name: 'New Member', email: '' };
+    user.isPremium = true;
+    user.plan      = 'premium';
+
     sessionStorage.removeItem('pendingUser');
-    _applyUser(user);
+    sessionStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user',   JSON.stringify(user));
+    if (window.IBlog?.state) IBlog.state.currentUser = user;
+
+    const API      = 'backend/view/components/auth/api-auth.php';
+    const MAIL_API = 'backend/view/components/auth/api-mail.php';
+
+    // ── 1. Persist isPremium = 1 in the database ─────────────
+    fetch(API, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        action: 'upgrade_to_premium',
+        method: 'card',
+        amount: 9,
+      }),
+    })
+    .then(r => r.text())
+    .then(text => {
+      if (!text.trim().startsWith('{')) return;
+      const data = JSON.parse(text);
+      if (data.ok && data.user) {
+        // Merge updated plan/isPremium back into session
+        const updated = { ...user, ...data.user, isPremium: true, plan: 'premium' };
+        sessionStorage.setItem('user', JSON.stringify(updated));
+        localStorage.setItem('user',   JSON.stringify(updated));
+        if (window.IBlog?.state) IBlog.state.currentUser = updated;
+      }
+    })
+    .catch(() => {}); // silent — session is already updated above
+
+    // ── 2. Send real confirmation email ──────────────────────
+    if (user.email) {
+      fetch(MAIL_API, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          type:   'premium_activated',
+          to:     user.email,
+          name:   user.name || 'Member',
+          plan:   'Pro',
+          amount: '9',
+          method: 'card',
+        }),
+      }).catch(() => {}); // fire-and-forget
+    }
+
+    // ── 3. Show success screen ────────────────────────────────
     const s2 = document.getElementById('premium-step-payment');
     const s3 = document.getElementById('premium-step-success');
     if (s2) s2.style.display = 'none';
     if (s3) s3.style.display = 'block';
+
     window.dispatchEvent(new CustomEvent('auth:premium', { detail: { success: true } }));
-    setTimeout(() => { closeAllModals(); user.onboardingComplete === false ? launchOnboarding(user) : goToDashboard(); }, 1500);
+
+    setTimeout(() => {
+      closeAllModals();
+      if (user.onboardingComplete === false) {
+        launchOnboarding(user);
+      } else {
+        goToDashboard();
+      }
+    }, 1500);
   }
+
 
   /* ── Onboarding → Dashboard ── */
   function launchOnboarding(user) {
