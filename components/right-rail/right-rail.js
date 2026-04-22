@@ -1,5 +1,6 @@
 // components/right-rail/right-rail.js
 
+<<<<<<< Updated upstream:components/right-rail/right-rail.js
 /* ── Authors data ──────────────────────────────────────── */
 const authorsData = [
   { id: 'marie',  name: 'Marie Curie',    avatar: 'MC', field: 'Science',     followers: '3.2k', following: false },
@@ -7,16 +8,41 @@ const authorsData = [
   { id: 'ada',    name: 'Ada Lovelace',   avatar: 'AL', field: 'Programming', followers: '2.1k', following: false },
   { id: 'nikola', name: 'Nikola Tesla',   avatar: 'NT', field: 'Physics',     followers: '1.9k', following: false },
   { id: 'grace',  name: 'Grace Hopper',   avatar: 'GH', field: 'Tech',        followers: '1.7k', following: false },
+=======
+const STATS_API = 'backend/view/components/auth/api-stats.php';
+
+async function _statsPost(action) {
+  try {
+    const r = await fetch(STATS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    });
+    const text = await r.text();
+    if (!text.trim().startsWith('{')) return null;
+    return JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+}
+
+/* ── Authors fallback ── */
+const _fallbackAuthors = [
+  { id: 'marie', name: 'Marie Curie', avatar: 'MC', field: 'Science', followers: '3.2k', following: false },
+  { id: 'alan', name: 'Alan Turing', avatar: 'AT', field: 'AI', followers: '2.8k', following: false },
+  { id: 'ada', name: 'Ada Lovelace', avatar: 'AL', field: 'Programming', followers: '2.1k', following: false },
+  { id: 'nikola', name: 'Nikola Tesla', avatar: 'NT', field: 'Physics', followers: '1.9k', following: false },
+>>>>>>> Stashed changes:backend/view/components/right-rail/right-rail.js
 ];
 
 /* ── Trending topics ───────────────────────────────────── */
 const trendingTopics = [
-  { name: 'Artificial Intelligence', count: '2.3k', active: true  },
-  { name: 'Web3',                    count: '1.8k', active: false },
-  { name: 'Climate Tech',            count: '1.2k', active: false },
-  { name: 'Quantum Computing',       count: '956',  active: false },
-  { name: 'BioTech',                 count: '789',  active: false },
-  { name: 'Cybersecurity',           count: '654',  active: false },
+  { name: 'Artificial Intelligence', count: '2.3k', active: true },
+  { name: 'Web3', count: '1.8k', active: false },
+  { name: 'Climate Tech', count: '1.2k', active: false },
+  { name: 'Quantum Computing', count: '956', active: false },
+  { name: 'BioTech', count: '789', active: false },
+  { name: 'Cybersecurity', count: '654', active: false },
 ];
 
 /* ══════════════════════════════════════════════════════════
@@ -84,6 +110,43 @@ function injectRightRail() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   GLOBAL HELPER – opens chat overlay with real community data
+══════════════════════════════════════════════════════════ */
+// ── PASTE THIS to replace the openCommunityChat function in right-rail.js ──
+
+window.openCommunityChat = async function (communityId) {
+  // Ensure IBlog.COMMUNITIES is loaded from DB
+  if (!window.IBlog.COMMUNITIES?.length) {
+    try {
+      const resp = await fetch('/propfe/backend/view/components/communities/get_communities_data.php');
+      const communities = await resp.json();
+      window.IBlog.COMMUNITIES = communities.map(c => ({
+        id:          c.id,
+        name:        c.name,
+        icon:        c.iconLetter || c.name.substring(0, 2),
+        memberCount: c.memberCount,   // ← raw number, no "members" string
+        desc:        c.description,
+        tags:        c.tags || [],
+        createdBy:   c.creatorName,
+        threads:     [],
+        resources:   [],
+        chatSeeds:   [],
+      }));
+    } catch (err) {
+      console.error('Failed to load communities', err);
+      return;
+    }
+  }
+
+  const idx = window.IBlog.COMMUNITIES.findIndex(c => c.id == communityId);
+  if (idx !== -1 && IBlog.Chat?.open) {
+    IBlog.Chat.open(idx);
+  } else {
+    console.error('Community not found:', communityId, 'COMMUNITIES:', window.IBlog.COMMUNITIES);
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
 function initRightRail() {
@@ -105,6 +168,7 @@ function loadUserStats() {
   let viewsCount     = '8.4k';
   let likesCount     = '312';
 
+<<<<<<< Updated upstream:components/right-rail/right-rail.js
   if (u) {
     const mine = (IBlog.state.articles || []).filter(a => a.author === u.name);
     articleCount = mine.length;
@@ -112,6 +176,88 @@ function loadUserStats() {
       followersCount = '2.5k';
       viewsCount     = '15.2k';
       likesCount     = '1.1k';
+=======
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = typeof val === 'number' && val >= 1000
+      ? (val / 1000).toFixed(1) + 'k' : String(val);
+  };
+
+  if (data?.ok) {
+    set('rr-articles', data.articles || 0);
+    set('rr-likes', data.likes || 0);
+    set('rr-views', data.views || 0);
+    set('rr-comments', data.comments || 0);
+  } else {
+    // Fallback from JS state
+    const u = IBlog.state?.currentUser;
+    const arts = (IBlog.state?.articles || []).filter(a => a.author === u?.name);
+    set('rr-articles', arts.length);
+    set('rr-likes', arts.reduce((s, a) => s + (a.likes || 0), 0));
+    set('rr-views', arts.reduce((s, a) => s + ((a.likes || 0) * 8), 0));
+    set('rr-comments', arts.reduce((s, a) => s + (a.comments?.length || 0), 0));
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOP AUTHORS — from DB (sorted by total likes received)
+══════════════════════════════════════════════════════════ */
+async function loadTopAuthors() {
+  const container = document.getElementById('top-authors');
+  if (!container) return;
+
+  const data = await _statsPost('top_authors');
+
+  if (data?.ok && data.authors?.length) {
+    container.innerHTML = data.authors.map((a, i) => {
+      const colors = ['hsl(280,55%,55%)', 'hsl(200,55%,45%)', 'hsl(30,65%,50%)', 'hsl(160,50%,40%)', 'hsl(350,55%,50%)'];
+      const color = colors[i % colors.length];
+      const badge = a.isPremium ? '<span style="font-size:10px;color:var(--premium);">⭐</span>' : '';
+      return `
+        <div class="author-item">
+          <div class="card-avatar" style="width:36px;height:36px;background:${color};font-size:14px;font-weight:700;
+               display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;flex-shrink:0;">
+            ${a.initial}${badge}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.name}</div>
+            <div style="font-size:11px;color:var(--text2);">
+              ❤️ ${a.totalLikes} likes · ${a.articleCount} articles
+            </div>
+          </div>
+          <button class="follow-btn"
+            onclick="this.classList.toggle('following');
+                     this.textContent=this.classList.contains('following')?'Following':'Follow';
+                     IBlog.utils?.toast(this.classList.contains('following')?'Following!':'Unfollowed');">
+            Follow
+          </button>
+        </div>`;
+    }).join('');
+  } else {
+    // Fallback: use IBlog.AUTHORS or derive from seed articles
+    const authors = window.IBlog?.AUTHORS || [];
+    if (authors.length) {
+      container.innerHTML = authors.slice(0, 5).map(a => `
+        <div class="author-item">
+          <div class="card-avatar" style="width:34px;height:34px;background:${a.color};font-size:14px;font-weight:700;
+               display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;flex-shrink:0;">
+            ${a.initial}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${a.name}</div>
+            <div style="font-size:11px;color:var(--text2);">${a.tag} · ${a.followers}</div>
+          </div>
+          <button class="follow-btn"
+            onclick="this.classList.toggle('following');
+                     this.textContent=this.classList.contains('following')?'Following':'Follow';
+                     IBlog.utils?.toast(this.classList.contains('following')?'Following '+${JSON.stringify(a.name)}:'Unfollowed');">
+            Follow
+          </button>
+        </div>`).join('');
+    } else {
+      container.innerHTML = '<div style="font-size:13px;color:var(--text2);padding:8px 0;">No data yet.</div>';
+>>>>>>> Stashed changes:backend/view/components/right-rail/right-rail.js
     }
   }
 
@@ -146,7 +292,7 @@ function selectTrendingTopic(topic) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   RAIL COMMUNITIES
+   RAIL COMMUNITIES - FROM PHP/MySQL
 ══════════════════════════════════════════════════════════ */
 function _railAbbr(name) {
   if (!name) return '?';
@@ -157,10 +303,18 @@ function _railAbbr(name) {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function loadRailCommunities() {
   const container = document.getElementById('rail-communities');
   if (!container) return;
 
+<<<<<<< Updated upstream:components/right-rail/right-rail.js
   if (window.IBlog?.COMMUNITIES && IBlog.state?.joinedCommunities) {
     const user   = IBlog.state.currentUser;
     const joined = IBlog.state.joinedCommunities;
@@ -176,11 +330,56 @@ function loadRailCommunities() {
         }
         return true;
       });
+=======
+  fetch('/propfe/backend/view/components/communities/get_user_communities.php')
+    .then(response => response.json())
+    .then(communities => {
+      if (!communities.length) {
+        container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+        return;
+      }
+      container.innerHTML = communities.map(community => `
+        <div class="rail-comm-item">
+          <div class="rail-comm-icon">${_railAbbr(community.name)}</div>
+          <div class="rail-comm-info">
+            <div class="rail-comm-name">${escapeHtml(community.name)}</div>
+            <div class="rail-comm-meta">${community.memberCount} members</div>
+          </div>
+          <div class="rail-comm-actions">
+            <button class="rail-comm-btn rail-comm-btn-open"
+                onclick="openCommunityChat(${community.id})">Open Chat</button>
+            <button class="rail-comm-btn rail-comm-btn-leave"
+                onclick="leaveCommunityAndReload('${community.id}')">Leave</button>
+          </div>
+        </div>
+      `).join('');
+    })
+    .catch(error => {
+      console.error('Error loading communities:', error);
+      container.innerHTML = '<div class="rail-comm-empty">Error loading communities.</div>';
+    });
+}
+>>>>>>> Stashed changes:backend/view/components/right-rail/right-rail.js
 
-    if (!joinedComms.length) {
-      container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
-      return;
+function leaveCommunityAndReload(communityId) {
+  fetch('/propfe/backend/controller/CommunityController.php?action=leave', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ community_id: communityId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      loadRailCommunities();                     // refresh right‑rail
+      if (typeof IBlog.Communities?.refresh === 'function') {
+        IBlog.Communities.refresh();             // refresh community grid
+      } else if (typeof IBlog.Communities?._buildCards === 'function') {
+        IBlog.Communities._buildCards();
+      }
+    } else {
+      IBlog.utils?.toast(data.error || 'Error leaving community', 'error');
     }
+<<<<<<< Updated upstream:components/right-rail/right-rail.js
 
     container.innerHTML = joinedComms.map(({ c, idx }) => `
       <div class="rail-comm-item">
@@ -199,6 +398,10 @@ function loadRailCommunities() {
   }
 
   container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+=======
+  })
+  .catch(error => console.error('Error:', error));
+>>>>>>> Stashed changes:backend/view/components/right-rail/right-rail.js
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -256,7 +459,14 @@ function subscribeToDigest() {
   const emailInput = document.querySelector('.digest-email');
   if (!emailInput) return;
   const email = emailInput.value.trim();
+<<<<<<< Updated upstream:components/right-rail/right-rail.js
   if (!email || !email.includes('@')) { IBlog.utils.toast('Please enter a valid email', 'error'); return; }
+=======
+  if (!email || !email.includes('@')) {
+    IBlog.utils?.toast('Please enter a valid email', 'error');
+    return;
+  }
+>>>>>>> Stashed changes:backend/view/components/right-rail/right-rail.js
   emailInput.value = '';
   IBlog.utils.toast('Subscribed! Weekly digest incoming.', 'success');
 }
@@ -279,11 +489,21 @@ function buildTopAuthors()      { loadTopAuthors(); }
    PUBLIC API
 ══════════════════════════════════════════════════════════ */
 window.RightRail = {
-  init:             initRightRail,
+  init: initRightRail,
   buildCommunities: loadRailCommunities,
+<<<<<<< Updated upstream:components/right-rail/right-rail.js
   loadCommunities:  loadRailCommunities,
   buildTopics:      buildRailTopics,
   buildAuthors:     buildTopAuthors,
   subscribe:        subscribeToDigest,
   follow:           toggleFollow,
 };
+=======
+  loadCommunities: loadRailCommunities,
+  buildTopics: loadTrendingTopics,
+  buildAuthors: loadTopAuthors,
+  subscribe: subscribeToDigest,
+};
+
+window.loadRailCommunities = loadRailCommunities;
+>>>>>>> Stashed changes:backend/view/components/right-rail/right-rail.js

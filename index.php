@@ -244,7 +244,33 @@
           <div id="analytics-root"></div>
 
           <!-- COMMUNITIES -->
-          <div id="communities-root"></div>
+<div class="view-panel" id="view-communities">
+    <div class="comm-header-row">
+        <div>
+            <h1>Community Spaces</h1>
+            <p>Topic-based spaces for deep knowledge sharing</p>
+        </div>
+        <button id="create-community-btn" class="btn btn-primary comm-create-btn" 
+                onclick="window.location.href='/propfe/backend/view/components/communities/create_community.php'">
+            + Create Community
+        </button>
+    </div>
+
+    <div class="comm-search-wrap">
+        <svg class="comm-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="comm-search-input" id="comm-search" type="text"
+               placeholder="Search communities…" autocomplete="off"/>
+        <button class="comm-search-clear" id="comm-search-clear" style="display:none"
+                onclick="clearCommunitySearch()">✕</button>
+    </div>
+
+    <div class="community-grid" id="comm-grid">
+        <div class="comm-loading">Loading communities...</div>
+    </div>
+</div>
 
           <!-- TRENDS -->
           <div id="trend-root"></div>
@@ -569,47 +595,8 @@
     <!-- /dashboard -->
 
     <!-- COMMUNITY CHAT PANEL -->
-    <div id="chatOverlay" onclick="IBlog.Chat.closedIfOutside(event)">
-      <div class="chat-panel">
-        <div class="chat-header">
-          <div class="chat-header-icon" id="chat-icon">🤖</div>
-          <div class="chat-header-info">
-            <strong id="chat-title">AI &amp; ML</strong>
-            <small id="chat-meta">4.2k members · 23 online</small>
-          </div>
-          <button class="chat-close" onclick="IBlog.Chat.close()">✕</button>
-        </div>
-        <div class="chat-tabs">
-          <div
-            class="chat-tab active"
-            onclick="IBlog.Chat.switchTab('messages', this)"
-          >
-            💬 Chat
-          </div>
-          <div class="chat-tab" onclick="IBlog.Chat.switchTab('threads', this)">
-            🧵 Threads
-          </div>
-          <div
-            class="chat-tab"
-            onclick="IBlog.Chat.switchTab('resources', this)"
-          >
-            📚 Resources
-          </div>
-        </div>
-        <div class="chat-body" id="chat-messages"></div>
-        <div class="chat-panel-section" id="chat-threads-panel"></div>
-        <div class="chat-panel-section" id="chat-resources-panel"></div>
-        <div class="chat-input-row" id="chat-input-row">
-          <input
-            class="chat-input"
-            id="chat-input"
-            placeholder="Message the community…"
-            onkeydown="if (event.key === 'Enter') IBlog.Chat.send();"
-          />
-          <button class="chat-send" onclick="IBlog.Chat.send()">➤</button>
-        </div>
-      </div>
-    </div>
+    <?php include 'backend/view/components/chat/chat.php'; ?>
+
 
 
 
@@ -617,7 +604,11 @@
     <!-- JS COMPONENTS (ordre de chargement strict) -->
 <script src="toggledark.js"></script>
 <script src="data.js"></script>
+<<<<<<< Updated upstream:index.html
 <script src="components/admin/admin.js"></script>
+=======
+<script src="backend/view/components/admin/admin.js"></script>
+>>>>>>> Stashed changes:index.php
 <script src="js/podcast.js"></script>
 <script src="js/templates.js"></script>
 <script src="js/feed.js"></script>
