@@ -1,15 +1,39 @@
-
+/* ============================================================
+   IBlog — app.js  (entry point)
+   Runs on DOMContentLoaded — decides landing vs dashboard
+   ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Clear any leftover localStorage user data so tab-close always returns to landing
+
+  // On tab close / new session, start fresh (no localStorage persistence)
   localStorage.removeItem('user');
   localStorage.removeItem('selectedPlan');
-  const savedUser = sessionStorage.getItem('user'); // ← sessionStorage not localStorage
+
+  const savedUser = sessionStorage.getItem('user');
+
   if (savedUser) {
     try {
       const user = JSON.parse(savedUser);
       if (user && user.name && user.email) {
         IBlog.state.currentUser = user;
+
+        // Onboarding incomplete → show landing + trigger onboarding
+        if (user.onboardingComplete === false && window.IBlogOnboarding?.start) {
+          document.getElementById('dashboard').style.display  = 'none';
+          document.getElementById('landing-page').style.display = 'block';
+          IBlogOnboarding.start(user, {
+            onComplete: () => {
+              document.getElementById('landing-page').style.display = 'none';
+              document.getElementById('dashboard').style.display    = 'block';
+              IBlog.Dashboard.enter();
+            }
+          });
+          return;
+        }
+
+        // Returning user → go straight to dashboard
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('dashboard').style.display    = 'block';
         IBlog.Dashboard.enter();
         return;
       } else {
@@ -20,18 +44,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // No user — show landing
-  document.getElementById('dashboard').style.display = 'none';
+  // ── No session → Landing page ──────────────────────────
+  document.getElementById('dashboard').style.display    = 'none';
   document.getElementById('landing-page').style.display = 'block';
 
   IBlog.Dashboard.initHero();
   IBlog.Dashboard.buildTicker();
   IBlog.Dashboard.buildLandingCarousel();
 
-  const trendList = document.getElementById('trend-list'); // ← fixed typo
+  // Trend list on landing
+  const trendList = document.getElementById('trend-list');
   if (trendList) {
     trendList.innerHTML = IBlog.TRENDS.map(t => `
-      <div class="trend-row" onclick="IBlog.Views.searchTopic('${t.topic}')">
+      <div class="trend-row" onclick="IBlog.Views?.searchTopic?.('${t.topic}')">
         <span class="trend-num">#${t.rank}</span>
         <div style="font-size:18px">${t.icon}</div>
         <div class="trend-info">
@@ -43,9 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
+  // Explore feed (if present)
   setTimeout(() => {
     const exp = document.getElementById('explore-feed');
-    if (exp) IBlog.Feed.build('trending', 'explore-feed');
+    if (exp) IBlog.Feed?.build('trending', 'explore-feed');
   }, 100);
 
 });

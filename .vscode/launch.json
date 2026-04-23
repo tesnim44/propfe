@@ -5,7 +5,7 @@
       "name": "Launch via Live Server",
       "type": "pwa-chrome",
       "request": "launch",
-      "url": "http://127.0.0.1:5500/index.html",
+      "url": "http://localhost/iblog/index.php",
       "webRoot": "${workspaceFolder}"
     }
   ]

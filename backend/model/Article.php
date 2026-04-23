@@ -1,0 +1,31 @@
+<?php
+class article {
+
+    public $id;
+    public $authorId;
+    public $title;
+    public $body;
+    public $category;
+    public $tags;
+    public $status;
+    public $likesCount;
+    public $coverImage;
+    public $readingTime;
+    public $createdAt;
+    public $views;
+    public $label;
+
+    public function __construct($authorId,$title,$body,$category,$tags,$status,$coverImage,$readingTime,$views,$label){
+        $this->authorId = $authorId;
+        $this->title = $title;
+        $this->body = $body;
+        $this->category = $category;
+        $this->tags = $tags;
+        $this->status = $status;
+        $this->coverImage = $coverImage;
+        $this->readingTime = $readingTime;
+        $this->views = $views;
+        $this->label = $label;
+    }
+}
+?>
