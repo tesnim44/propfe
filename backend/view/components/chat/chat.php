@@ -2,7 +2,7 @@
 <div id="chatOverlay" onclick="IBlog.Chat.closedIfOutside(event)">
   <div class="chat-panel">
     <div class="chat-header">
-      <div class="chat-header-icon" id="chat-icon"></div>
+      <div class="chat-header-icon" id="chat-icon">🤖</div>
       <div class="chat-header-info">
         <strong id="chat-title">AI &amp; ML</strong>
         <small id="chat-meta">4.2k members · 23 online</small>

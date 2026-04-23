@@ -7,47 +7,54 @@ IBlog.Chat = (() => {
   let _activeThreadId     = null;
   let _reactions          = new Map();
   let _threadMessages     = new Map();
+  let _pollInterval       = null;
 
   const API_BASE = '/propfe/backend/controller/CommunityController.php';
-  const _api = () => API_BASE;
 
-  /* ── API helpers ─────────────────────────────────────────*/
+  /* ── API helpers ─────────────────────────────────────── */
+  async function _safeJSON(res) {
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch(e) { console.error('[Chat] Non-JSON:', text.slice(0, 200)); return null; }
+  }
 
   async function _get(action, params = {}) {
     const qs  = new URLSearchParams({ action, ...params }).toString();
-    const res = await fetch(`${_api()}?${qs}`);
-    return res.json();
+    const res = await fetch(`${API_BASE}?${qs}`);
+    return _safeJSON(res);
   }
 
   async function _post(action, body = {}) {
-    const res = await fetch(`${_api()}?action=${encodeURIComponent(action)}`, {
-      method : 'POST',
+    const res = await fetch(`${API_BASE}?action=${encodeURIComponent(action)}`, {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify(body),
+      body:    JSON.stringify(body),
     });
-    return res.json();
+    return _safeJSON(res);
   }
 
-  /* ── Domain API ──────────────────────────────────────────*/
-
+  /* ── Domain API ──────────────────────────────────────── */
   async function _loadMessages(communityId) {
     const mb = document.getElementById('chat-messages');
+    if (!mb) return;
     try {
       const res  = await fetch(`${API_BASE}?action=getMessages&communityId=${communityId}`);
-      const data = await res.json();
+      const data = await _safeJSON(res);
+      if (!data) { _showError(mb, 'Could not load messages.'); return; }
+
+      const currentUser = IBlog.state?.currentUser;
       if (data.success) {
-        const currentUser = IBlog.state?.currentUser;
-        mb.innerHTML = data.messages.length
+        mb.innerHTML = data.messages?.length
           ? data.messages.map(m => _renderMsg({
-              id           : m.id,
-              userName     : m.userName,
-              message      : m.message,
+              id:            m.id,
+              userName:      m.userName,
+              message:       m.message,
               formattedTime: new Date(m.created_at || m.createdAt)
-                               .toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }),
-              isMine       : currentUser && String(m.userId) === String(currentUser.id),
+                               .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              isMine:        currentUser && (String(m.userId) === String(currentUser.id)),
             })).join('')
           : '<div class="chat-placeholder">No messages yet. Be the first!</div>';
-        data.messages.forEach(m => _renderReactions(m.id));
+        data.messages?.forEach(m => _renderReactions(m.id));
       } else {
         _showError(mb, 'Could not load messages.');
       }
@@ -59,8 +66,7 @@ IBlog.Chat = (() => {
 
   async function _postMessage(communityId, message) {
     try {
-      const data = await _post('sendMessage', { communityId, message });
-      return data;
+      return await _post('sendMessage', { communityId, message });
     } catch (e) {
       console.error('[Chat] postMessage:', e);
       return { success: false };
@@ -69,25 +75,22 @@ IBlog.Chat = (() => {
 
   async function _checkMembership(communityId) {
     try {
-      return await _get('checkMembership', { communityId });
+      return await _get('checkMembership', { communityId }) || { isMember: false, isBanned: false };
     } catch (e) {
-      console.error('[Chat] checkMembership:', e);
       return { isMember: false, isBanned: false };
     }
   }
 
   async function _joinCommunity(communityId) {
     try {
-      return await _post('join', { community_id: communityId });
+      return await _post('join', { community_id: communityId }) || { success: false };
     } catch (e) {
-      console.error('[Chat] joinCommunity:', e);
       return { success: false };
     }
   }
 
-  /* ── Helpers ─────────────────────────────────────────────*/
-
-  function _escapeHtml(str) {
+  /* ── Helpers ─────────────────────────────────────────── */
+  function _esc(str) {
     if (!str) return '';
     const d = document.createElement('div');
     d.textContent = str;
@@ -100,11 +103,6 @@ IBlog.Chat = (() => {
     const m    = n.getMinutes().toString().padStart(2, '0');
     const ampm = h >= 12 ? 'PM' : 'AM';
     return `${h % 12 || 12}:${m} ${ampm}`;
-  }
-
-  function _isPremium() {
-    const u = IBlog.state.currentUser;
-    return u && (u.isPremium === true || u.plan === 'premium');
   }
 
   function _colorFromName(name) {
@@ -129,33 +127,32 @@ IBlog.Chat = (() => {
 
   function _getRandomReply() {
     const r = [
-      "Great point! 🔥","Totally agree with that.","Interesting — source?",
-      "This is exactly what I was thinking.","Has anyone tried this in practice?",
-      "Worth a deep dive for sure.","Really appreciate you sharing this.",
-      "100% — the data backs this up too.","Thanks for sharing your perspective!",
-      "Could you elaborate on that?","I've been researching this too!",
+      'Great point! 🔥', 'Totally agree with that.', 'Interesting — source?',
+      'This is exactly what I was thinking.', 'Has anyone tried this in practice?',
+      'Worth a deep dive for sure.', 'Really appreciate you sharing this.',
+      '100% — the data backs this up too.', 'Thanks for sharing your perspective!',
+      'Could you elaborate on that?', 'I\'ve been researching this too!',
     ];
     return r[Math.floor(Math.random() * r.length)];
   }
 
-  /* ── UI state helpers ────────────────────────────────────*/
-
+  /* ── UI state helpers ────────────────────────────────── */
   function _showLoading(mb) {
-    mb.innerHTML = `<div class="chat-placeholder">Loading messages…</div>`;
+    if (mb) mb.innerHTML = `<div class="chat-placeholder">Loading messages…</div>`;
   }
 
   function _showError(mb, msg) {
-    mb.innerHTML = `<div class="chat-placeholder">⚠️ ${_escapeHtml(msg)}</div>`;
+    if (mb) mb.innerHTML = `<div class="chat-placeholder">⚠️ ${_esc(msg)}</div>`;
   }
 
   function _showBanned(mb) {
-    mb.innerHTML = `<div class="chat-placeholder">🚫 You have been banned from this community.</div>`;
-    document.getElementById('chat-input-row').style.display = 'none';
+    if (mb) mb.innerHTML = `<div class="chat-placeholder">🚫 You have been banned from this community.</div>`;
+    const ir = document.getElementById('chat-input-row');
+    if (ir) ir.style.display = 'none';
   }
 
-  /* ── Reactions (client-side) ─────────────────────────────*/
-
-  const QUICK_EMOJIS = ['👍','❤️','😂','😮','🔥','👏'];
+  /* ── Reactions (client-side) ─────────────────────────── */
+  const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '👏'];
 
   function toggleReaction(msgId, emoji) {
     if (!_reactions.has(msgId)) _reactions.set(msgId, {});
@@ -185,7 +182,7 @@ IBlog.Chat = (() => {
     bar.innerHTML = Object.entries(reacts).map(([emoji, users]) =>
       `<button class="reaction-chip${users.has(user) ? ' mine' : ''}"
         onclick="IBlog.Chat.toggleReaction('${msgId}','${emoji}')"
-        title="${[...users].join(', ')}">${emoji} <span>${users.size}</span></button>`
+        title="${_esc([...users].join(', '))}">${emoji} <span>${users.size}</span></button>`
     ).join('');
   }
 
@@ -204,10 +201,10 @@ IBlog.Chat = (() => {
     let top  = rect.top - ph - 8;
     if (top < 10) top = rect.bottom + 8;
     Object.assign(picker.style, {
-      position:'fixed', left:`${left}px`, top:`${top}px`, zIndex:'10001',
-      background:'var(--surface)', borderRadius:'12px', padding:'8px',
-      display:'flex', gap:'4px', boxShadow:'0 4px 12px rgba(0,0,0,.2)',
-      border:'1px solid var(--border)',
+      position: 'fixed', left: `${left}px`, top: `${top}px`, zIndex: '10001',
+      background: 'var(--surface)', borderRadius: '12px', padding: '8px',
+      display: 'flex', gap: '4px', boxShadow: '0 4px 12px rgba(0,0,0,.2)',
+      border: '1px solid var(--border)',
     });
     picker.querySelectorAll('button').forEach(btn => {
       btn.onclick = e => {
@@ -229,20 +226,19 @@ IBlog.Chat = (() => {
     }, 100);
   }
 
-  /* ── Render one message ──────────────────────────────────*/
-
+  /* ── Render one message ──────────────────────────────── */
   function _renderMsg(msg) {
     const text = msg.message || msg.text || '';
+    const initial = msg.userInitial || (msg.userName || '?')[0].toUpperCase();
+    const color   = msg.avatarColor || _colorFromName(msg.userName);
     return `
       <div class="chat-msg ${msg.isMine ? 'mine' : ''}" id="wrap-${msg.id}">
-        <div class="chat-msg-avatar" style="background:${msg.avatarColor || _colorFromName(msg.userName)}">
-          ${msg.userInitial || (msg.userName || '?')[0].toUpperCase()}
-        </div>
+        <div class="chat-msg-avatar" style="background:${color}">${initial}</div>
         <div class="chat-msg-bubble">
-          <div class="chat-msg-name">${_escapeHtml(msg.userName || 'Member')}
-            ${msg.tag ? `<span style="font-size:10px;opacity:.7;margin-left:6px;">(${msg.tag})</span>` : ''}
+          <div class="chat-msg-name">${_esc(msg.userName || 'Member')}
+            ${msg.tag ? `<span style="font-size:10px;opacity:.7;margin-left:6px;">(${_esc(msg.tag)})</span>` : ''}
           </div>
-          <div class="chat-msg-text">${_escapeHtml(text)}</div>
+          <div class="chat-msg-text">${_esc(text)}</div>
           <div class="chat-msg-time">${msg.formattedTime || msg.time || ''}</div>
           <div class="reaction-bar" id="reactions-${msg.id}"></div>
         </div>
@@ -252,15 +248,14 @@ IBlog.Chat = (() => {
       </div>`;
   }
 
-  /* ── Thread pane ─────────────────────────────────────────*/
-
+  /* ── Thread pane ─────────────────────────────────────── */
   function _threadKey(cid, tid) { return `${cid}:${tid}`; }
 
   function _addThreadMsg(cid, tid, msg) {
-    const key = _threadKey(cid, tid);
+    const key  = _threadKey(cid, tid);
     if (!_threadMessages.has(key)) _threadMessages.set(key, []);
     const msgs = _threadMessages.get(key);
-    const m = { ...msg, id:`tmsg-${Date.now()}-${Math.random().toString(36).slice(2)}`, time:_formatTime() };
+    const m    = { ...msg, id: `tmsg-${Date.now()}-${Math.random().toString(36).slice(2)}`, time: _formatTime() };
     msgs.push(m);
     return m;
   }
@@ -306,10 +301,8 @@ IBlog.Chat = (() => {
     document.getElementById('chat-flex-row').appendChild(pane);
   }
 
-  /* ── Open community chat ─────────────────────────────────*/
-
+  /* ── Open community chat ─────────────────────────────── */
   async function open(idx) {
-    console.log('[Chat] open idx:', idx, '| COMMUNITIES:', IBlog.COMMUNITIES);
     const c = IBlog.COMMUNITIES?.[idx];
     if (!c) { console.error('[Chat] No community at index', idx); return; }
     if (!c.id) { console.error('[Chat] Community has no id:', c); return; }
@@ -317,6 +310,9 @@ IBlog.Chat = (() => {
     _activeCommunityIdx = idx;
     _activeCommunityId  = c.id;
     _activeThreadId     = null;
+
+    // Stop any previous polling
+    if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
 
     document.getElementById('chat-icon').textContent  = c.icon || c.name?.substring(0, 2);
     document.getElementById('chat-title').textContent = c.name;
@@ -333,38 +329,39 @@ IBlog.Chat = (() => {
 
     const mb = document.getElementById('chat-messages');
     _showLoading(mb);
-    document.getElementById('chat-input-row').style.display = 'none';
+    const ir = document.getElementById('chat-input-row');
+    if (ir) ir.style.display = 'none';
     document.getElementById('chatOverlay').classList.add('open');
 
-    // Check membership using real DB id
+    // Check membership
     const membership = await _checkMembership(c.id);
     if (membership.isBanned) { _showBanned(mb); return; }
 
     if (!membership.isMember) {
       const joined = await _joinCommunity(c.id);
-      if (!joined.success) {
+      if (!joined || !joined.success) {
         _showError(mb, 'Could not join community. Please try again.');
         return;
       }
       if (joined.isBanned) { _showBanned(mb); return; }
+      // Update joined state in communities module
+      IBlog.state.joinedCommunityIds = IBlog.state.joinedCommunityIds || new Set();
+      IBlog.state.joinedCommunityIds.add(String(c.id));
     }
 
-    // Update UI join state
-    IBlog.state.joinedCommunities?.add(idx);
-    const jb = document.getElementById('comm-join-' + idx);
-    if (jb) jb.textContent = '✓ Joined';
-    document.getElementById('comm-enter-' + idx)?.classList.add('visible');
-    const rjb = document.getElementById('rail-join-' + idx);
-    if (rjb) { rjb.classList.add('joined'); rjb.textContent = 'Joined'; }
-
-    // Load real messages from DB
+    // Load messages
     await _loadMessages(c.id);
-    document.getElementById('chat-input-row').style.display = 'flex';
-    setTimeout(() => { mb.scrollTop = mb.scrollHeight; }, 60);
+    if (ir) ir.style.display = 'flex';
+    const mbEl = document.getElementById('chat-messages');
+    if (mbEl) setTimeout(() => { mbEl.scrollTop = mbEl.scrollHeight; }, 60);
+
+    // Poll for new messages every 5s
+    _pollInterval = setInterval(() => {
+      if (_activeCommunityId === c.id) _loadMessages(c.id);
+    }, 5000);
   }
 
-  /* ── Threads ─────────────────────────────────────────────*/
-
+  /* ── Threads ─────────────────────────────────────────── */
   function _buildThreads(c) {
     const el = document.getElementById('chat-threads-panel');
     if (!el) return;
@@ -377,8 +374,8 @@ IBlog.Chat = (() => {
       ? threads.map((t, i) => `
           <div class="thread-card${_activeThreadId === i ? ' active-thread' : ''}" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin-bottom:8px;" id="thread-card-${i}">
             <div style="flex:1;" onclick="IBlog.Chat.openThread(${i})">
-              <strong>💬 ${_escapeHtml(t.title)}</strong>
-              <span style="display:block;font-size:11px;color:var(--text2);margin-top:2px;">${t.replyCount || 0} ${t.replyCount === 1 ? 'reply' : 'replies'} · by ${_escapeHtml(t.createdBy || 'Member')}</span>
+              <strong>💬 ${_esc(t.title)}</strong>
+              <span style="display:block;font-size:11px;color:var(--text2);margin-top:2px;">${t.replyCount || 0} ${t.replyCount === 1 ? 'reply' : 'replies'} · by ${_esc(t.createdBy || 'Member')}</span>
             </div>
             ${isPremium ? `<button onclick="IBlog.Chat.deleteThread(${i});event.stopPropagation();" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:15px;padding:2px 6px;border-radius:4px;flex-shrink:0;" title="Delete thread">🗑</button>` : ''}
           </div>`).join('')
@@ -404,16 +401,6 @@ IBlog.Chat = (() => {
     }, 60);
   }
 
-  function openThreadByTitle(commIdx, title) {
-    const isOpen = document.getElementById('chatOverlay')?.classList.contains('open');
-    if (!isOpen || _activeCommunityIdx !== commIdx) open(commIdx);
-    setTimeout(() => {
-      [...document.querySelectorAll('.chat-tab')].find(t => t.textContent.includes('Thread'))?.click();
-      const idx = (IBlog.COMMUNITIES?.[commIdx]?.threads || []).findIndex(t => t.title === title);
-      if (idx !== -1) openThread(idx);
-    }, 80);
-  }
-
   function _renderThreadPane() {
     const el = document.getElementById('thread-pane-msgs');
     if (!el || _activeThreadId === null) return;
@@ -436,9 +423,9 @@ IBlog.Chat = (() => {
     const input = document.getElementById('thread-pane-input');
     const text  = input?.value.trim();
     if (!text) return;
-    const u   = IBlog.state.currentUser || { name:'You', initial:'U', color:'var(--accent)' };
+    const u   = IBlog.state.currentUser || { name: 'You', initial: 'U', color: 'var(--accent)' };
     const msg = _addThreadMsg(_activeCommunityIdx, _activeThreadId, {
-      userName:u.name, userInitial:u.initial, text, isMine:true, avatarColor:u.color
+      userName: u.name, userInitial: u.initial || u.name[0], text, isMine: true, avatarColor: u.color
     });
     const el = document.getElementById('thread-pane-msgs');
     if (el.querySelector('.chat-placeholder')) el.innerHTML = '';
@@ -450,7 +437,7 @@ IBlog.Chat = (() => {
     setTimeout(() => {
       const a = _getRandomAuthor();
       const r = _addThreadMsg(_activeCommunityIdx, _activeThreadId, {
-        userName:a.name, userInitial:a.initial, text:_getRandomReply(), isMine:false, avatarColor:a.color, tag:a.tag
+        userName: a.name, userInitial: a.initial, text: _getRandomReply(), isMine: false, avatarColor: a.color, tag: a.tag
       });
       el.insertAdjacentHTML('beforeend', _renderMsg(r));
       el.scrollTop = el.scrollHeight;
@@ -470,7 +457,7 @@ IBlog.Chat = (() => {
   }
 
   function showCreateThreadModal() {
-    if (!_isPremium()) { IBlog.utils?.toast?.('⭐ Premium feature', 'info'); window.showPremium?.(); return; }
+    if (!_isPremium()) { IBlog.utils?.toast('⭐ Premium feature', 'info'); window.showPremium?.(); return; }
     if (!document.getElementById('modal-create-thread')) {
       const wrap = document.createElement('div');
       wrap.innerHTML = `
@@ -506,10 +493,10 @@ IBlog.Chat = (() => {
     const c    = IBlog.COMMUNITIES?.[_activeCommunityIdx];
     const user = IBlog.state.currentUser || { name: 'Member' };
     if (!c.threads) c.threads = [];
-    c.threads.unshift({ id:`thread-${Date.now()}`, title, createdBy:user.name, createdAt:new Date().toISOString(), replyCount:0 });
+    c.threads.unshift({ id: `thread-${Date.now()}`, title, createdBy: user.name, createdAt: new Date().toISOString(), replyCount: 0 });
     closeCreateThreadModal();
     _buildThreads(c);
-    IBlog.utils?.toast?.(`Thread "${title}" created!`, 'success');
+    IBlog.utils?.toast(`Thread "${title}" created!`, 'success');
     openThread(0);
   }
 
@@ -522,24 +509,29 @@ IBlog.Chat = (() => {
     c.threads.splice(threadIdx, 1);
     if (_activeThreadId === threadIdx) _closeThreadPane();
     else _buildThreads(c);
-    IBlog.utils?.toast?.('Thread deleted.', 'info');
+    IBlog.utils?.toast('Thread deleted.', 'info');
   }
 
-  /* ── Resources ───────────────────────────────────────────*/
-
+  /* ── Resources ───────────────────────────────────────── */
   function _buildResources(c) {
     const el = document.getElementById('chat-resources-panel');
     if (!el) return;
     el.innerHTML = (c.resources || []).map(r => `
-      <div class="resource-card" onclick="window.open('${r.link||'#'}','_blank')" style="margin-bottom:8px;">
-        <h5>📄 ${_escapeHtml(r.title)}</h5>
-        <p>${_escapeHtml(r.desc || r.description || '')}</p>
-      </div>`).join('');
+      <div class="resource-card" onclick="window.open('${_esc(r.link || '#')}','_blank')" style="margin-bottom:8px;">
+        <h5>📄 ${_esc(r.title)}</h5>
+        <p>${_esc(r.desc || r.description || '')}</p>
+      </div>`).join('') || '<div class="chat-placeholder" style="font-size:13px;">No resources shared yet.</div>';
   }
 
-  /* ── Close / tabs ────────────────────────────────────────*/
+  /* ── Premium check ───────────────────────────────────── */
+  function _isPremium() {
+    const u = IBlog.state.currentUser;
+    return u && (u.isPremium === true || u.plan === 'premium');
+  }
 
+  /* ── Close / tabs ────────────────────────────────────── */
   function close() {
+    if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
     _closeThreadPane();
     document.getElementById('chatOverlay')?.classList.remove('open');
   }
@@ -556,7 +548,7 @@ IBlog.Chat = (() => {
   }
 
   function _switchTab(tab) {
-    const ids = { messages:'chat-messages', threads:'chat-threads-panel', resources:'chat-resources-panel' };
+    const ids = { messages: 'chat-messages', threads: 'chat-threads-panel', resources: 'chat-resources-panel' };
     Object.entries(ids).forEach(([key, id]) => {
       const el = document.getElementById(id);
       if (el) el.style.display = key === tab ? 'flex' : 'none';
@@ -565,54 +557,51 @@ IBlog.Chat = (() => {
     if (inputRow) inputRow.style.display = tab === 'messages' ? 'flex' : 'none';
   }
 
-  /* ── Send message ────────────────────────────────────────*/
-
+  /* ── Send message ────────────────────────────────────── */
   async function send() {
     const input = document.getElementById('chat-input');
     const text  = input?.value.trim();
     if (!text) return;
 
     const mb = document.getElementById('chat-messages');
-    const u  = IBlog.state.currentUser || { name:'You', initial:'U', color:'var(--accent)' };
+    const u  = IBlog.state.currentUser || { name: 'You', initial: 'U', color: 'var(--accent)' };
 
-    // Optimistic render
     const tempId  = `tmp-${Date.now()}`;
     const tempMsg = {
-      id: tempId, userName:u.name, userInitial:u.initial,
-      avatarColor:u.color, message:text, isMine:true, formattedTime:_formatTime(),
+      id: tempId, userName: u.name,
+      userInitial: u.initial || u.name[0].toUpperCase(),
+      avatarColor: u.color, message: text, isMine: true, formattedTime: _formatTime(),
     };
-    mb.querySelector('.chat-placeholder')?.remove();
-    mb.insertAdjacentHTML('beforeend', _renderMsg(tempMsg));
+    mb?.querySelector('.chat-placeholder')?.remove();
+    mb?.insertAdjacentHTML('beforeend', _renderMsg(tempMsg));
     if (input) input.value = '';
-    mb.scrollTop = mb.scrollHeight;
+    if (mb) mb.scrollTop = mb.scrollHeight;
     _renderReactions(tempId);
 
-    // Persist to DB using real community id
-    _postMessage(_activeCommunityId, text).then(res => {
-      if (res.success && res.message?.id) {
-        document.getElementById(`wrap-${tempId}`)?.setAttribute('id', `wrap-${res.message.id}`);
-        document.getElementById(`reactions-${tempId}`)?.setAttribute('id', `reactions-${res.message.id}`);
-      }
-    });
+    // Persist to DB
+    const res = await _postMessage(_activeCommunityId, text);
+    if (res?.success && res.message?.id) {
+      document.getElementById(`wrap-${tempId}`)?.setAttribute('id', `wrap-${res.message.id}`);
+      document.getElementById(`reactions-${tempId}`)?.setAttribute('id', `reactions-${res.message.id}`);
+    }
 
-    // URL → resources
+    // Auto-extract URLs to resources
     const urlMatch = text.match(/https?:\/\/[^\s]+/);
     if (urlMatch) {
       const c = IBlog.COMMUNITIES?.[_activeCommunityIdx];
       if (c) {
         if (!c.resources) c.resources = [];
-        c.resources.unshift({ title:urlMatch[0], link:urlMatch[0], desc:`Shared by ${u.name}` });
+        c.resources.unshift({ title: urlMatch[0], link: urlMatch[0], desc: `Shared by ${u.name}` });
         _buildResources(c);
       }
     }
   }
 
-  /* ── Public API ──────────────────────────────────────────*/
-
+  /* ── Public API ──────────────────────────────────────── */
   return {
     open, close, closedIfOutside,
     switchTab, send,
-    openThread, openThreadByTitle, _closeThreadPane,
+    openThread, _closeThreadPane,
     sendThreadMsg,
     showCreateThreadModal, closeCreateThreadModal, createThread, deleteThread,
     toggleReaction, showEmojiPicker,

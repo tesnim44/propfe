@@ -1,43 +1,54 @@
 <?php
+// /propfe/backend/view/components/communities/get_user_communities.php
+
 declare(strict_types=1);
 
-session_start();
+ini_set('display_errors', '0');
+error_reporting(0);
 
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../controller/CommunityController.php';
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 
+// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([]);
     exit;
 }
 
 try {
+    require_once __DIR__ . '/../../../config/database.php';
+    
     $userId = (int) $_SESSION['user_id'];
-
-    $stmt = $cnx->prepare('
+    
+    // IMPORTANT: Filter by user's joined communities only
+    $stmt = $cnx->prepare("
         SELECT c.id, c.name, c.icon, c.memberCount
         FROM community c
         INNER JOIN communitymember cm ON cm.communityId = c.id
         WHERE cm.userId = :userId AND cm.isBanned = 0
-        ORDER BY c.name
-    ');
+        ORDER BY c.name ASC
+    ");
     $stmt->execute([':userId' => $userId]);
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $output = array_map(function ($row) {
+    
+    $communities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Format the response
+    $result = array_map(function($row) {
         return [
-            'id'          => (int) $row['id'],
-            'name'        => $row['name'],
-            'iconLetter'  => $row['icon'] ?: strtoupper(substr($row['name'], 0, 2)),
-            'memberCount' => (int) $row['memberCount'],
+            'id' => (int) $row['id'],
+            'name' => $row['name'],
+            'iconLetter' => $row['icon'] ?: strtoupper(substr($row['name'], 0, 2)),
+            'memberCount' => (int) ($row['memberCount'] ?? 0)
         ];
-    }, $rows);
-
-    echo json_encode($output);
+    }, $communities);
+    
+    echo json_encode($result);
+    
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Failed to load user communities', 'detail' => $e->getMessage()]);
+    error_log('Error in get_user_communities.php: ' . $e->getMessage());
+    echo json_encode([]);
 }
