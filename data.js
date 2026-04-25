@@ -560,6 +560,92 @@ IBlog.COUNTRY_DATA = {
       {title:"Ubuntu in the Age of AI: African Values for Global Tech",author:"Amara Diallo",readTime:"10 min",img:"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=80"},
     ]
   },
+  "Tunisia":{flag:"🇹🇳",coords:[33.89,9.56],topics:["Digital Services","Fintech North Africa","Mediterranean Startups","Civic Tech"],
+    articles:[
+      {title:"Tunis Is Quietly Becoming North Africa's Design-and-Code Hub",author:"Amara Diallo",readTime:"8 min",img:"https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80"},
+      {title:"How Tunisian Fintech Startups Are Simplifying Cross-Border Payments",author:"Diego Ferreira",readTime:"9 min",img:"https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=400&q=80"},
+      {title:"The New Wave of Civic Tech in Tunis",author:"Sofia Reyes",readTime:"7 min",img:"https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?w=400&q=80"},
+    ]
+  },
+  "Saudi Arabia":{flag:"🇸🇦",coords:[23.89,45.08],topics:["Vision 2030","Smart Cities","Energy Transition","Creative Economy"],
+    articles:[
+      {title:"Inside Saudi Arabia's NEOM Experiment in Future Urban Life",author:"Marcus Jin",readTime:"10 min",img:"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400&q=80"},
+      {title:"How Riyadh Is Funding a New Startup Corridor",author:"Yuki Tanaka",readTime:"8 min",img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80"},
+      {title:"From Oil to Solar: Saudi's Energy Pivot Gets Real",author:"Carlos Mendez",readTime:"9 min",img:"https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&q=80"},
+    ]
+  },
+  "Egypt":{flag:"🇪🇬",coords:[26.82,30.8],topics:["EdTech","Logistics","Digital Heritage","Nile Innovation"],
+    articles:[
+      {title:"Egypt's EdTech Surge Is Rewiring Classrooms at Scale",author:"Priya Nair",readTime:"8 min",img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&q=80"},
+      {title:"AI Preservation for Ancient Heritage Is Becoming a National Priority",author:"Aiko Suzuki",readTime:"10 min",img:"https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=400&q=80"},
+    ]
+  },
+  "Algeria":{flag:"🇩🇿",coords:[28.03,1.66],topics:["Energy","Sahara Tech","Youth Entrepreneurship","Mobility"],
+    articles:[
+      {title:"What Algeria's Desert Solar Projects Mean for the Region",author:"Carlos Mendez",readTime:"9 min",img:"https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&q=80"},
+      {title:"A New Generation of Builders Is Changing Algeria's Startup Story",author:"Amara Diallo",readTime:"7 min",img:"https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&q=80"},
+    ]
+  },
+  "Morocco":{flag:"🇲🇦",coords:[31.79,-7.09],topics:["Green Industry","Travel Tech","Craft Economy","Logistics"],
+    articles:[
+      {title:"Morocco's EV Supply Chain Is Growing Faster Than Anyone Expected",author:"Marcus Jin",readTime:"8 min",img:"https://images.unsplash.com/photo-1489515217757-5fd1be406fef?w=400&q=80"},
+      {title:"Marrakech Designers Are Bringing Craft to the Creator Economy",author:"Aiko Suzuki",readTime:"7 min",img:"https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=400&q=80"},
+    ]
+  },
+  "Qatar":{flag:"🇶🇦",coords:[25.35,51.18],topics:["Sports Tech","Media Innovation","Energy Analytics","Smart Infrastructure"],
+    articles:[
+      {title:"Qatar's Sports Analytics Boom Didn't End with the World Cup",author:"Sofia Reyes",readTime:"8 min",img:"https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&q=80"},
+      {title:"Doha's Media Labs Are Reimagining Arabic Digital Storytelling",author:"Amara Diallo",readTime:"7 min",img:"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&q=80"},
+    ]
+  },
+  "Turkey":{flag:"🇹🇷",coords:[38.96,35.24],topics:["Manufacturing","Defense Tech","Creator Economy","Mobility"],
+    articles:[
+      {title:"Turkey's Manufacturing Base Is Powering a New Tech Identity",author:"Diego Ferreira",readTime:"9 min",img:"https://images.unsplash.com/photo-1513828583688-c52646db42da?w=400&q=80"},
+      {title:"Istanbul's Creator Economy Is Becoming Export Infrastructure",author:"Aiko Suzuki",readTime:"7 min",img:"https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&q=80"},
+    ]
+  },
+  "Italy":{flag:"🇮🇹",coords:[41.87,12.57],topics:["Design Systems","Climate Adaptation","Luxury Tech","Architecture"],
+    articles:[
+      {title:"Italian Design Schools Are Teaching the Next Wave of Product Thinking",author:"Yuki Tanaka",readTime:"8 min",img:"https://images.unsplash.com/photo-1494526585095-c41746248156?w=400&q=80"},
+      {title:"How Italy Is Climate-Proofing Coastal Cities",author:"Carlos Mendez",readTime:"9 min",img:"https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=400&q=80"},
+    ]
+  },
+  "Spain":{flag:"🇪🇸",coords:[40.46,-3.75],topics:["Climate Resilience","Remote Work","Urban Mobility","Food Innovation"],
+    articles:[
+      {title:"Barcelona's Superblocks Are Becoming a Global Urban Design Template",author:"Sofia Reyes",readTime:"8 min",img:"https://images.unsplash.com/photo-1464790719320-516ecd75af6c?w=400&q=80"},
+      {title:"How Spain Built a Lifestyle Economy Around Remote Work",author:"Amara Diallo",readTime:"7 min",img:"https://images.unsplash.com/photo-1497493292307-31c376b6e479?w=400&q=80"},
+    ]
+  },
+  "Portugal":{flag:"🇵🇹",coords:[39.4,-8.22],topics:["Creator Economy","Ocean Tech","Startups","AI Tools"],
+    articles:[
+      {title:"Lisbon's Startup Magnetism Is Still Growing",author:"Yuki Tanaka",readTime:"8 min",img:"https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=400&q=80"},
+      {title:"Portugal's Ocean Tech Ecosystem Is Finally Getting Attention",author:"Priya Nair",readTime:"9 min",img:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80"},
+    ]
+  },
+  "Indonesia":{flag:"🇮🇩",coords:[-0.79,113.92],topics:["Creator Economy","Fintech","Climate Risk","E-commerce"],
+    articles:[
+      {title:"Indonesia's Creator Economy Is Scaling Beyond Jakarta",author:"Amara Diallo",readTime:"8 min",img:"https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=400&q=80"},
+      {title:"How Indonesian Fintech Reached Millions Outside Major Cities",author:"Diego Ferreira",readTime:"9 min",img:"https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?w=400&q=80"},
+    ]
+  },
+  "Malaysia":{flag:"🇲🇾",coords:[4.21,101.98],topics:["Semiconductors","Islamic Finance","Digital Trade","Climate Adaptation"],
+    articles:[
+      {title:"Malaysia's Chip Ambitions Are Getting a Global Second Look",author:"Marcus Jin",readTime:"8 min",img:"https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80"},
+      {title:"Kuala Lumpur's Digital Trade Playbook Is Quietly Working",author:"Diego Ferreira",readTime:"7 min",img:"https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&q=80"},
+    ]
+  },
+  "Argentina":{flag:"🇦🇷",coords:[-38.42,-63.62],topics:["AgriTech","Inflation Tools","AI Startups","Culture"],
+    articles:[
+      {title:"Argentina's AgriTech Stack Is Becoming World-Class",author:"Karim Osei",readTime:"8 min",img:"https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&q=80"},
+      {title:"Builders in Buenos Aires Are Designing for Economic Volatility",author:"Marcus Jin",readTime:"9 min",img:"https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=400&q=80"},
+    ]
+  },
+  "Chile":{flag:"🇨🇱",coords:[-35.68,-71.54],topics:["Astronomy","Climate Science","Green Hydrogen","Mining"],
+    articles:[
+      {title:"Why Chile Is Emerging as a Green Hydrogen Powerhouse",author:"Carlos Mendez",readTime:"9 min",img:"https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&q=80"},
+      {title:"The Atacama Advantage in Global Astronomy",author:"Priya Nair",readTime:"8 min",img:"https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&q=80"},
+    ]
+  },
 };
 
 // ─── Trends ───────────────────────────────────────────────

@@ -1,0 +1,199 @@
+/* ═══════════════════════════════════════════════
+   IBLOG — Updated Capsule Features Component
+═══════════════════════════════════════════════ */
+.features-section {
+  width: 100%;
+  padding: 46px var(--gutter) 34px;
+  max-width: calc(var(--max-w) + var(--gutter) * 2);
+  margin: 0 auto;
+  padding-left: clamp(16px, 2vw, 28px);
+  padding-right: clamp(16px, 2vw, 28px);
+}
+
+.features-header {
+  max-width: 560px;
+  margin-bottom: 28px;
+}
+
+
+
+.features-header .section-eyebrow {
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 3px;
+
+  text-transform: uppercase;
+
+  color: var(--accent);
+
+  margin-bottom: 14px;
+
+  display: block;
+
+}
+
+
+
+.section-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 3.2vw, 46px);
+  font-weight: 700;
+  color: #111;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 14px;
+}
+
+.section-headline em {
+
+  font-style: italic;
+
+  color: var(--accent);
+
+}
+
+
+
+.section-divider {
+
+  width: 36px;
+
+  height: 2px;
+
+  background: var(--accent);
+
+}
+/* Grid — Removed the 'hairline' background and added real spacing */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: transparent;
+  border: none;
+}
+
+/* Card — Transformed into a "Capsule" */
+.feat-card {
+  background: #fff;
+  padding: 24px 22px;
+  border-radius: 18px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #eee;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Better Hover State */
+.feat-card:hover {
+  background: #fff;
+  transform: translateY(-5px); /* Lift effect */
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--accent);
+}
+
+/* Premium Card Variation */
+.feat-card.premium-feat {
+  background: #fffdf5;
+  border-color: #f1e6c0;
+}
+
+.feat-card.premium-feat:hover {
+  background: #fffbf0;
+  border-color: var(--accent);
+}
+
+/* Icon — Circular/Capsule style */
+
+/* Premium Label Styling */
+.feat-premium-label {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: var(--accent);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 100px; /* Capsule label */
+  margin-bottom: 12px;
+  border: none;
+}
+
+/* Typography Improvements */
+.feat-card h3 {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.feat-card p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
+.feat-card-arrow {
+  margin-top: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--accent);
+}
+
+/* Cleaned up the "Bottom Accent Line" to match capsules */
+.feat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%; /* Vertical accent instead */
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform .3s ease;
+}
+
+.feat-card:hover::after {
+  transform: scaleY(1);
+}
+
+/* Dark mode adjustments */
+body.dark .feat-card {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+body.dark .feat-card:hover {
+  background: #222;
+  border-color: var(--accent);
+}
+
+body.dark .feat-icon {
+  background: #2a2a2a;
+}
+
+@media (max-width: 980px) {
+  .feat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .features-section {
+    padding: 36px 16px 24px;
+  }
+
+  .feat-grid {
+    grid-template-columns: 1fr;
+  }
+}

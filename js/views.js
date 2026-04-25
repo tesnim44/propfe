@@ -1,12 +1,12 @@
 IBlog.Views = (() => {
   let _mapInstance = null;
+  let _flowTimer = null;
 
   /* ── Map ─────────────────────────────────────────────── */
   function initMap() {
     const isPrem = IBlog.state.currentUser?.plan === 'premium';
     const overlay = document.getElementById('map-premium-overlay');
     if (overlay) overlay.style.display = isPrem ? 'none' : 'flex';
-    if (!isPrem) return;
     if (_mapInstance) {
       document.getElementById('country-feed').style.display = 'block';
       _buildCountryFeed('World');
@@ -68,10 +68,90 @@ IBlog.Views = (() => {
           marker.on('click', () => selectCountry(name));
         });
 
+        _drawCountryFlows();
+
         document.getElementById('country-feed').style.display = 'block';
         _buildCountryFeed('World');
       } catch (e) { console.error('Map error:', e); }
     }, 300);
+  }
+
+  function _drawCountryFlows() {
+    if (!_mapInstance || typeof L === 'undefined') return;
+
+    const links = [
+      ['USA', 'UK'],
+      ['USA', 'Japan'],
+      ['Canada', 'UK'],
+      ['UK', 'France'],
+      ['France', 'Germany'],
+      ['Germany', 'India'],
+      ['India', 'Singapore'],
+      ['Singapore', 'South Korea'],
+      ['Japan', 'South Korea'],
+      ['UAE', 'India'],
+      ['Nigeria', 'UK'],
+      ['Kenya', 'UAE'],
+      ['Brazil', 'USA'],
+      ['Mexico', 'USA'],
+      ['Australia', 'Singapore'],
+      ['South Africa', 'Germany'],
+      ['Tunisia', 'France'],
+      ['Tunisia', 'Italy'],
+      ['Saudi Arabia', 'UAE'],
+      ['Saudi Arabia', 'India'],
+      ['Egypt', 'Saudi Arabia'],
+      ['Algeria', 'France'],
+      ['Morocco', 'Spain'],
+      ['Qatar', 'UK'],
+      ['Turkey', 'Germany'],
+      ['Italy', 'France'],
+      ['Spain', 'Portugal'],
+      ['Portugal', 'Brazil'],
+      ['Indonesia', 'Singapore'],
+      ['Malaysia', 'Singapore'],
+      ['Argentina', 'Brazil'],
+      ['Chile', 'USA'],
+    ];
+
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b8960c';
+    let dash = 0;
+
+    links.forEach(([from, to]) => {
+      const a = IBlog.COUNTRY_DATA[from];
+      const b = IBlog.COUNTRY_DATA[to];
+      if (!a?.coords || !b?.coords) return;
+
+      const flowGlow = L.polyline([a.coords, b.coords], {
+        color: '#ffd766',
+        weight: 5,
+        opacity: 0.16,
+        smoothFactor: 1,
+        className: 'map-flow-glow',
+      }).addTo(_mapInstance);
+
+      const flowLine = L.polyline([a.coords, b.coords], {
+        color: accent,
+        weight: 2,
+        opacity: 0.9,
+        dashArray: '8 10',
+        className: 'map-flow-line',
+      }).addTo(_mapInstance);
+
+      flowGlow.bringToBack();
+      flowLine.bindTooltip(`${from} → ${to}`, { sticky: true, direction: 'center' });
+      flowLine.on('click', () => selectCountry(to));
+    });
+
+    if (_flowTimer) clearInterval(_flowTimer);
+    _flowTimer = setInterval(() => {
+      dash = (dash + 2) % 200;
+      _mapInstance.eachLayer(layer => {
+        if (layer instanceof L.Polyline && layer.options?.className === 'map-flow-line') {
+          layer.setStyle({ dashOffset: String(-dash) });
+        }
+      });
+    }, 90);
   }
 
   function selectCountry(name) {
@@ -99,7 +179,7 @@ IBlog.Views = (() => {
 <div class="country-article-card" onclick="IBlog.Feed.openReader(${existing.id})">
   <div class="country-article-img" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${i*80%360},35%,${document.body.classList.contains('dark')?'18%':'85%'})`}"></div>
   <div class="country-article-info">
-    <div class="country-article-rank">#${i + 1} Trending</div>
+    <div class="country-article-rank">#${i + 1} Trending in ${country}</div>
     <div class="country-article-title">${a.title}</div>
     <div class="country-article-meta">✍️ ${a.author} &nbsp;·&nbsp; ⏱ ${a.readTime}</div>
   </div>
@@ -112,7 +192,7 @@ IBlog.Views = (() => {
 <div class="country-article-card" onclick="IBlog.Views.openMapArticle('${tempId}', '${safeTitle}', '${safeAuthor}', '${a.readTime}', '${a.img || ''}', '${country}')">
   <div class="country-article-img" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${i*80%360},35%,${document.body.classList.contains('dark')?'18%':'85%'})`}"></div>
   <div class="country-article-info">
-    <div class="country-article-rank">#${i + 1} Trending</div>
+    <div class="country-article-rank">#${i + 1} Trending in ${country}</div>
     <div class="country-article-title">${a.title}</div>
     <div class="country-article-meta">✍️ ${a.author} &nbsp;·&nbsp; ⏱ ${a.readTime}</div>
   </div>
@@ -127,6 +207,7 @@ IBlog.Views = (() => {
   }
 
   function openMapArticle(id, title, author, readTime, img, country) {
+    const seed = Array.from(`${title}|${author}|${country}`).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
     const tempArticle = {
       id: id,
       title: title,
@@ -138,9 +219,9 @@ IBlog.Views = (() => {
       readTime: readTime,
       excerpt: `A trending article from ${country} — one of the most-read pieces in this region right now.`,
       body: `This is a trending article from ${country}.\n\n"${title}" by ${author} is currently one of the most-read pieces in the region. This article has been identified as a top trend through IBlog's global reading pattern analysis.\n\nExplore more content from ${country} by clicking the topic chips above, or navigate to the Smart Search to find related articles in our full library.`,
-      likes: Math.floor(Math.random() * 300 + 50),
+      likes: 80 + (seed % 240),
       comments: [],
-      reposts: Math.floor(Math.random() * 60 + 10),
+      reposts: 12 + (seed % 48),
       bookmarked: false,
       liked: false,
       quality: 'high',
@@ -159,10 +240,11 @@ IBlog.Views = (() => {
   function buildActivity() {
     const grid = document.getElementById('activity-grid');
     if (!grid) return;
-    grid.innerHTML = Array.from({ length: 364 }, (_, i) => {
-      const r = Math.random();
-      const lvl = r > .82 ? 'l4' : r > .62 ? 'l3' : r > .42 ? 'l2' : r > .22 ? 'l1' : '';
-      return `<div class="activity-cell ${lvl}" title="${lvl ? Math.floor(Math.random()*4+1) + ' activities' : 'No activity'}" onclick="IBlog.utils.toast(this.title)"></div>`;
+    const days = IBlogTracker?.getDailyActivity?.(364) || [];
+    grid.innerHTML = days.map((day) => {
+      const count = Number(day.count || 0);
+      const lvl = count >= 7 ? 'l4' : count >= 4 ? 'l3' : count >= 2 ? 'l2' : count >= 1 ? 'l1' : '';
+      return `<div class="activity-cell ${lvl}" title="${count ? count + ' activities' : 'No activity'}" onclick="IBlog.utils.toast(this.title)"></div>`;
     }).join('');
   }
 
@@ -190,7 +272,7 @@ IBlog.Views = (() => {
 <div class="trend-cat-card" onclick="searchTopic('${c}')">
   <div style="font-size:22px;margin-bottom:6px;">${icons[i % icons.length]}</div>
   <strong style="font-size:13px;">${c}</strong>
-  <div style="font-size:11px;color:var(--text2);margin-top:3px;">+${Math.floor(Math.random()*180+40)}% this week</div>
+  <div style="font-size:11px;color:var(--text2);margin-top:3px;">${IBlog.TRENDS[i % IBlog.TRENDS.length]?.spike || '+84%'} this week</div>
 </div>`).join('');
     }
   }
@@ -454,9 +536,20 @@ function publishArticle() {
       date: 'Just now',
     };
     IBlog.state.articles.unshift(a);
+    IBlogTracker?.log('publish_article', {
+      entityType: 'article',
+      entityId: a.id,
+      title: a.title,
+      category: a.cat,
+      value: 1,
+    });
     _clearWriter();
     IBlog.Feed.build();
     buildMyArticles();
+    window.RightRail?.refreshStats?.();
+    window.RightRail?.refreshAuthors?.();
+    IBlog.Analytics?.init?.();
+    IBlog.Activity?.init?.();
     IBlog.Dashboard.navigateTo('home');
     IBlog.utils.toast(isPrem ? '⭐ Premium article published!' : '🚀 Article published!', 'success');
   }

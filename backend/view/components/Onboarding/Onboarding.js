@@ -1,0 +1,427 @@
+window.IBlogOnboarding = (() => {
+  "use strict";
+
+  const GENERAL_INTERESTS = [
+    { id: "ai", label: "AI", emoji: "AI" },
+    { id: "technology", label: "Technology", emoji: "TE" },
+    { id: "science", label: "Science", emoji: "SC" },
+    { id: "health", label: "Health", emoji: "HE" },
+    { id: "finance", label: "Finance", emoji: "FI" },
+    { id: "culture", label: "Culture", emoji: "CU" },
+    { id: "education", label: "Education", emoji: "ED" },
+    { id: "travel", label: "Travel", emoji: "TR" },
+    { id: "sports", label: "Sports", emoji: "SP" },
+    { id: "environment", label: "Environment", emoji: "EN" },
+    { id: "food", label: "Food", emoji: "FO" },
+    { id: "politics", label: "Politics", emoji: "PO" },
+    { id: "business", label: "Business", emoji: "BU" },
+    { id: "design", label: "Design", emoji: "DE" },
+    { id: "history", label: "History", emoji: "HI" },
+    { id: "psychology", label: "Psychology", emoji: "PS" },
+    { id: "productivity", label: "Productivity", emoji: "PR" },
+    { id: "philosophy", label: "Philosophy", emoji: "PH" },
+    { id: "media", label: "Media", emoji: "ME" }
+  ];
+
+  const SPECIFIC_INTERESTS = [
+    { id: "robotics", label: "Robotics", emoji: "RB" },
+    { id: "cybersecurity", label: "Cybersecurity", emoji: "CY" },
+    { id: "climate-tech", label: "Climate Tech", emoji: "CT" },
+    { id: "startups", label: "Startups", emoji: "ST" },
+    { id: "space", label: "Space", emoji: "SP" },
+    { id: "psychology", label: "Psychology", emoji: "PS" },
+    { id: "design", label: "Design", emoji: "DE" },
+    { id: "music", label: "Music", emoji: "MU" },
+    { id: "gaming", label: "Gaming", emoji: "GA" },
+    { id: "literature", label: "Literature", emoji: "LI" },
+    { id: "biotech", label: "Biotech", emoji: "BI" },
+    { id: "neuroscience", label: "Neuroscience", emoji: "NE" },
+    { id: "crypto", label: "Crypto", emoji: "CR" },
+    { id: "architecture", label: "Architecture", emoji: "AR" },
+    { id: "machine-learning", label: "Machine Learning", emoji: "ML" },
+    { id: "data-science", label: "Data Science", emoji: "DS" },
+    { id: "web3", label: "Web3", emoji: "W3" },
+    { id: "economics", label: "Economics", emoji: "EC" },
+    { id: "ux-ui", label: "UX/UI", emoji: "UX" },
+    { id: "writing", label: "Writing", emoji: "WR" },
+    { id: "leadership", label: "Leadership", emoji: "LD" },
+    { id: "marketing", label: "Marketing", emoji: "MK" },
+    { id: "geopolitics", label: "Geopolitics", emoji: "GP" }
+  ];
+
+  const TEMPLATE = `
+    <div id="onboarding-overlay" class="ob-overlay" style="display:none">
+      <div class="ob-shell">
+        <div class="ob-progress"><div class="ob-progress-fill" id="ob-progress-fill"></div></div>
+        <div class="ob-step-label" id="ob-step-label">Step 1 of 3</div>
+        <div class="ob-step active" id="ob-step-1">
+          <div class="ob-header">
+            <span class="ob-kicker">Create your account</span>
+            <h2 class="ob-title">Finish your IBlog profile</h2>
+            <p class="ob-subtitle">Add your photo, username, and bio so other readers know who you are.</p>
+          </div>
+          <div class="ob-avatar-panel">
+            <div class="ob-avatar-wrap">
+              <div class="ob-avatar" id="ob-avatar-preview">A</div>
+              <div class="ob-avatar-ring"></div>
+            </div>
+            <div class="ob-avatar-copy">
+              <strong>Profile picture</strong>
+              <p>Upload a photo from your computer or keep the letter avatar.</p>
+              <label class="ob-upload-btn" for="ob-avatar-file">Choose photo</label>
+              <input id="ob-avatar-file" class="ob-file-input" type="file" accept="image/*" onchange="IBlogOnboarding.handleAvatarUpload(this)" />
+            </div>
+          </div>
+          <div class="ob-form">
+            <div class="ob-field">
+              <label class="ob-label">Full name</label>
+              <input class="ob-input" type="text" id="ob-name" readonly />
+            </div>
+            <div class="ob-field">
+              <label class="ob-label">Pseudo / username <span class="ob-required">*</span></label>
+              <div class="ob-input-prefix-wrap">
+                <span class="ob-prefix">@</span>
+                <input class="ob-input ob-input-prefix" type="text" id="ob-pseudo" maxlength="24" placeholder="your_name" oninput="IBlogOnboarding.validatePseudo(this)" />
+              </div>
+              <span class="ob-field-hint" id="ob-pseudo-hint">Use 3 to 24 lowercase letters, numbers, or underscores.</span>
+            </div>
+            <div class="ob-field">
+              <label class="ob-label">Short bio</label>
+              <textarea class="ob-input ob-textarea" id="ob-bio" maxlength="160" rows="4" placeholder="Tell readers what you write about, study, or love exploring." oninput="IBlogOnboarding.updateBioCount(this)"></textarea>
+              <span class="ob-field-hint ob-counter"><span id="ob-bio-count">0</span> / 160</span>
+            </div>
+          </div>
+          <button class="ob-btn-primary" type="button" onclick="IBlogOnboarding.goStep(2)">Continue</button>
+        </div>
+        <div class="ob-step" id="ob-step-2">
+          <div class="ob-header">
+            <span class="ob-kicker">Recommendations start here</span>
+            <h2 class="ob-title">Choose your interests and subjects</h2>
+            <p class="ob-subtitle">Pick a few broad fields and some specific subjects. We will use them later in your recommendations.</p>
+          </div>
+          <div class="ob-interests-section">
+            <div class="ob-interests-label">
+              <span class="ob-interests-label-text">Fields of interest</span>
+              <span class="ob-interests-count" id="ob-general-count">0 selected</span>
+            </div>
+            <div class="ob-chips" id="ob-general-chips"></div>
+          </div>
+          <div class="ob-interests-section">
+            <div class="ob-interests-label">
+              <span class="ob-interests-label-text">Favorite subjects</span>
+              <span class="ob-interests-count" id="ob-specific-count">0 selected</span>
+            </div>
+            <div class="ob-chips" id="ob-specific-chips"></div>
+          </div>
+          <div class="ob-selection-summary" id="ob-selection-summary">Select at least 3 interests to continue.</div>
+          <div class="ob-btn-row">
+            <button class="ob-btn-ghost" type="button" onclick="IBlogOnboarding.goStep(1)">Back</button>
+            <button class="ob-btn-primary" id="ob-step2-next" type="button" onclick="IBlogOnboarding.goStep(3)" disabled>Continue</button>
+          </div>
+        </div>
+        <div class="ob-step" id="ob-step-3">
+          <div class="ob-header">
+            <span class="ob-kicker">Review</span>
+            <h2 class="ob-title">Your profile is ready</h2>
+            <p class="ob-subtitle">Check your public profile card before entering the dashboard.</p>
+          </div>
+          <div class="ob-profile-preview">
+            <div class="ob-preview-banner"></div>
+            <div class="ob-preview-body">
+              <div class="ob-preview-avatar" id="ob-preview-avatar">A</div>
+              <div class="ob-preview-name" id="ob-preview-name">User</div>
+              <div class="ob-preview-pseudo" id="ob-preview-pseudo">@user</div>
+              <div class="ob-preview-bio" id="ob-preview-bio">No bio yet.</div>
+              <div class="ob-preview-block">
+                <div class="ob-preview-label">Fields</div>
+                <div class="ob-preview-topics" id="ob-preview-fields"></div>
+              </div>
+              <div class="ob-preview-block">
+                <div class="ob-preview-label">Subjects</div>
+                <div class="ob-preview-topics" id="ob-preview-subjects"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ob-btn-row">
+            <button class="ob-btn-ghost" type="button" onclick="IBlogOnboarding.goStep(2)">Back</button>
+            <button class="ob-btn-primary" id="ob-finish-btn" type="button" onclick="IBlogOnboarding.finish()">Enter Dashboard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  let currentStep = 1;
+  let currentUser = null;
+  let selectedIds = new Set();
+  let selectedAvatar = "";
+  let pseudoValid = false;
+  let onComplete = null;
+  let finishLabel = "Enter Dashboard";
+
+  function start(user, options = {}) {
+    currentUser = { ...(user || {}) };
+    selectedIds = new Set([...(user?.fieldIds || []), ...(user?.subjectIds || []), ...(user?.interestIds || [])]);
+    selectedAvatar = user?.avatar || "";
+    currentStep = 1;
+    pseudoValid = false;
+    onComplete = typeof options.onComplete === "function" ? options.onComplete : null;
+    finishLabel = options.finishLabel || "Enter Dashboard";
+
+    injectHTML();
+    renderChips();
+    prefillIdentity();
+    updateSelectionUI();
+    showOverlay();
+    goStep(1);
+  }
+
+  function injectHTML() {
+    if (!document.getElementById("onboarding-overlay")) {
+      const host = document.createElement("div");
+      host.innerHTML = TEMPLATE.trim();
+      document.body.appendChild(host.firstElementChild);
+    }
+    document.getElementById("ob-finish-btn").textContent = finishLabel;
+  }
+
+  function showOverlay() {
+    document.getElementById("onboarding-overlay").style.display = "flex";
+  }
+
+  function hideOverlay() {
+    document.getElementById("onboarding-overlay").style.display = "none";
+  }
+
+  function goStep(targetStep) {
+    if (targetStep > currentStep) {
+      if (currentStep === 1 && !validateStep1()) return;
+      if (currentStep === 2 && !validateStep2()) return;
+    }
+
+    currentStep = targetStep;
+    document.querySelectorAll(".ob-step").forEach(step => step.classList.remove("active"));
+    document.getElementById(`ob-step-${targetStep}`).classList.add("active");
+    document.getElementById("ob-step-label").textContent = `Step ${targetStep} of 3`;
+    document.getElementById("ob-progress-fill").style.width = `${((targetStep - 1) / 2) * 100}%`;
+
+    if (targetStep === 3) buildPreview();
+  }
+
+  function prefillIdentity() {
+    const name = currentUser?.name || "";
+    const pseudo = currentUser?.pseudo || suggestPseudo(name);
+    const bio = currentUser?.bio || "";
+
+    document.getElementById("ob-name").value = name;
+    document.getElementById("ob-pseudo").value = pseudo;
+    document.getElementById("ob-bio").value = bio;
+    document.getElementById("ob-bio-count").textContent = String(bio.length);
+
+    validatePseudo(document.getElementById("ob-pseudo"));
+    updateAvatar(document.getElementById("ob-avatar-preview"), selectedAvatar, name || "A");
+  }
+
+  function suggestPseudo(name) {
+    return (name || "reader")
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "")
+      .slice(0, 24) || "reader";
+  }
+
+  function validatePseudo(input) {
+    const value = input.value.trim();
+    const hint = document.getElementById("ob-pseudo-hint");
+    pseudoValid = /^[a-z0-9_]{3,24}$/.test(value);
+
+    if (!value) {
+      hint.textContent = "Use 3 to 24 lowercase letters, numbers, or underscores.";
+      hint.className = "ob-field-hint";
+    } else if (pseudoValid) {
+      hint.textContent = `@${value} is ready for your profile.`;
+      hint.className = "ob-field-hint success";
+    } else {
+      hint.textContent = "Only lowercase letters, numbers, and underscores are allowed.";
+      hint.className = "ob-field-hint error";
+    }
+  }
+
+  function updateBioCount(textarea) {
+    document.getElementById("ob-bio-count").textContent = String(textarea.value.length);
+  }
+
+  function handleAvatarUpload(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = event => {
+      selectedAvatar = String(event.target?.result || "");
+      updateAvatar(document.getElementById("ob-avatar-preview"), selectedAvatar, currentUser?.name || "A");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function validateStep1() {
+    if (pseudoValid) return true;
+    document.getElementById("ob-pseudo-hint").textContent = "Please choose a valid pseudo to continue.";
+    document.getElementById("ob-pseudo-hint").className = "ob-field-hint error";
+    document.getElementById("ob-pseudo").focus();
+    return false;
+  }
+
+  function renderChips() {
+    renderChipGroup("ob-general-chips", GENERAL_INTERESTS);
+    renderChipGroup("ob-specific-chips", SPECIFIC_INTERESTS);
+  }
+
+  function renderChipGroup(containerId, items) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = items.map(item => `
+      <button class="ob-chip${selectedIds.has(item.id) ? " selected" : ""}" type="button" data-id="${item.id}" onclick="IBlogOnboarding.toggleChip(this, '${item.id}')">
+        <span class="ob-chip-emoji">${item.emoji}</span>${escapeHTML(item.label)}
+      </button>
+    `).join("");
+  }
+
+  function toggleChip(button, id) {
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+      button.classList.remove("selected");
+    } else {
+      selectedIds.add(id);
+      button.classList.add("selected");
+    }
+    updateSelectionUI();
+  }
+
+  function updateSelectionUI() {
+    const generalCount = GENERAL_INTERESTS.filter(item => selectedIds.has(item.id)).length;
+    const specificCount = SPECIFIC_INTERESTS.filter(item => selectedIds.has(item.id)).length;
+    const remaining = Math.max(0, 3 - selectedIds.size);
+    const summary = document.getElementById("ob-selection-summary");
+
+    document.getElementById("ob-general-count").textContent = `${generalCount} selected`;
+    document.getElementById("ob-specific-count").textContent = `${specificCount} selected`;
+
+    if (remaining === 0) {
+      summary.textContent = `Great choice. ${selectedIds.size} interests selected.`;
+      summary.className = "ob-selection-summary ready";
+    } else {
+      summary.textContent = `Select ${remaining} more interest${remaining > 1 ? "s" : ""} to continue.`;
+      summary.className = "ob-selection-summary";
+    }
+
+    document.getElementById("ob-step2-next").disabled = selectedIds.size < 3;
+  }
+
+  function validateStep2() {
+    return selectedIds.size >= 3;
+  }
+
+  function buildPreview() {
+    const profile = collectProfileData();
+    updateAvatar(document.getElementById("ob-preview-avatar"), profile.avatar, profile.name || "A");
+    document.getElementById("ob-preview-name").textContent = profile.name || "User";
+    document.getElementById("ob-preview-pseudo").textContent = `@${profile.pseudo}`;
+    document.getElementById("ob-preview-bio").textContent = profile.bio || "No bio yet.";
+    buildTopicPills("ob-preview-fields", profile.fields);
+    buildTopicPills("ob-preview-subjects", profile.subjects);
+  }
+
+  function finish() {
+    const profile = collectProfileData();
+    const enrichedUser = {
+      ...currentUser,
+      ...profile,
+      initial: (profile.name?.[0] || "A").toUpperCase(),
+      onboardingComplete: true
+    };
+
+    sessionStorage.setItem("user", JSON.stringify(enrichedUser));
+    localStorage.setItem("user", JSON.stringify(enrichedUser));
+    if (window.IBlog?.state) IBlog.state.currentUser = enrichedUser;
+
+    hideOverlay();
+    refreshUserUI(enrichedUser);
+    window.dispatchEvent(new CustomEvent("onboarding:complete", { detail: { user: enrichedUser } }));
+    if (onComplete) onComplete(enrichedUser);
+  }
+
+  function collectProfileData() {
+    const pseudo = (document.getElementById("ob-pseudo").value || suggestPseudo(currentUser?.name || "reader")).trim();
+    const bio = document.getElementById("ob-bio").value.trim();
+    const allItems = [...GENERAL_INTERESTS, ...SPECIFIC_INTERESTS];
+
+    return {
+      name: document.getElementById("ob-name").value || currentUser?.name || "",
+      pseudo,
+      bio,
+      avatar: selectedAvatar || currentUser?.avatar || "",
+      fieldIds: GENERAL_INTERESTS.filter(item => selectedIds.has(item.id)).map(item => item.id),
+      subjectIds: SPECIFIC_INTERESTS.filter(item => selectedIds.has(item.id)).map(item => item.id),
+      fields: GENERAL_INTERESTS.filter(item => selectedIds.has(item.id)).map(item => item.label),
+      subjects: SPECIFIC_INTERESTS.filter(item => selectedIds.has(item.id)).map(item => item.label),
+      interests: [...selectedIds].map(id => allItems.find(item => item.id === id)?.label).filter(Boolean),
+      interestIds: [...selectedIds]
+    };
+  }
+
+  function buildTopicPills(containerId, items) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = (items.length ? items : ["No selection"]).map(item => `<span class="ob-topic-pill">${escapeHTML(item)}</span>`).join("");
+  }
+
+  function refreshUserUI(user) {
+    if (!window.IBlog) return;
+    IBlog.Dashboard?.updateUserUI?.();
+    IBlog.Profile?.buildProfile?.();
+
+    const pseudo = document.getElementById("profile-pseudo");
+    if (pseudo) pseudo.textContent = `@${user.pseudo}`;
+
+    const bio = document.getElementById("profile-bio-text");
+    if (bio) bio.textContent = user.bio || "No bio yet.";
+
+    const settingsBio = document.getElementById("settings-bio");
+    if (settingsBio) settingsBio.value = user.bio || "";
+  }
+
+  function updateAvatar(element, imageSrc, name) {
+    if (!element) return;
+    const initial = (name || "A")[0].toUpperCase();
+    if (imageSrc) {
+      element.textContent = "";
+      element.style.backgroundImage = `url("${imageSrc}")`;
+      element.style.backgroundSize = "cover";
+      element.style.backgroundPosition = "center";
+      element.style.backgroundColor = "transparent";
+    } else {
+      element.textContent = initial;
+      element.style.backgroundImage = "";
+      element.style.backgroundSize = "";
+      element.style.backgroundPosition = "";
+      element.style.backgroundColor = "var(--accent)";
+    }
+  }
+
+  function escapeHTML(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  return {
+    start,
+    goStep,
+    toggleChip,
+    validatePseudo,
+    updateBioCount,
+    handleAvatarUpload,
+    finish
+  };
+})();
