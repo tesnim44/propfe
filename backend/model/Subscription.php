@@ -1,5 +1,5 @@
 <?php 
-class Subscription {
+class subscription {
 
     public $id;
     public $userId;

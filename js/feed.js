@@ -19,6 +19,9 @@ IBlog.Feed = (() => {
     close:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
   };
 
+  function iconHeart() { return I.heart; }
+  function iconHeartFill() { return I.heartFill; }
+
   const REACTIONS = [
     { key:'love',    label:'Love',       svgKey:'love',    color:'#e25555' },
     { key:'insight', label:'Insightful', svgKey:'insight', color:'#4a90d9' },
@@ -28,7 +31,7 @@ IBlog.Feed = (() => {
 
   /* ── Filter ──────────────────────────────────────────── */
   function _filter(tab) {
-    const all = IBlog.state.articles||[];
+    const all = (IBlog.state.articles || []).filter(article => (article?.status || 'published') !== 'draft');
     if(tab==='following') return all.filter((_,i)=>i%3===0);
     if(tab==='trending')  return [...all].sort((a,b)=>(b.likes||0)-(a.likes||0));
     if(tab==='latest')    return [...all].sort((a,b)=>b.id-a.id);
@@ -42,8 +45,144 @@ IBlog.Feed = (() => {
     const container = document.getElementById(containerId);
     if(!container) return;
     container.innerHTML = '';
-    _filter(tab).forEach((article,i) => {
-      container.appendChild(IBlog.ArticleCard.render(article,i));
+    const articles = _filter(tab);
+    if (!articles.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="emoji">📝</div>
+          <p>No articles to show yet.</p>
+        </div>`;
+      return;
+    }
+
+    const fallbackText = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    articles.forEach((article,i) => {
+      try {
+        container.appendChild(IBlog.ArticleCard.render(article,i));
+      } catch (err) {
+        console.error('Feed card render failed:', article?.id, err);
+        const AC = IBlog.ArticleCard || {};
+        const reactions = Array.isArray(AC.REACTIONS) ? AC.REACTIONS : [
+          { key: 'love', label: 'Love', svgKey: 'love', color: '#e25555' },
+          { key: 'insight', label: 'Insightful', svgKey: 'insight', color: '#4a90d9' },
+          { key: 'helpful', label: 'Helpful', svgKey: 'helpful', color: '#4caf7d' },
+          { key: 'save', label: 'Save', svgKey: 'save', color: '#b8960c' },
+        ];
+        const icons = AC.SVG || {};
+        const fallback = document.createElement('div');
+        fallback.className = 'article-card';
+        fallback.dataset.id = article?.id || `fallback-${i}`;
+        AC.hydrateSocialState?.(article);
+        const coverImage = article?.cover || article?.img || '';
+        const safeOpenReaderId = JSON.stringify(article?.id);
+        const authorProfilePayload = JSON.stringify({
+          id: article?.authorId ?? null,
+          name: article?.author || 'Anonymous',
+          avatar: article?.authorAvatar || '',
+          initial: (article?.author || 'A').slice(0, 1).toUpperCase(),
+        });
+        const reactionState = article?._reactions || { love: 0, insight: 0, helpful: 0, save: 0 };
+        const summaryHTML = typeof AC._summaryHTML === 'function'
+          ? AC._summaryHTML(article || {})
+          : '';
+        const activeReaction = typeof AC._reactionMeta === 'function'
+          ? AC._reactionMeta(article || {})
+          : null;
+        const commentCount = Array.isArray(article?.comments) ? article.comments.length : 0;
+        const repostCount = Number(article?.reposts || 0);
+        const bookmarkLabel = article?._bookmarked ? 'Saved' : 'Save';
+        fallback.innerHTML = `
+          ${coverImage ? `
+            <div class="card-cover" style="background-image:url('${fallbackText(coverImage)}')"
+                 onclick="IBlog.Feed.openReader(${safeOpenReaderId})">
+              <div class="card-cover-overlay"></div>
+            </div>` : ''}
+          <div class="card-body">
+            <div class="card-header">
+              <div class="card-avatar" style="background:${IBlog.ArticleCard?.avatarColor?.(i) || 'var(--accent)'}">
+                ${fallbackText((article?.author || 'A').slice(0, 1).toUpperCase())}
+              </div>
+              <div style="cursor:pointer" onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">
+                <div class="card-author">${fallbackText(article?.author || 'Anonymous')}</div>
+                <div class="card-date">${fallbackText(article?.date || '')}</div>
+              </div>
+              <span class="card-cat">${fallbackText(article?.cat || article?.category || 'General')}</span>
+            </div>
+            <div class="card-story-grid">
+              <div class="card-story-main">
+                <div class="card-title" onclick="IBlog.Feed.openReader(${safeOpenReaderId})">${fallbackText(article?.title || 'Untitled article')}</div>
+                <div class="card-excerpt">${fallbackText(article?.excerpt || '')}</div>
+              </div>
+            </div>
+            <div class="card-meta">
+              <span class="read-time">${fallbackText(article?.readTime || '3 min')}</span>
+            </div>
+
+            <button class="pod-toggle-btn" onclick="IBlog.ArticleCard?.togglePodcast?.(${safeOpenReaderId},this)">
+              <span class="pod-icon">${icons.mic || ''}</span>
+              <span id="pod-label-${article?.id}">Listen as Podcast</span>
+            </button>
+            <div class="podcast-player-inline" id="pod-${article?.id}" style="display:none;margin-bottom:12px"></div>
+
+            <div class="interact-bar">
+              <div class="reaction-inline" id="reaction-inline-${article?.id}">
+                <button class="interact-btn react-trigger ${article?._userReaction ? 'reacted' : ''}"
+                        id="react-trigger-${article?.id}"
+                        onclick="IBlog.ArticleCard?.togglePicker?.(${safeOpenReaderId})">
+                  ${activeReaction ? (icons[activeReaction.svgKey] || activeReaction.label.slice(0, 1)) : (icons.love || '♡')}
+                  <span>${activeReaction ? fallbackText(activeReaction.label) : 'React'}</span>
+                </button>
+                <div class="reaction-summary" id="reaction-summary-${article?.id}">
+                  ${summaryHTML}
+                </div>
+                <div class="reaction-picker" id="reaction-picker-${article?.id}">
+                  <div class="reaction-picker-inner">
+                    ${reactions.map(r => `
+                      <button class="reaction-option ${article?._userReaction === r.key ? 'chosen' : ''}"
+                              data-key="${r.key}" title="${r.label}"
+                              style="--rc:${article?._userReaction === r.key ? r.color : 'var(--text2)'}"
+                              onclick="IBlog.ArticleCard?.setReaction?.(${safeOpenReaderId},'${r.key}')">
+                        <span class="r-icon">${icons[r.svgKey] || r.label.slice(0, 1)}</span>
+                        <span class="r-label">${fallbackText(r.label)}</span>
+                        <span class="r-count" id="rc-${article?.id}-${r.key}">${reactionState[r.key] || 0}</span>
+                      </button>`).join('')}
+                  </div>
+                </div>
+              </div>
+              <button class="interact-btn ${article?._bookmarked ? 'bookmarked' : ''}"
+                      id="bookmark-btn-${article?.id}"
+                      onclick="IBlog.ArticleCard?.toggleBookmark?.(${safeOpenReaderId})">
+                ${article?._bookmarked ? (icons.saveFill || icons.save || '🔖') : (icons.save || '🔖')}
+                <span id="bookmark-label-${article?.id}">${bookmarkLabel}</span>
+              </button>
+              <button class="interact-btn" onclick="IBlog.ArticleCard?.toggleComments?.(${safeOpenReaderId})">
+                ${icons.comment || '💬'}
+                <span id="comment-count-${article?.id}">${commentCount}</span>
+              </button>
+              <button class="interact-btn ${article?._reposted ? 'reposted' : ''}"
+                      id="repost-btn-${article?.id}"
+                      onclick="IBlog.ArticleCard?.toggleRepost?.(${safeOpenReaderId})">
+                ${icons.repost || '↻'}
+                <span id="repost-count-${article?.id}">${repostCount}</span>
+              </button>
+              <div class="share-wrapper">
+                <button class="interact-btn" onclick="IBlog.ArticleCard?.toggleShareMenu?.(${safeOpenReaderId})">
+                  ${icons.share || '↗'} Share
+                </button>
+                <div class="share-menu" id="share-menu-${article?.id}">
+                  <button onclick="IBlog.ArticleCard?.shareTo?.('twitter',${safeOpenReaderId})">X / Twitter</button>
+                  <button onclick="IBlog.ArticleCard?.shareTo?.('linkedin',${safeOpenReaderId})">LinkedIn</button>
+                  <button onclick="IBlog.ArticleCard?.shareTo?.('copy',${safeOpenReaderId})">Copy link</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        container.appendChild(fallback);
+      }
     });
   }
 
@@ -51,7 +190,7 @@ IBlog.Feed = (() => {
      openReader
      ══════════════════════════════════════════════════════ */
   function openReader(id) {
-    const article = (IBlog.state.articles||[]).find(a=>a.id===id);
+    const article = (IBlog.state.articles||[]).find(a => a.id === id || String(a.id) === String(id));
     if(!article) return;
     const overlay = document.getElementById('article-reader-overlay');
     const content = document.getElementById('article-reader-content');
@@ -60,19 +199,33 @@ IBlog.Feed = (() => {
     const AC      = IBlog.ArticleCard;
     const idx     = IBlog.state.articles.indexOf(article);
     const color   = AC ? AC.avatarColor(idx) : '#b8960c';
+    AC?.hydrateSocialState?.(article);
     const initial = (article.author||'A')[0].toUpperCase();
+    const authorProfilePayload = JSON.stringify({
+      id: article.authorId ?? null,
+      name: article.author || 'Anonymous',
+      avatar: article.authorAvatar || '',
+      initial,
+    });
+    const readerAvatarStyle = article.authorAvatar
+      ? `background-image:url('${String(article.authorAvatar).replace(/'/g, '&#39;')}');background-size:cover;background-position:center;background-color:transparent;cursor:pointer`
+      : `background:${color};cursor:pointer`;
     const hasCover = !!(article.cover||article.img);
     const comments = article.comments||[];
     article._reactions = article._reactions||{love:0,insight:0,helpful:0,save:0};
+    const activeReaction = typeof AC?._reactionMeta === 'function'
+      ? AC._reactionMeta(article)
+      : null;
 
     const reactionPickerHTML = AC ? `
-      <div class="reaction-bar reader-reaction-bar" id="reader-reaction-bar-${id}">
-        <div class="reaction-summary" id="reader-reaction-summary-${id}">${AC._summaryHTML(article)}</div>
-        <button class="react-trigger ${article._userReaction?'reacted':''}"
+      <div class="reaction-inline reader-reaction-inline" id="reader-reaction-inline-${id}">
+        <button class="reader-action-btn react-trigger ${article._userReaction?'reacted':''}"
                 id="reader-react-trigger-${id}"
                 onclick="IBlog.ArticleCard.toggleReaderPicker(${id})">
-          ${AC.SVG.love} ${article._userReaction?'Reacted':'React'}
+          ${activeReaction ? AC.SVG[activeReaction.svgKey] : AC.SVG.love}
+          <span>${activeReaction ? activeReaction.label : 'React'}</span>
         </button>
+        <div class="reaction-summary" id="reader-reaction-summary-${id}">${AC._summaryHTML(article)}</div>
         <div class="reaction-picker" id="reader-reaction-picker-${id}">
           <div class="reaction-picker-inner">
             ${REACTIONS.map(r=>`
@@ -117,8 +270,10 @@ IBlog.Feed = (() => {
 
           <!-- Author + actions -->
           <div class="reader-author-row">
-            <div class="reader-author-avatar" style="background:${color}">${initial}</div>
-            <div class="reader-author-info">
+            <div class="reader-author-avatar" style="${readerAvatarStyle}"
+                 onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">${article.authorAvatar ? '' : initial}</div>
+            <div class="reader-author-info" style="cursor:pointer"
+                 onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">
               <strong>${article.author||'Anonymous'}</strong>
               <small>${article.date||''} · ${article.readTime||'5 min'} read</small>
             </div>
@@ -135,14 +290,12 @@ IBlog.Feed = (() => {
                 ${article._bookmarked?I.saveFill:I.save}
                 <span>${article._bookmarked?'Saved':'Save'}</span>
               </button>
+              ${reactionPickerHTML}
               <button class="reader-action-btn" onclick="IBlog.Feed.readerShare(${id})">
                 ${I.share} Share
               </button>
             </div>
           </div>
-
-          <!-- Reactions -->
-          ${reactionPickerHTML}
 
           <!-- Podcast player -->
           <div class="reader-podcast">
@@ -164,8 +317,12 @@ IBlog.Feed = (() => {
           ${(() => {
             const tplHTML = IBlog.Templates.renderForReader(article);
             if (tplHTML) return `<div class="reader-tpl-wrap">${tplHTML}</div>`;
+            const esc = value => String(value ?? '')
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
             return `<div class="reader-text">
-            ${(article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${p.trim()}</p>`).join('')}</div>`;
+            ${(article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${esc(p.trim())}</p>`).join('')}</div>`;
           })()}
 
           <!-- Tags -->
@@ -215,15 +372,61 @@ IBlog.Feed = (() => {
   }
 
   /* ── Reader like (separate from reaction, classic like) ─ */
-  function readerLike(id) {
-    const article=(IBlog.state.articles||[]).find(a=>a.id===id);
+  async function readerLike(id) {
+    const article=(IBlog.state.articles||[]).find(a=>a.id===id || String(a.id)===String(id));
     if(!article) return;
-    article._liked=!article._liked;
-    article.likes=Math.max(0,(article.likes||0)+(article._liked?1:-1));
-    const btn=document.getElementById(`reader-like-btn-${id}`);
-    if(btn){btn.className=`reader-action-btn ${article._liked?'active-like':''}`;btn.innerHTML=(article._liked?I.heartFill:I.heart)+`<span id="reader-like-count-${id}">${article.likes}</span>`;}
-    const fc=document.getElementById(`like-count-${id}`);
-    if(fc) fc.textContent=article.likes;
+
+    const applyState = (liked, likesCount) => {
+      article._liked = !!liked;
+      article.liked = !!liked;
+      article.likes = Math.max(0, Number(likesCount || 0));
+      const btn=document.getElementById(`reader-like-btn-${id}`);
+      if(btn){btn.className=`reader-action-btn ${article._liked?'active-like':''}`;btn.innerHTML=(article._liked?I.heartFill:I.heart)+`<span id="reader-like-count-${id}">${article.likes}</span>`;}
+      const cardBtn=document.getElementById(`like-btn-${id}`);
+      if(cardBtn){cardBtn.className=`interact-btn ${article._liked?'active-like':''}`;cardBtn.innerHTML=(article._liked?I.heartFill:I.heart)+`<span id="like-count-${id}">${article.likes}</span>`;}
+      const fc=document.getElementById(`like-count-${id}`);
+      if(fc) fc.textContent=article.likes;
+    };
+
+    if(/^\d+$/.test(String(id))){
+      try{
+        const response = await fetch('backend/view/components/article/api-articles.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'like_toggle',
+            articleId: Number(id),
+            liked: !article._liked,
+            authorEmail: IBlog.state.currentUser?.email || '',
+          }),
+        });
+        const payload = await response.json();
+        if(!response.ok || !payload.ok) throw new Error(payload.error || 'Could not update like.');
+        applyState(payload.liked, payload.likesCount);
+        window.RightRail?.refreshStats?.();
+        window.RightRail?.refreshAuthors?.();
+        IBlog.Analytics?.init?.();
+        IBlog.Notifications?.push?.(
+          payload.liked
+            ? `You liked <strong>${String(article.title || 'this article')}</strong>.`
+            : `You removed your like from <strong>${String(article.title || 'this article')}</strong>.`,
+          'like'
+        );
+        IBlog.utils.toast(payload.liked?'Liked!':'Like removed');
+        return;
+      }catch(error){
+        IBlog.utils.toast(error?.message || 'Could not update like.', 'error');
+        return;
+      }
+    }
+
+    applyState(!article._liked, Math.max(0,(article.likes||0)+(!article._liked?1:-1)));
+    IBlog.Notifications?.push?.(
+      article._liked
+        ? `You liked <strong>${String(article.title || 'this article')}</strong>.`
+        : `You removed your like from <strong>${String(article.title || 'this article')}</strong>.`,
+      'like'
+    );
     IBlog.utils.toast(article._liked?'Liked!':'Like removed');
   }
 
@@ -235,7 +438,7 @@ IBlog.Feed = (() => {
   }
 
   /* ── Reader comments ─────────────────────────────────── */
-  function postReaderComment(id) {
+  async function postReaderComment(id) {
     const input=document.getElementById(`reader-comment-input-${id}`);
     const list=document.getElementById(`reader-comment-list-${id}`);
     const counter=document.getElementById(`reader-comment-count-${id}`);
@@ -243,25 +446,58 @@ IBlog.Feed = (() => {
     const text=input.value.trim();
     if(!text) return;
     const user=IBlog.state.currentUser||{name:'You'};
-    const comment={author:user.name,text};
-    const article=(IBlog.state.articles||[]).find(a=>a.id===id);
-    if(article){
-      article.comments=article.comments||[];
-      article.comments.push(comment);
-      if(counter) counter.textContent=`(${article.comments.length})`;
-      const fc=document.getElementById(`comment-count-${id}`);
-      if(fc) fc.textContent=article.comments.length;
-      const fl=document.getElementById(`comment-list-${id}`);
-      if(fl){fl.insertAdjacentHTML('beforeend',IBlog.ArticleCard._commentHTML(comment));fl.scrollTop=fl.scrollHeight;}
+    const comment={author:user.name,text,createdAt:new Date().toISOString()};
+    const article=(IBlog.state.articles||[]).find(a=>String(a.id)===String(id));
+    if(!article) return;
+
+    let finalComment = comment;
+    if(/^\d+$/.test(String(id))){
+      try{
+        const response = await fetch('backend/view/components/article/api-articles.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'comment_add',
+            articleId: Number(id),
+            body: text,
+            authorEmail: user.email || '',
+          }),
+        });
+        const payload = await response.json();
+        if(!response.ok || !payload.ok) throw new Error(payload.error || 'Could not post comment.');
+        finalComment = payload.comment || comment;
+        article.comments = [...(article.comments || []), finalComment];
+        window.IBlogCommentStore?.set?.(id, article.comments);
+      }catch(error){
+        IBlog.utils.toast(error?.message || 'Could not post comment.', 'error');
+        return;
+      }
+    } else {
+      article.comments=window.IBlogCommentStore?.add?.(id, comment) || [...(article.comments||[]), comment];
     }
-    list.insertAdjacentHTML('beforeend',_readerCommentHTML(comment));
+
+    if(counter) counter.textContent=`(${article.comments.length})`;
+    const fc=document.getElementById(`comment-count-${id}`);
+    if(fc) fc.textContent=article.comments.length;
+    const fl=document.getElementById(`comment-list-${id}`);
+    if(fl){fl.insertAdjacentHTML('beforeend',IBlog.ArticleCard._commentHTML(finalComment));fl.scrollTop=fl.scrollHeight;}
+    list.insertAdjacentHTML('beforeend',_readerCommentHTML(finalComment));
     list.scrollTop=list.scrollHeight;
     input.value='';
+    window.RightRail?.refreshStats?.();
+    IBlog.Analytics?.init?.();
+    IBlog.Activity?.init?.();
+    IBlog.Notifications?.push?.(`New comment on <strong>${String(article.title || 'your article')}</strong>.`, 'comment');
     IBlog.utils.toast('Comment posted!','success');
   }
 
   function _readerCommentHTML(c) {
-    return `<div class="reader-comment-item"><div class="reader-comment-avatar">${(c.author||'U')[0].toUpperCase()}</div><div class="reader-comment-bubble"><strong>${c.author||'User'}</strong><p>${c.text}</p></div></div>`;
+    const esc = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    return `<div class="reader-comment-item"><div class="reader-comment-avatar">${esc((c.author||'U')[0].toUpperCase())}</div><div class="reader-comment-bubble"><strong>${esc(c.author||'User')}</strong><p>${esc(c.text)}</p></div></div>`;
   }
 
   /* ── Compose ─────────────────────────────────────────── */
@@ -294,6 +530,7 @@ IBlog.Feed = (() => {
     build, openReader, closeReader,
     readerLike, readerShare, postReaderComment,
     expandCompose, publishPost,
+    iconHeart, iconHeartFill,
   };
 
 })();
