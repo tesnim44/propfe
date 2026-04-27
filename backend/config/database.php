@@ -8,7 +8,7 @@ loadEnvFile();
 $db_server="127.0.0.1";
 $db_username="root";
 $db_pwd="";
-$db_name="database1";
+$db_name="blogdyn";
 
 if (($envHost = env('DB_HOST')) !== null) {
     $db_server = $envHost;
