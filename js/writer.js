@@ -34,6 +34,10 @@ IBlog.Writer = (() => {
       ?.addEventListener('input', _scheduleRender);
     document.getElementById('article-cat')
       ?.addEventListener('change', _scheduleRender);
+    document.getElementById('article-tags')
+      ?.addEventListener('input', _scheduleRender);
+    document.getElementById('article-img')
+      ?.addEventListener('input', _scheduleRender);
   }
 
   function _scheduleRender() {
