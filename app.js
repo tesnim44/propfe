@@ -13,6 +13,7 @@ window.IBlogSession = (() => {
   const USER_KEY = 'user';
   const PENDING_KEY = 'pendingUser';
   const ACTIVE_KEY = 'iblog_active_user';
+  const AUTH_API = 'backend/view/components/auth/api-auth.php';
 
   function _valid(user) {
     return !!(user && typeof user === 'object' && user.name && user.email);
@@ -42,6 +43,19 @@ window.IBlogSession = (() => {
     } catch (_) {
       return [];
     }
+  }
+
+  function _broadcastSessionChange(user, previousUser = null) {
+    try {
+      window.dispatchEvent(new CustomEvent('iblog:session-changed', {
+        detail: {
+          user: user || null,
+          previousUser: previousUser || null,
+          scope: _scope(user),
+          previousScope: _scope(previousUser),
+        },
+      }));
+    } catch (_) {}
   }
 
   function _resetRuntimeState(user = null) {
@@ -76,6 +90,7 @@ window.IBlogSession = (() => {
       return null;
     }
 
+    const previousUser = getUser();
     const normalizedUser = {
       ...user,
       initial: user.initial || (user.name ? user.name[0].toUpperCase() : 'A'),
@@ -93,16 +108,20 @@ window.IBlogSession = (() => {
       IBlog.state.currentUser = normalizedUser;
     }
 
+    _broadcastSessionChange(normalizedUser, previousUser);
+
     return normalizedUser;
   }
 
   function clearUser() {
+    const previousUser = getUser();
     sessionStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(PENDING_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(PENDING_KEY);
     localStorage.removeItem(ACTIVE_KEY);
     _resetRuntimeState(null);
+    _broadcastSessionChange(null, previousUser);
   }
 
   async function destroy() {
@@ -111,8 +130,38 @@ window.IBlogSession = (() => {
       await fetch('backend/view/components/auth/logout.php', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
       });
     } catch (_) {}
+  }
+
+  async function syncFromServer(options = {}) {
+    const clearOnFailure = !!options.clearOnFailure;
+
+    try {
+      const response = await fetch(AUTH_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'me' }),
+      });
+      const text = await response.text();
+      if (!text.trim().startsWith('{')) {
+        if (clearOnFailure) clearUser();
+        return null;
+      }
+
+      const data = JSON.parse(text);
+      if (!response.ok || !data?.ok || !data?.user) {
+        if (clearOnFailure) clearUser();
+        return null;
+      }
+
+      return setUser(data.user);
+    } catch (_) {
+      if (clearOnFailure) clearUser();
+      return null;
+    }
   }
 
   function scopedKey(baseKey, user = getUser()) {
@@ -131,6 +180,7 @@ window.IBlogSession = (() => {
     setUser,
     clearUser,
     destroy,
+    syncFromServer,
     scopedKey,
     switchToPersistedUser,
     isValidUser: _valid,
@@ -245,6 +295,7 @@ window.IBlogArticleSync = (() => {
     const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({
         action,
         ...(currentUser?.email ? { authorEmail: currentUser.email } : {}),
@@ -269,7 +320,7 @@ window.IBlogArticleSync = (() => {
       : (Array.isArray(IBlog.state.articles) ? [...IBlog.state.articles] : []);
 
     const keyed = new Map();
-    [...remoteArticles, ...baseArticles].forEach((article) => {
+    [...baseArticles, ...remoteArticles].forEach((article) => {
       const key = _articleKey(article);
       if (!key || keyed.has(key)) return;
       keyed.set(key, _normalizeArticle(article));
@@ -340,6 +391,7 @@ window.IBlogSavedSync = (() => {
     const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({
         action,
         ...(currentUser?.email ? { authorEmail: currentUser.email } : {}),
@@ -402,15 +454,19 @@ window.IBlogSavedSync = (() => {
   return { load, toggle, applySavedState };
 })();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   window.IBlogDataSanitizer?.run?.();
 
-  const savedUser = window.IBlogSession.switchToPersistedUser();
-  if (savedUser) {
-    if (savedUser.onboardingComplete === false && window.IBlogOnboarding?.start) {
+  const cachedUser = window.IBlogSession.getUser();
+  const activeUser = await window.IBlogSession.syncFromServer({
+    clearOnFailure: !!cachedUser,
+  });
+
+  if (activeUser) {
+    if (activeUser.onboardingComplete === false && window.IBlogOnboarding?.start) {
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('landing-page').style.display = 'block';
-      IBlogOnboarding.start(savedUser, {
+      IBlogOnboarding.start(activeUser, {
         onComplete: () => {
           document.getElementById('landing-page').style.display = 'none';
           document.getElementById('dashboard').style.display = 'block';

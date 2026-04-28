@@ -89,7 +89,7 @@
     if (!root) return;
 
     root.innerHTML = `
-      <section class="testimonial-section">
+      <section class="testimonial-section" id="testimonials">
         <div class="testimonial-header">
           <h2 class="testimonial-title">Loved by writers &amp; thinkers worldwide</h2>
           <p class="testimonial-sub">Join thousands sharing knowledge on IBlog</p>

@@ -1,7 +1,3 @@
-/* ═══════════════════════════════════════════════
-   IBLOG — Features Component
-   components/features/features.js
-═══════════════════════════════════════════════ */
 
 (function () {
 

@@ -8,8 +8,7 @@
       onkeydown="
         if (event.key === 'Enter') {
           IBlog.Dashboard.navigateTo('search');
-          document.getElementById('smart-search-input').value = this.value;
-          IBlog.Views.doSearch();
+          IBlog.Search?.focusAndNavigate(this.value);
         }
       "
     />

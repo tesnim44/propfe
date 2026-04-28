@@ -5,7 +5,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
+    @session_start();
 }
 
 function jsonOk(array $data = []): never
@@ -76,7 +76,6 @@ function resolveUserId(array $body): int
 {
     $userId = (int) ($body['userId'] ?? 0);
     if ($userId > 0) {
-        $_SESSION['user_id'] = $userId;
         return $userId;
     }
 
@@ -89,8 +88,6 @@ function resolveUserId(array $body): int
                 $stmt->execute([':email' => $email]);
                 $resolvedId = (int) ($stmt->fetchColumn() ?: 0);
                 if ($resolvedId > 0) {
-                    $_SESSION['user_id'] = $resolvedId;
-                    $_SESSION['email'] = $email;
                     return $resolvedId;
                 }
             } catch (Throwable) {
@@ -372,7 +369,7 @@ function getActivity(PDO $cnx, int $userId): array
     ];
 }
 
-function getTopAuthors(PDO $cnx): array
+function getTopAuthors(PDO $cnx, int $currentUserId = 0): array
 {
     $hasAvatar = columnExists($cnx, 'users', 'avatar');
     $hasCover = columnExists($cnx, 'users', 'cover');
@@ -388,28 +385,69 @@ function getTopAuthors(PDO $cnx): array
         ? 'COALESCE(up.bio, ' . ($hasBio ? 'u.bio' : '""') . ', "")'
         : ($hasBio ? 'COALESCE(u.bio, "")' : '""');
 
-    $rows = $cnx->query(
-        "SELECT
-            u.id,
-            u.name,
-            COALESCE(u.isPremium, 0) AS isPremium,
-            {$avatarExpr} AS avatar,
-            {$coverExpr} AS cover,
-            {$bioExpr} AS bio,
-            COALESCE(ast.articleCount, 0) AS articleCount,
-            COALESCE(ast.totalLikes, 0) AS totalLikes
-         FROM users u
-         " . ($hasUserProfile ? 'LEFT JOIN user_profile up ON up.userId = u.id' : '') . "
-         LEFT JOIN (
-            SELECT userId, COUNT(id) AS articleCount, COALESCE(SUM(likesCount), 0) AS totalLikes
-            FROM article
-            WHERE status = 'published'
-            GROUP BY userId
-         ) ast ON ast.userId = u.id
-         WHERE COALESCE(u.isAdmin, 0) = 0
-         ORDER BY totalLikes DESC, articleCount DESC, u.name ASC
-         LIMIT 6"
-    )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $sql = "SELECT
+                u.id,
+                u.name,
+                COALESCE(u.isPremium, 0) AS isPremium,
+                {$avatarExpr} AS avatar,
+                {$coverExpr} AS cover,
+                {$bioExpr} AS bio,
+                COALESCE(ast.articleCount, 0) AS articleCount,
+                COALESCE(ast.totalLikes, 0) AS totalLikes,
+                COALESCE(ast.totalViews, 0) AS totalViews,
+                COALESCE(cst.totalComments, 0) AS totalComments,
+                COALESCE(sst.totalSaves, 0) AS totalSaves,
+                (
+                    COALESCE(ast.articleCount, 0) +
+                    COALESCE(ast.totalLikes, 0) +
+                    COALESCE(ast.totalViews, 0) +
+                    COALESCE(cst.totalComments, 0) +
+                    COALESCE(sst.totalSaves, 0)
+                ) AS totalInteractions
+            FROM users u
+            " . ($hasUserProfile ? 'LEFT JOIN user_profile up ON up.userId = u.id' : '') . "
+            LEFT JOIN (
+                SELECT
+                    userId,
+                    COUNT(id) AS articleCount,
+                    COALESCE(SUM(likesCount), 0) AS totalLikes,
+                    COALESCE(SUM(views), 0) AS totalViews
+                FROM article
+                WHERE status = 'published'
+                GROUP BY userId
+            ) ast ON ast.userId = u.id
+            LEFT JOIN (
+                SELECT
+                    a.userId,
+                    COUNT(c.id) AS totalComments
+                FROM article a
+                INNER JOIN comment c ON c.articleId = a.id
+                WHERE a.status = 'published'
+                GROUP BY a.userId
+            ) cst ON cst.userId = u.id
+            LEFT JOIN (
+                SELECT
+                    a.userId,
+                    COUNT(sa.id) AS totalSaves
+                FROM article a
+                INNER JOIN savedarticle sa ON sa.articleId = a.id
+                WHERE a.status = 'published'
+                GROUP BY a.userId
+            ) sst ON sst.userId = u.id
+            WHERE COALESCE(u.isAdmin, 0) = 0
+              AND COALESCE(ast.articleCount, 0) > 0
+              AND (
+                  COALESCE(ast.totalLikes, 0) > 0
+                  OR COALESCE(ast.totalViews, 0) > 0
+                  OR COALESCE(cst.totalComments, 0) > 0
+                  OR COALESCE(sst.totalSaves, 0) > 0
+              )";
+
+    $sql .= ' ORDER BY totalInteractions DESC, totalLikes DESC, totalViews DESC, articleCount DESC, u.name ASC';
+
+    $stmt = $cnx->prepare($sql);
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
     return [
         'authors' => array_map(static function (array $row): array {
@@ -424,6 +462,10 @@ function getTopAuthors(PDO $cnx): array
                 'bio' => (string) ($row['bio'] ?? ''),
                 'articleCount' => (int) ($row['articleCount'] ?? 0),
                 'totalLikes' => (int) ($row['totalLikes'] ?? 0),
+                'totalViews' => (int) ($row['totalViews'] ?? 0),
+                'totalComments' => (int) ($row['totalComments'] ?? 0),
+                'totalSaves' => (int) ($row['totalSaves'] ?? 0),
+                'totalInteractions' => (int) ($row['totalInteractions'] ?? 0),
             ];
         }, $rows),
     ];
@@ -472,7 +514,7 @@ try {
     }
 
     if ($action === 'top_authors' || $action === 'topAuthors') {
-        jsonOk(getTopAuthors($cnx));
+        jsonOk(getTopAuthors($cnx, $userId));
     }
 
     jsonOk(platformSummary($cnx));

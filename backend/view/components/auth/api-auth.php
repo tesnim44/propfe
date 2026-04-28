@@ -8,7 +8,7 @@ require_once __DIR__ . '/../../../config/env.php';
 require_once __DIR__ . '/../../../controller/UserController.php';
 require_once __DIR__ . '/../../../lib/Mailer.php';
 
-session_start();
+@session_start();
 
 if (!($cnx instanceof PDO)) {
     http_response_code(500);
@@ -504,6 +504,33 @@ function sendPrivateMessage(PDO $cnx, int $senderId, int $recipientId, string $b
     ];
 }
 
+function deletePrivateMessageThread(PDO $cnx, int $userId, int $partnerId): int
+{
+    ensurePrivateMessagesTable($cnx);
+    if ($userId <= 0 || $partnerId <= 0) {
+        jsonErr('Invalid conversation.', 400);
+    }
+
+    $partner = getUserById($cnx, $partnerId);
+    if ($partner === false) {
+        jsonErr('Conversation partner not found.', 404);
+    }
+
+    $stmt = $cnx->prepare(
+        "DELETE FROM private_messages
+         WHERE (senderId = :userIdA AND recipientId = :partnerIdA)
+            OR (senderId = :partnerIdB AND recipientId = :userIdB)"
+    );
+    $stmt->execute([
+        ':userIdA' => $userId,
+        ':partnerIdA' => $partnerId,
+        ':partnerIdB' => $partnerId,
+        ':userIdB' => $userId,
+    ]);
+
+    return (int) $stmt->rowCount();
+}
+
 function sendPasswordResetEmail(string $email, string $name, string $token): void
 {
     $baseUrl = rtrim(env('APP_URL', 'http://localhost/iblog3'), '/');
@@ -807,6 +834,17 @@ try {
         $message = (string) ($body['message'] ?? $body['body'] ?? '');
         $saved = sendPrivateMessage($cnx, (int) $_SESSION['user_id'], $recipientId, $message);
         jsonOk(['message' => $saved]);
+    }
+
+    if ($action === 'dm_delete_thread') {
+        if (empty($_SESSION['user_id'])) jsonErr('Not authenticated.', 401);
+        $partnerId = (int) ($body['partnerId'] ?? 0);
+        $deleted = deletePrivateMessageThread($cnx, (int) $_SESSION['user_id'], $partnerId);
+        jsonOk([
+            'partnerId' => $partnerId,
+            'deletedCount' => $deleted,
+            'threads' => getPrivateMessageThreads($cnx, (int) $_SESSION['user_id']),
+        ]);
     }
 
     jsonErr('Unknown action.');

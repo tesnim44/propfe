@@ -24,6 +24,10 @@ IBlog.Writer = (() => {
     _buildImageInput();
     _wireEditorEvents();
     _patchTemplateSelector();
+    window.IBlog?.Views?.refreshCoverPreview?.(
+      document.getElementById('article-img')?.value?.trim() || '',
+      document.getElementById('writer-cover-name')?.textContent?.trim() || ''
+    );
   }
 
   /* ── Wire real-time input ────────────────────────────── */
@@ -34,10 +38,6 @@ IBlog.Writer = (() => {
       ?.addEventListener('input', _scheduleRender);
     document.getElementById('article-cat')
       ?.addEventListener('change', _scheduleRender);
-    document.getElementById('article-tags')
-      ?.addEventListener('input', _scheduleRender);
-    document.getElementById('article-img')
-      ?.addEventListener('input', _scheduleRender);
   }
 
   function _scheduleRender() {
@@ -159,16 +159,37 @@ IBlog.Writer = (() => {
           <h1 class="wtr-plain-title">${title}</h1>
           <div class="wtr-plain-meta">By <strong>${user.name}</strong> · ${article.readTime} · ${article.date}</div>
           <hr class="wtr-plain-rule"/>
-          ${paras.map((p,i)=>{
-            if(p.startsWith('## ')) return `<h2 class="wtr-plain-h2">${p.slice(3)}</h2>`;
-            if(p.startsWith('# '))  return `<h1 class="wtr-plain-h1">${p.slice(2)}</h1>`;
-            return `<p class="wtr-plain-p ${i===0?'wtr-lede':''}">${p}</p>`;
-          }).join('')}
+          ${paras.map((p,i)=>_renderPlainBlock(p, i)).join('')}
           ${article.tags.length?`<div class="wtr-plain-tags">${article.tags.map(t=>`<span>${t}</span>`).join('')}</div>`:''}
         </div>`;
     }
 
     setTimeout(_initWYSIWYG, 60);
+  }
+
+  function _escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function _renderPlainBlock(paragraph, index) {
+    const trimmed = String(paragraph || '').trim();
+    const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+
+    if (imageMatch) {
+      return `
+        <figure class="wtr-plain-inline-image">
+          <img src="${_escapeHtml(imageMatch[2])}" alt="${_escapeHtml(imageMatch[1] || 'Article image')}">
+          ${imageMatch[1] ? `<figcaption>${_escapeHtml(imageMatch[1])}</figcaption>` : ''}
+        </figure>`;
+    }
+
+    if (trimmed.startsWith('## ')) return `<h2 class="wtr-plain-h2">${_escapeHtml(trimmed.slice(3))}</h2>`;
+    if (trimmed.startsWith('# '))  return `<h1 class="wtr-plain-h1">${_escapeHtml(trimmed.slice(2))}</h1>`;
+    return `<p class="wtr-plain-p ${index===0?'wtr-lede':''}">${_escapeHtml(trimmed)}</p>`;
   }
 
   /* ══════════════════════════════════════════════════════

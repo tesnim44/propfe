@@ -8,7 +8,7 @@ loadEnvFile();
 $db_server="127.0.0.1";
 $db_username="root";
 $db_pwd="";
-$db_name="database1";
+$db_name="blogdyn";
 
 if (($envHost = env('DB_HOST')) !== null) {
     $db_server = $envHost;
@@ -54,12 +54,7 @@ function databaseNames(): array
     $candidates = [
         $name,
         $projectName,
-        'blog_123',
-        'blogdyn',
-        $projectName,
-        'iblog_bd',
-        'iblog',
-        'database1',
+        'blogdyn'
     ];
 
     return array_values(array_filter(array_unique($candidates), static fn ($value) => is_string($value) && $value !== ''));

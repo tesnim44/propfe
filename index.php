@@ -62,7 +62,9 @@ function assetUrl(string $path): string
    
     <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('backend/view/components/right-rail/right-rail.css'), ENT_QUOTES) ?>" />
     <link rel="stylesheet" href="backend/view/components/map/map.css" />
-    <link rel="stylesheet" href="backend/view/components/activity/activity.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
     <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('backend/view/components/search/search.css'), ENT_QUOTES) ?>" />
     <link rel="stylesheet" href="backend/view/components/stats/stats.css" />
     <link rel="stylesheet" href="backend/view/components/communities/communities.css" />
@@ -93,8 +95,8 @@ function assetUrl(string $path): string
      ARTICLE READER
      ════════════════════════════════════════════════════════ --> 
   <div id="article-reader-overlay">
-    <div id="article-reader-content"></div>
-  </div>
+  <div id="article-reader-content"></div>
+</div>
 
 <!-- ════════════════════════════════════════════════════════
      LANDING PAGE
@@ -136,55 +138,8 @@ function assetUrl(string $path): string
         <div class="center-feed" id="center-feed">
           <!-- HOME -->
           <div class="view-panel active" id="view-home">
-            <div class="feed-tabs">
-              <div
-                class="feed-tab active"
-                onclick="IBlog.Dashboard.switchFeedTab(this, 'foryou')"
-              >
-                For You
-              </div>
-              <div
-                class="feed-tab"
-                onclick="IBlog.Dashboard.switchFeedTab(this, 'following')"
-              >
-                Following
-              </div>
-              <div
-                class="feed-tab"
-                onclick="IBlog.Dashboard.switchFeedTab(this, 'trending')"
-              >
-                Trending
-              </div>
-              <div
-                class="feed-tab"
-                onclick="IBlog.Dashboard.switchFeedTab(this, 'latest')"
-              >
-                Latest
-              </div>
-            </div>
             <br />
-            <div class="compose-box">
-              <div class="compose-row">
-                <div class="compose-avatar" id="compose-avatar">A</div>
-                <textarea
-                  class="compose-input"
-                  id="composeInput"
-                  placeholder="What's on your mind? Share knowledge…"
-                  rows="2"
-                  onclick="IBlog.Feed.expandCompose()"
-                  oninput="IBlog.Feed.expandCompose()"
-                ></textarea>
-              </div>
-              <div class="compose-tools" id="composeTools">
-                <button class="tool-btn">📷 Image</button>
-                <button class="tool-btn">🔗 Link</button>
-                <button class="tool-btn">🏷️ Topic</button>
-                <button class="tool-btn">📊 Poll</button>
-                <button class="publish-btn" onclick="IBlog.Feed.publishPost()">
-                  Publish
-                </button>
-              </div>
-            </div>
+            
             <div id="feed-container"></div>
             <button
               class="load-more-btn"
@@ -199,33 +154,17 @@ function assetUrl(string $path): string
 
           <!-- MAP -->
           <div class="view-panel" id="view-map">
-            <div class="map-panel">
-              <div class="map-heading">
-                <div>
-                  <div class="map-kicker">Live reading patterns</div>
-                  <h1>Global Trend Map</h1>
-                  <p>Follow what people are actually reading across regions, then jump into each country feed for a warmer, story-first view of what is resonating there right now.</p>
-                  <div class="map-stats">
-                    <div class="map-stat">
-                      <strong>90+</strong>
-                      <span>countries tracked</span>
-                    </div>
-                    <div class="map-stat">
-                      <strong>24h</strong>
-                      <span>rolling activity window</span>
-                    </div>
-                    <div class="map-stat">
-                      <strong>Curated</strong>
-                      <span>human-friendly summaries</span>
-                    </div>
-                  </div>
-                </div>
-                <span class="badge badge-premium" style="font-size: 13px; padding: 6px 14px">Premium Feature</span>
+            <div class="view-header flex-between">
+              <div>
+                <h1>Global Trend Map</h1>
+                <p>Pick a country and jump straight into its most-read stories.</p>
               </div>
+              <span class="badge badge-premium" style="font-size: 13px; padding: 6px 14px">Premium Feature</span>
+            </div>
             <div class="premium-gate map-shell">
               <div id="world-map"></div>
               <div class="premium-overlay" id="map-premium-overlay">
-                <div style="font-size: 44px">🌍🔒</div>
+                <div style="font-size: 44px"></div>
                 <h3
                   style="
                     font-family: &quot;Playfair Display&quot;, serif;
@@ -248,16 +187,15 @@ function assetUrl(string $path): string
                   reading.
                 </p>
                 <button class="premium-upgrade-btn" onclick="showPremium()">
-                  ⭐ Upgrade to Premium
+                   Upgrade to Premium
                 </button>
               </div>
             </div>
             <div class="country-feed" id="country-feed">
               <div class="country-title" id="country-title">
-                🌐 <em>World</em> — Trending Now
+                 <em>World</em> — Trending Now
               </div>
               <div id="country-articles"></div>
-            </div>
             </div>
           </div>
 
@@ -278,19 +216,19 @@ function assetUrl(string $path): string
 
           <!-- NOTIFICATIONS -->
           <div class="view-panel" id="view-notifications">
-            <div class="view-header"><h1>🔔 Notifications</h1></div>
+            <div class="view-header"><h1> Notifications</h1></div>
             <div class="section-card" id="notif-list"></div>
           </div>
 
           <!-- MESSAGES -->
           <div class="view-panel messages-view" id="view-messages">
-            <div class="view-header"><h1>💬 Messages</h1></div>
+            <div class="view-header"><h1>Messages</h1></div>
             <div id="messages-list"></div>
           </div>
 
           <!-- SAVED -->
           <div class="view-panel" id="view-saved">
-            <div class="view-header"><h1>🔖 Saved Articles</h1></div>
+            <div class="view-header"><h1>Saved Articles</h1></div>
             <div id="saved-list"></div>
           </div>
 
@@ -303,7 +241,7 @@ function assetUrl(string $path): string
 
   <div class="view-header flex-between">
     <div>
-      <h1>✏️ Write an Article</h1>
+      <h1> Write an Article</h1>
       <p>Share your knowledge with the IBlog community</p>
     </div>
     <div class="wtr-toggle-bar" style="margin:0">
@@ -339,14 +277,14 @@ function assetUrl(string $path): string
     <div class="flex-between" style="margin-bottom:14px">
       <div>
         <strong style="font-size:15px">Article Templates</strong>
-        <span class="badge badge-premium" style="margin-left:8px">⭐ Premium</span>
+        <span class="badge badge-premium" style="margin-left:8px"> Premium</span>
       </div>
     </div>
     <div class="premium-gate" style="min-height:150px">
       <div class="template-grid" id="template-grid"
            style="pointer-events:none;opacity:.35"></div>
       <div class="premium-overlay" id="template-overlay">
-        <div style="font-size:40px">✍️🔒</div>
+        <div style="font-size:40px"></div>
         <h3 style="font-family:'Playfair Display',serif;font-size:20px;color:var(--text)">
           Premium Templates
         </h3>
@@ -354,7 +292,7 @@ function assetUrl(string $path): string
           5 professional article layouts — Newspaper, Magazine, Academic, Thread, Recipe.
         </p>
         <button class="premium-upgrade-btn" onclick="showPremium()">
-          ⭐ Upgrade to Unlock
+           Upgrade to Unlock
         </button>
       </div>
     </div>
@@ -404,7 +342,7 @@ function assetUrl(string $path): string
     <!-- Article Quality -->
     <div class="quality-analyzer">
       <div class="flex-between" style="margin-bottom:14px">
-        <strong>📊 Article Quality</strong>
+        <strong>Article Quality</strong>
         <div class="ai-pill"><span class="ai-dot"></span>Live AI</div>
       </div>
 
@@ -455,7 +393,7 @@ function assetUrl(string $path): string
       <button class="btn btn-primary"
               style="flex:2;padding:13px;justify-content:center"
               onclick="IBlog.Views.publishArticle()">
-        Publish Article 🚀
+        Publish Article 
       </button>
     </div>
   </div>
@@ -466,7 +404,7 @@ function assetUrl(string $path): string
           <div class="view-panel" id="view-articles">
             <div class="view-header flex-between">
               <div>
-                <h1>📄 My Articles</h1>
+                <h1> My Articles</h1>
                 <p class="view-subtitle">Published articles and private drafts saved from the writer.</p>
               </div>
               <button
@@ -477,57 +415,12 @@ function assetUrl(string $path): string
                 + New Article
               </button>
             </div>
-            <div class="my-articles-stats">
-              <div class="ma-stat">
-                <div class="ma-stat__val" id="ma-count">0</div>
-                <div class="ma-stat__lbl">Published</div>
-              </div>
-              <div class="ma-stat">
-                <div class="ma-stat__val" id="ma-drafts">0</div>
-                <div class="ma-stat__lbl">Drafts</div>
-              </div>
-              <div class="ma-stat">
-                <div class="ma-stat__val" id="ma-views">0</div>
-                <div class="ma-stat__lbl">Views</div>
-              </div>
-              <div class="ma-stat">
-                <div class="ma-stat__val" id="ma-likes">0</div>
-                <div class="ma-stat__lbl">Likes</div>
-              </div>
-            </div>
             <div id="my-articles-list"></div>
           </div>
    
           <!-- ── SETTINGS -->
           <div class="view-panel" id="view-settings">
-            <div class="view-header"><h1>⚙️ Settings</h1></div>
-            <div class="section-card">
-              <h3 style="margin-bottom: 18px">Account</h3>
-              <div class="form-group">
-                <label>Display Name</label>
-                <input type="text" id="settings-name" />
-              </div>
-              <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="settings-email" />
-              </div>
-              <div class="form-group">
-                <label>Bio</label>
-                <textarea
-                  id="settings-bio"
-                  style="resize: vertical"
-                  rows="3"
-                  placeholder="Tell your story…"
-                ></textarea>
-              </div>
-              <button
-                class="btn btn-primary"
-                style="padding: 11px 26px"
-                onclick="IBlog.utils.toast('Settings saved! ✓', 'success')"
-              >
-                Save Changes
-              </button>
-            </div>
+            <div class="view-header"><h1> Settings</h1></div>
             <div class="section-card">
               <div class="flex-between">
                 <div>
@@ -549,7 +442,7 @@ function assetUrl(string $path): string
                   id="premium-settings-btn"
                   onclick="showPremium()"
                 >
-                  ⭐ Upgrade
+                   Upgrade
                 </button>
               </div>
             </div>
@@ -565,13 +458,6 @@ function assetUrl(string $path): string
                 </div>
                 <div class="flex-between">
                   <span style="font-size: 14px">Article likes</span>
-                  <label class="toggle-switch"
-                    ><input type="checkbox" checked />
-                    <div class="toggle-track"></div
-                  ></label>
-                </div>
-                <div class="flex-between">
-                  <span style="font-size: 14px">Weekly digest</span>
                   <label class="toggle-switch"
                     ><input type="checkbox" checked />
                     <div class="toggle-track"></div
@@ -595,7 +481,7 @@ function assetUrl(string $path): string
     <div id="chatOverlay" onclick="IBlog.Chat.closedIfOutside(event)">
       <div class="chat-panel">
         <div class="chat-header">
-          <div class="chat-header-icon" id="chat-icon">🤖</div>
+          <div class="chat-header-icon" id="chat-icon"></div>
           <div class="chat-header-info">
             <strong id="chat-title">AI &amp; ML</strong>
             <small id="chat-meta">4.2k members · 23 online</small>
@@ -607,16 +493,16 @@ function assetUrl(string $path): string
             class="chat-tab active"
             onclick="IBlog.Chat.switchTab('messages', this)"
           >
-            💬 Chat
+             Chat
           </div>
           <div class="chat-tab" onclick="IBlog.Chat.switchTab('threads', this)">
-            🧵 Threads
+             Threads
           </div>
           <div
             class="chat-tab"
             onclick="IBlog.Chat.switchTab('resources', this)"
           >
-            📚 Resources
+             Resources
           </div>
         </div>
         <div class="chat-body" id="chat-messages"></div>
@@ -671,7 +557,6 @@ function assetUrl(string $path): string
 <?php inlineComponentScript('backend/view/components/communities/communities.js'); ?>
 
 <!-- ✅ AJOUTER ACTIVITY ICI (avant profile.js car profile en dépend) -->
-<?php inlineComponentScript('backend/view/components/activity/activity.js'); ?>
 <?php inlineComponentScript('backend/view/components/profile/profile.js'); ?>
 <?php inlineComponentScript('backend/view/components/Onboarding/Onboarding.js'); ?>
 

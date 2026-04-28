@@ -1,8 +1,4 @@
-<!-- ═══════════════════════════════════════════════
-   IBLOG — How It Works Component
-   components/HIW/hiw.html
-   Steps injected by hiw.js
-═══════════════════════════════════════════════ -->
+
 <section class="hiw-section" id="hiw">
 
   <div class="hiw-eyebrow">The Process</div>

@@ -24,7 +24,7 @@
   font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 700;
-  color: #111;
+  color: #a99312;
   text-decoration: none;
 }
 .footer-logo em { color: var(--accent); font-style: italic; }

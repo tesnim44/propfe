@@ -165,6 +165,25 @@
 /* Article text */
 .reader-text { font-size: 17px; line-height: 1.95; color: var(--text); margin-bottom: 32px; }
 .reader-text p { margin-bottom: 20px; }
+.reader-inline-image {
+  margin: 28px 0;
+}
+.reader-inline-image img {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  box-shadow: 0 22px 44px rgba(0,0,0,.12);
+}
+.reader-inline-image figcaption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text2);
+}
 .reader-text p:first-child::first-letter {
   font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 900;
   float: left; line-height: .85; margin: 6px 10px 0 0; color: var(--accent);

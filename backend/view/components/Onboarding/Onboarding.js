@@ -1,6 +1,8 @@
 window.IBlogOnboarding = (() => {
   "use strict";
 
+  const AUTH_API = "backend/view/components/auth/api-auth.php";
+
   const GENERAL_INTERESTS = [
     { id: "ai", label: "AI", emoji: "AI" },
     { id: "technology", label: "Technology", emoji: "TE" },
@@ -362,14 +364,53 @@ window.IBlogOnboarding = (() => {
     buildTopicPills("ob-preview-subjects", profile.subjects);
   }
 
-  function finish() {
+  async function finish() {
+    const finishButton = document.getElementById("ob-finish-btn");
+    const originalLabel = finishButton?.textContent || finishLabel;
     const profile = collectProfileData();
-    const enrichedUser = {
+    const fallbackUser = {
       ...currentUser,
       ...profile,
       initial: (profile.name?.[0] || "A").toUpperCase(),
       onboardingComplete: true
     };
+
+    if (finishButton) {
+      finishButton.disabled = true;
+      finishButton.textContent = "Saving...";
+    }
+
+    let enrichedUser = fallbackUser;
+
+    try {
+      const response = await fetch(AUTH_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_profile",
+          name: profile.name || currentUser?.name || "",
+          email: currentUser?.email || "",
+          bio: profile.bio || "",
+          avatar: profile.avatar || currentUser?.avatar || "",
+          cover: currentUser?.cover || ""
+        })
+      });
+      const text = await response.text();
+      if (text.trim().startsWith("{")) {
+        const data = JSON.parse(text);
+        if (response.ok && data.ok && data.user) {
+          enrichedUser = {
+            ...fallbackUser,
+            ...data.user,
+            ...profile,
+            onboardingComplete: true,
+            initial: (profile.name?.[0] || data.user.name?.[0] || "A").toUpperCase()
+          };
+        }
+      }
+    } catch (error) {
+      console.warn("Onboarding profile sync failed:", error);
+    }
 
     if (window.IBlogSession?.setUser) {
       IBlogSession.setUser(enrichedUser);
@@ -379,10 +420,16 @@ window.IBlogOnboarding = (() => {
       if (window.IBlog?.state) IBlog.state.currentUser = enrichedUser;
     }
 
+    syncCurrentUserArticles(enrichedUser);
     hideOverlay();
     refreshUserUI(enrichedUser);
     window.dispatchEvent(new CustomEvent("onboarding:complete", { detail: { user: enrichedUser } }));
     if (onComplete) onComplete(enrichedUser);
+
+    if (finishButton) {
+      finishButton.disabled = false;
+      finishButton.textContent = originalLabel;
+    }
   }
 
   function collectProfileData() {
@@ -413,6 +460,9 @@ window.IBlogOnboarding = (() => {
     if (!window.IBlog) return;
     IBlog.Dashboard?.updateUserUI?.();
     IBlog.Profile?.buildProfile?.();
+    IBlog.Feed?.build?.();
+    IBlog.Views?.buildSaved?.();
+    window.RightRail?.refreshAuthors?.();
 
     const pseudo = document.getElementById("profile-pseudo");
     if (pseudo) pseudo.textContent = `@${user.pseudo}`;
@@ -422,6 +472,33 @@ window.IBlogOnboarding = (() => {
 
     const settingsBio = document.getElementById("settings-bio");
     if (settingsBio) settingsBio.value = user.bio || "";
+  }
+
+  function syncCurrentUserArticles(user) {
+    const articles = window.IBlog?.state?.articles;
+    if (!Array.isArray(articles) || !user) return;
+
+    const userId = user.id ?? null;
+    const userEmail = String(user.email || "").trim().toLowerCase();
+
+    articles.forEach(article => {
+      if (!article) return;
+      const articleAuthorId = article.authorId ?? article.userId ?? null;
+      const articleAuthorEmail = String(article.authorEmail || "").trim().toLowerCase();
+      const isCurrentUsersArticle = (
+        (userId !== null && articleAuthorId !== null && String(userId) === String(articleAuthorId)) ||
+        (userEmail && articleAuthorEmail && userEmail === articleAuthorEmail)
+      );
+
+      if (!isCurrentUsersArticle) return;
+
+      article.author = user.name || article.author;
+      article.authorInitial = user.initial || (user.name?.[0] || article.authorInitial || "A").toUpperCase();
+      article.authorAvatar = user.avatar || "";
+      article.authorEmail = user.email || article.authorEmail || "";
+      article.authorId = user.id ?? article.authorId ?? article.userId ?? null;
+      article.userId = article.authorId ?? article.userId ?? user.id ?? null;
+    });
   }
 
   function updateAvatar(element, imageSrc, name) {

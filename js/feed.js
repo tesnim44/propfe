@@ -22,6 +22,29 @@ IBlog.Feed = (() => {
   function iconHeart() { return I.heart; }
   function iconHeartFill() { return I.heartFill; }
 
+  function _escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function _renderReaderBodyBlock(paragraph) {
+    const trimmed = String(paragraph || '').trim();
+    const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+
+    if (imageMatch) {
+      return `
+        <figure class="reader-inline-image">
+          <img src="${_escapeHtml(imageMatch[2])}" alt="${_escapeHtml(imageMatch[1] || 'Article image')}">
+          ${imageMatch[1] ? `<figcaption>${_escapeHtml(imageMatch[1])}</figcaption>` : ''}
+        </figure>`;
+    }
+
+    return `<p>${_escapeHtml(trimmed)}</p>`;
+  }
+
   const REACTIONS = [
     { key:'love',    label:'Love',       svgKey:'love',    color:'#e25555' },
     { key:'insight', label:'Insightful', svgKey:'insight', color:'#4a90d9' },
@@ -79,12 +102,13 @@ IBlog.Feed = (() => {
         AC.hydrateSocialState?.(article);
         const coverImage = article?.cover || article?.img || '';
         const safeOpenReaderId = JSON.stringify(article?.id);
-        const authorProfilePayload = JSON.stringify({
+        const authorProfilePayload = encodeURIComponent(JSON.stringify({
           id: article?.authorId ?? null,
           name: article?.author || 'Anonymous',
+          email: article?.authorEmail || '',
           avatar: article?.authorAvatar || '',
           initial: (article?.author || 'A').slice(0, 1).toUpperCase(),
-        });
+        }));
         const reactionState = article?._reactions || { love: 0, insight: 0, helpful: 0, save: 0 };
         const summaryHTML = typeof AC._summaryHTML === 'function'
           ? AC._summaryHTML(article || {})
@@ -106,7 +130,9 @@ IBlog.Feed = (() => {
               <div class="card-avatar" style="background:${IBlog.ArticleCard?.avatarColor?.(i) || 'var(--accent)'}">
                 ${fallbackText((article?.author || 'A').slice(0, 1).toUpperCase())}
               </div>
-              <div style="cursor:pointer" onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">
+              <div style="cursor:pointer"
+                   data-profile="${fallbackText(authorProfilePayload)}"
+                   onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">
                 <div class="card-author">${fallbackText(article?.author || 'Anonymous')}</div>
                 <div class="card-date">${fallbackText(article?.date || '')}</div>
               </div>
@@ -201,12 +227,13 @@ IBlog.Feed = (() => {
     const color   = AC ? AC.avatarColor(idx) : '#b8960c';
     AC?.hydrateSocialState?.(article);
     const initial = (article.author||'A')[0].toUpperCase();
-    const authorProfilePayload = JSON.stringify({
+    const authorProfilePayload = encodeURIComponent(JSON.stringify({
       id: article.authorId ?? null,
       name: article.author || 'Anonymous',
+      email: article.authorEmail || '',
       avatar: article.authorAvatar || '',
       initial,
-    });
+    }));
     const readerAvatarStyle = article.authorAvatar
       ? `background-image:url('${String(article.authorAvatar).replace(/'/g, '&#39;')}');background-size:cover;background-position:center;background-color:transparent;cursor:pointer`
       : `background:${color};cursor:pointer`;
@@ -271,9 +298,11 @@ IBlog.Feed = (() => {
           <!-- Author + actions -->
           <div class="reader-author-row">
             <div class="reader-author-avatar" style="${readerAvatarStyle}"
-                 onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">${article.authorAvatar ? '' : initial}</div>
+                 data-profile="${authorProfilePayload.replace(/"/g, '&quot;')}"
+                 onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">${article.authorAvatar ? '' : initial}</div>
             <div class="reader-author-info" style="cursor:pointer"
-                 onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">
+                 data-profile="${authorProfilePayload.replace(/"/g, '&quot;')}"
+                 onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">
               <strong>${article.author||'Anonymous'}</strong>
               <small>${article.date||''} · ${article.readTime||'5 min'} read</small>
             </div>
@@ -317,12 +346,8 @@ IBlog.Feed = (() => {
           ${(() => {
             const tplHTML = IBlog.Templates.renderForReader(article);
             if (tplHTML) return `<div class="reader-tpl-wrap">${tplHTML}</div>`;
-            const esc = value => String(value ?? '')
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
             return `<div class="reader-text">
-            ${(article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${esc(p.trim())}</p>`).join('')}</div>`;
+            ${(article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(_renderReaderBodyBlock).join('')}</div>`;
           })()}
 
           <!-- Tags -->
@@ -513,7 +538,8 @@ IBlog.Feed = (() => {
     if(!text){IBlog.utils.toast('Write something first!');return;}
     const user=IBlog.state.currentUser||{name:'You'};
     IBlog.state.articles.unshift({
-      id:Date.now(),author:user.name,cat:'General',
+      id:Date.now(),author:user.name,authorInitial:(user.initial||user.name?.[0]||'Y').toUpperCase(),
+      authorAvatar:user.avatar||'',authorEmail:user.email||'',authorId:user.id??null,userId:user.id??null,cat:'General',
       title:text.length>80?text.slice(0,80)+'…':text,
       excerpt:text,body:text,readTime:'1 min',
       likes:0,comments:[],quality:50,tags:[],

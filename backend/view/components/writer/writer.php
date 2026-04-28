@@ -150,7 +150,7 @@
     <div style="display:flex;gap:11px;margin-top:18px">
       <button class="btn btn-ghost"
               style="flex:1;padding:13px;justify-content:center"
-              onclick="IBlog.utils.toast('Draft saved! 📝','success')">
+              onclick="IBlog.Views.saveDraftArticle()">
         Save Draft
       </button>
       <button class="btn btn-primary"

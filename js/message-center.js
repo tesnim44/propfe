@@ -8,6 +8,17 @@
   let _searchTimer = null;
   let _conversationPartnerIds = new Set();
 
+  function _resetRuntime() {
+    _activePartner = null;
+    _usersCache = [];
+    _threadsCache = [];
+    _conversationPartnerIds = new Set();
+    if (_searchTimer) {
+      clearTimeout(_searchTimer);
+      _searchTimer = null;
+    }
+  }
+
   function _currentUser() {
     return IBlog.state?.currentUser || null;
   }
@@ -21,8 +32,19 @@
       .replace(/'/g, '&#39;');
   }
 
+  function _linkify(value) {
+    const escaped = _escapeHtml(value);
+    return escaped.replace(
+      /((?:https?:\/\/|www\.)[^\s<]+)/gi,
+      (match) => {
+        const href = match.toLowerCase().startsWith('http') ? match : `https://${match}`;
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+      }
+    );
+  }
+
   function _payload(value) {
-    return encodeURIComponent(JSON.stringify(value ?? {}));
+    return encodeURIComponent(JSON.stringify(value ?? {})).replace(/'/g, '%27');
   }
 
   function _friendlyError(error, surface = 'messages') {
@@ -188,7 +210,7 @@
     return `
       <div class="dm-message${mine ? ' mine' : ''}">
         <div class="dm-message-bubble">
-          <p>${_escapeHtml(message.body || '')}</p>
+          <p>${_linkify(message.body || '')}</p>
           <small>${message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''}</small>
         </div>
       </div>`;
@@ -296,7 +318,10 @@
           <span>${_escapeHtml(user?.bio || user?.email || 'Private conversation')}</span>
         </div>
       </div>
-      <button class="dm-open-profile" type="button" onclick="IBlog.Profile?.openUserProfile?.(JSON.parse(decodeURIComponent('${_payload(user)}')))">View profile</button>`;
+      <div class="dm-panel-actions">
+        <button class="dm-open-profile" type="button" onclick="IBlog.Profile?.openUserProfile?.(JSON.parse(decodeURIComponent('${_payload(user)}')))">View profile</button>
+        <button class="dm-open-profile dm-delete-thread" type="button" onclick="IBlog.MessageCenter.deleteConversation()">Delete conversation</button>
+      </div>`;
   }
 
   async function _loadConversation(partner) {
@@ -432,15 +457,51 @@
     }
   }
 
+  async function deleteConversation() {
+    if (!_activePartner?.id) {
+      IBlog.utils?.toast('Pick a conversation first.', 'info');
+      return;
+    }
+
+    if (!window.confirm('Delete this conversation for both sides?')) {
+      return;
+    }
+
+    try {
+      await _request('dm_delete_thread', {
+        partnerId: Number(_activePartner.id),
+      });
+
+      _activePartner = null;
+      _threadsCache = [];
+      _conversationPartnerIds = new Set();
+      await build();
+      IBlog.utils?.toast('Conversation deleted.', 'success');
+    } catch (error) {
+      IBlog.utils?.toast(error?.message || 'Could not delete this conversation.', 'error');
+    }
+  }
+
   window.IBlogMessageCenter = {
     build,
     openConversation,
     startConversation,
     sendMessage,
+    deleteConversation,
     refresh: build,
     getUsers: () => _usersCache,
   };
 
   window.IBlog = window.IBlog || {};
   window.IBlog.MessageCenter = window.IBlogMessageCenter;
+
+  if (!window.__iblogDmSessionBound) {
+    window.addEventListener('iblog:session-changed', () => {
+      _resetRuntime();
+      if (document.getElementById('messages-list')) {
+        build();
+      }
+    });
+    window.__iblogDmSessionBound = true;
+  }
 })();

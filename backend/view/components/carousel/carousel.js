@@ -1,9 +1,11 @@
-/* ═══════════════════════════════════════════════
-   IBLOG — Carousel Component
-   components/carousel/carousel.js
-═══════════════════════════════════════════════ */
-
 (function () {
+  function esc(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
   function init() {
     const root = document.getElementById('carousel-root');
@@ -22,60 +24,62 @@
     }
 
     const track = document.getElementById('carousel-track');
-    if (!track || !window.IBlog || !Array.isArray(IBlog.SEED_ARTICLES)) return;
+    const source = Array.isArray(window.IBlog?.SEED_ARTICLES) ? window.IBlog.SEED_ARTICLES : [];
+    if (!track || !source.length) return;
 
-    if (!IBlog.SEED_ARTICLES.length) {
-      track.innerHTML = `
-        <div class="c-card" style="min-width:min(420px,100%);cursor:default;">
-          <div class="c-body">
-            <div class="c-cat">Featured</div>
-            <div class="c-title">No featured articles yet.</div>
-            <div class="c-meta">
-              <span>Real articles will appear here once published.</span>
-            </div>
-          </div>
-        </div>
-      `;
-      return;
+    const wrapper = document.getElementById('carousel-wrapper');
+    if (!wrapper) return;
+
+    const minCards = Math.max(8, Math.ceil((wrapper.clientWidth || window.innerWidth || 1200) / 160));
+    const loopCards = [];
+    while (loopCards.length < minCards) {
+      loopCards.push(...source);
     }
+    const cards = [...loopCards, ...loopCards];
 
-    // Duplicate for infinite loop
-    const cards = [...IBlog.SEED_ARTICLES, ...IBlog.SEED_ARTICLES];
-
-    track.innerHTML = cards.map(a => `
-      <div class="c-card">
+    track.innerHTML = cards.map((article) => `
+      <div class="c-card" onclick="openArticleFromLanding(${Number(article.id)})">
         <div class="c-img">
-          <img src="${a.img || ''}" alt="" loading="lazy"
-               onerror="this.parentNode.style.background='#1a1a2e'">
+          <img src="${esc(article.img || article.cover || '')}" alt="${esc(article.title || 'Article')}" loading="lazy"
+               onerror="this.parentNode.style.background='#1a1a2e'; this.remove();">
           <div class="c-img-overlay"></div>
-          <button class="c-read-btn" onclick="event.stopPropagation(); typeof showSignin === 'function' ? showSignin() : (IBlog.Auth && IBlog.Auth.showSignin ? IBlog.Auth.showSignin() : null)">
+          <button class="c-read-btn" onclick="event.stopPropagation(); openArticleFromLanding(${Number(article.id)})">
             Read Article →
           </button>
         </div>
         <div class="c-body">
-          <div class="c-cat">${a.cat || ''}</div>
-          <div class="c-title">${a.title || ''}</div>
+          <div class="c-cat">${esc(article.cat || article.category || 'Featured')}</div>
+          <div class="c-title">${esc(article.title || '')}</div>
           <div class="c-meta">
-            <span>${a.author || ''}</span>
+            <span>${esc(article.author || '')}</span>
             <span class="c-meta-dot"></span>
-            <span>${a.date || ''}</span>
-            <span class="c-read-badge">${a.readTime || ''}</span>
+            <span>${esc(article.date || '')}</span>
+            <span class="c-read-badge">${esc(article.readTime || '')}</span>
           </div>
         </div>
       </div>
     `).join('');
 
-    // ── Drag to scroll ──────────────────────────────
-    const wrapper = document.getElementById('carousel-wrapper');
-    if (!wrapper) return;
+    const syncLoopDistance = () => {
+      track.style.setProperty('--carousel-loop-distance', `${track.scrollWidth / 2}px`);
+    };
+
+    requestAnimationFrame(syncLoopDistance);
+    window.addEventListener('load', syncLoopDistance, { once: true });
+    window.addEventListener('resize', syncLoopDistance, { passive: true });
 
     let isDragging = false;
     let dragStartX = 0;
     let dragDelta = 0;
-    let animOffset = 0; // accumulated drag offset
+    let animOffset = 0;
 
     function pauseAnim() { track.classList.add('paused'); }
     function resumeAnim() { track.classList.remove('paused'); }
+
+    wrapper.addEventListener('mouseenter', pauseAnim);
+    wrapper.addEventListener('mouseleave', () => {
+      if (!isDragging) resumeAnim();
+    });
 
     wrapper.addEventListener('mousedown', e => {
       isDragging = true;
@@ -88,14 +92,13 @@
     window.addEventListener('mousemove', e => {
       if (!isDragging) return;
       dragDelta = e.clientX - dragStartX;
-      track.style.marginLeft = (animOffset + dragDelta) + 'px';
+      track.style.marginLeft = `${animOffset + dragDelta}px`;
     });
 
     window.addEventListener('mouseup', () => {
       if (!isDragging) return;
       isDragging = false;
       animOffset += dragDelta;
-      // Resume auto-scroll after 2.5s
       setTimeout(() => {
         animOffset = 0;
         track.style.marginLeft = '';
@@ -103,7 +106,6 @@
       }, 2500);
     });
 
-    // Touch
     let touchStartX = 0;
     wrapper.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
@@ -112,7 +114,7 @@
 
     wrapper.addEventListener('touchmove', e => {
       const dx = e.touches[0].clientX - touchStartX;
-      track.style.marginLeft = (animOffset + dx) + 'px';
+      track.style.marginLeft = `${animOffset + dx}px`;
     }, { passive: true });
 
     wrapper.addEventListener('touchend', e => {
@@ -130,5 +132,4 @@
   } else {
     init();
   }
-
 })();

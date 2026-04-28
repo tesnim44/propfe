@@ -70,6 +70,7 @@
   gap: 12px;
   padding: 6px 18px 14px;
   animation: carouselScroll 50s linear infinite;
+  --carousel-loop-distance: 50%;
   width: max-content;
   will-change: transform;
 }
@@ -77,7 +78,7 @@
 
 @keyframes carouselScroll {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  100% { transform: translateX(calc(-1 * var(--carousel-loop-distance))); }
 }
 
 /* Card */

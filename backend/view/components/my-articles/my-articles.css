@@ -141,6 +141,15 @@
   min-width: 0;
 }
 
+.my-article-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
 .my-article-title {
   font-weight: 700;
   font-size: 14px;

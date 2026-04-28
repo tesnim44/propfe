@@ -8,69 +8,6 @@ error_reporting(0);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../model/community.php';
 
-function resolveCommunityMessageTable(PDO $cnx): string
-{
-    static $table = null;
-
-    if (is_string($table)) {
-        return $table;
-    }
-
-    $stmt = $cnx->query("
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = DATABASE()
-          AND table_name IN ('community_message', 'community_messages')
-        ORDER BY FIELD(table_name, 'community_message', 'community_messages')
-        LIMIT 1
-    ");
-
-    $resolved = $stmt->fetchColumn();
-    if (is_string($resolved) && $resolved !== '') {
-        $table = $resolved;
-        return $table;
-    }
-
-    $table = 'community_message';
-    return $table;
-}
-
-function getTableColumns(PDO $cnx, string $table): array
-{
-    static $cache = [];
-
-    if (isset($cache[$table])) {
-        return $cache[$table];
-    }
-
-    $columns = [];
-
-    try {
-        $stmt = $cnx->query("SHOW COLUMNS FROM {$table}");
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            if (!empty($row['Field'])) {
-                $columns[] = $row['Field'];
-            }
-        }
-    } catch (Throwable $e) {
-        $columns = [];
-    }
-
-    $cache[$table] = $columns;
-    return $columns;
-}
-
-function resolveColumnName(array $columns, array $candidates): ?string
-{
-    foreach ($candidates as $candidate) {
-        if (in_array($candidate, $columns, true)) {
-            return $candidate;
-        }
-    }
-
-    return null;
-}
-
 function readJsonInput(): array
 {
     $raw = file_get_contents('php://input');
@@ -81,34 +18,72 @@ function readJsonInput(): array
 function resolveRequestUserId(PDO $cnx, ?array $input = null): int
 {
     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+        @session_start();
     }
 
     $input ??= readJsonInput();
-    $userId = (int) ($input['userId'] ?? $_REQUEST['userId'] ?? 0);
-    if ($userId > 0) {
-        $_SESSION['user_id'] = $userId;
-        return $userId;
-    }
+    $requestedUserId = (int) ($input['userId'] ?? $_REQUEST['userId'] ?? 0);
+    $requestedEmail = trim((string) ($input['userEmail'] ?? $_REQUEST['userEmail'] ?? ''));
+    $hasExplicitIdentity = ($requestedUserId > 0) || ($requestedEmail !== '');
 
-    $email = trim((string) ($input['userEmail'] ?? $_REQUEST['userEmail'] ?? ''));
-    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if ($requestedEmail !== '') {
+        if (!filter_var($requestedEmail, FILTER_VALIDATE_EMAIL)) {
+            return 0;
+        }
         try {
-            $stmt = $cnx->prepare('SELECT id, name FROM users WHERE email = :email LIMIT 1');
-            $stmt->execute([':email' => $email]);
+            $stmt = $cnx->prepare('SELECT id, name, email FROM users WHERE email = :email LIMIT 1');
+            $stmt->execute([':email' => $requestedEmail]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-            if ($row && !empty($row['id'])) {
-                $_SESSION['user_id'] = (int) $row['id'];
-                $_SESSION['email'] = $email;
-                $_SESSION['user_name'] = (string) ($row['name'] ?? 'Member');
-                return (int) $row['id'];
+            if (!$row || empty($row['id'])) {
+                return 0;
             }
+            $resolvedId = (int) $row['id'];
+            if ($requestedUserId > 0 && $resolvedId !== $requestedUserId) {
+                return 0;
+            }
+            return $resolvedId;
         } catch (Throwable $e) {
             return 0;
         }
     }
 
+    if ($requestedUserId > 0) {
+        try {
+            $stmt = $cnx->prepare('SELECT id, name, email FROM users WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $requestedUserId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if (!$row || empty($row['id'])) {
+                return 0;
+            }
+            return (int) $row['id'];
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+
+    if ($hasExplicitIdentity) {
+        return 0;
+    }
+
     return (int) ($_SESSION['user_id'] ?? 0);
+}
+
+function resolveUserDisplayName(PDO $cnx, int $userId): string
+{
+    if ($userId <= 0) {
+        return 'Member';
+    }
+    try {
+        $stmt = $cnx->prepare('SELECT name FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $userId]);
+        $name = $stmt->fetchColumn();
+        if (is_string($name) && trim($name) !== '') {
+            return trim($name);
+        }
+    } catch (Throwable $e) {
+        // no-op: fall through to default
+    }
+    return 'Member';
 }
 
 // ─────────────────────────────────────────────────────────
@@ -132,19 +107,20 @@ function createCommunity(PDO $cnx, array $data): bool
 function createCommunityAction(PDO $cnx): void
 {
     header('Content-Type: application/json');
-    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (session_status() === PHP_SESSION_NONE) @session_start();
+    $input = readJsonInput();
+    $userId = resolveRequestUserId($cnx, $input);
 
-    if (!isset($_SESSION['user_id'])) {
+    if ($userId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Not logged in']);
         return;
     }
 
-    if (empty($_SESSION['isPremium'])) {
+    if (!isUserPremium($cnx, $userId)) {
         echo json_encode(['success' => false, 'error' => 'Premium subscription required']);
         return;
     }
 
-    $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $name  = trim($input['name']        ?? '');
     $desc  = trim($input['description'] ?? '');
     $tags  = trim($input['topics']      ?? '');
@@ -158,7 +134,7 @@ function createCommunityAction(PDO $cnx): void
     $topics = $tags !== '' ? implode(',', array_map('trim', explode(',', $tags))) : null;
 
     $success = createCommunity($cnx, [
-        'creatorId'   => (int) $_SESSION['user_id'],
+        'creatorId'   => $userId,
         'name'        => $name,
         'description' => $desc,
         'icon'        => $icon,
@@ -176,7 +152,7 @@ function createCommunityAction(PDO $cnx): void
         INSERT INTO communitymember (communityId, userId, role, joinedAt)
         VALUES (:communityId, :userId, 'creator', NOW())
     ");
-    $stmt->execute([':communityId' => $communityId, ':userId' => (int) $_SESSION['user_id']]);
+    $stmt->execute([':communityId' => $communityId, ':userId' => $userId]);
 
     echo json_encode(['success' => true, 'id' => $communityId]);
 }
@@ -378,34 +354,22 @@ function getMessagesAction(PDO $cnx): void
     try {
         header('Content-Type: application/json');
 
-        $communityId = (int) ($_GET['communityId'] ?? 0);
+        $communityId   = (int) ($_GET['communityId'] ?? 0);
         $currentUserId = resolveRequestUserId($cnx);
+
         if (!$communityId) {
             echo json_encode(['success' => false, 'messages' => []]);
             return;
         }
-        $messageTable = resolveCommunityMessageTable($cnx);
-        $messageCols = getTableColumns($cnx, $messageTable);
-
-        $communityIdCol = resolveColumnName($messageCols, ['communityId', 'community_id']);
-        $userIdCol      = resolveColumnName($messageCols, ['userId', 'user_id']);
-        $messageCol     = resolveColumnName($messageCols, ['message', 'content', 'body']);
-        $createdAtCol   = resolveColumnName($messageCols, ['createdAt', 'created_at']);
-        $isDeletedCol   = resolveColumnName($messageCols, ['isDeleted', 'is_deleted']);
-
-        if (!$communityIdCol || !$userIdCol || !$messageCol || !$createdAtCol) {
-            echo json_encode(['success' => true, 'messages' => []]);
-            return;
-        }
 
         $stmt = $cnx->prepare("
-            SELECT cm.id, cm.{$userIdCol} AS userId, cm.{$messageCol} AS message, cm.{$createdAtCol} AS createdAt,
+            SELECT cm.id, cm.userId, cm.message, cm.createdAt,
                    u.name AS userName
-            FROM {$messageTable} cm
-            LEFT JOIN users u ON u.id = cm.{$userIdCol}
-            WHERE cm.{$communityIdCol} = ?
-            " . ($isDeletedCol ? "AND cm.{$isDeletedCol} = 0" : '') . "
-            ORDER BY cm.{$createdAtCol} ASC
+            FROM community_message cm
+            LEFT JOIN users u ON u.id = cm.userId
+            WHERE cm.communityId = ?
+              AND cm.isDeleted = 0
+            ORDER BY cm.createdAt ASC
             LIMIT 200
         ");
         $stmt->execute([$communityId]);
@@ -420,55 +384,32 @@ function getMessagesAction(PDO $cnx): void
     } catch (Throwable $e) {
         error_log('[getMessagesAction] ' . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Unable to load messages', 'detail' => $e->getMessage()]);
-        return;
+        echo json_encode(['success' => false, 'error' => 'Unable to load messages']);
     }
 }
 
 function sendMessageAction(PDO $cnx): void
 {
     header('Content-Type: application/json');
-    $input = readJsonInput();
-    $userId = resolveRequestUserId($cnx, $input);
+    $input       = readJsonInput();
+    $userId      = resolveRequestUserId($cnx, $input);
+    $communityId = (int) ($input['communityId'] ?? 0);
+    $message     = trim($input['message'] ?? '');
+
     if ($userId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Not logged in']);
         return;
     }
-
-    $communityId = (int) ($input['communityId'] ?? 0);
-    $message     = trim($input['message'] ?? '');
 
     if (!$communityId || $message === '') {
         echo json_encode(['success' => false, 'error' => 'Invalid data']);
         return;
     }
 
-    $messageTable = resolveCommunityMessageTable($cnx);
-    $messageCols = getTableColumns($cnx, $messageTable);
-
-    $communityIdCol = resolveColumnName($messageCols, ['communityId', 'community_id']);
-    $userIdCol      = resolveColumnName($messageCols, ['userId', 'user_id']);
-    $messageCol     = resolveColumnName($messageCols, ['message', 'content', 'body']);
-    $createdAtCol   = resolveColumnName($messageCols, ['createdAt', 'created_at']);
-    $isDeletedCol   = resolveColumnName($messageCols, ['isDeleted', 'is_deleted']);
-
-    if (!$communityIdCol || !$userIdCol || !$messageCol || !$createdAtCol) {
-        echo json_encode(['success' => false, 'error' => 'Message schema is invalid']);
-        return;
-    }
-
     try {
-        $columns = [$communityIdCol, $userIdCol, $messageCol, $createdAtCol];
-        $values  = ['?', '?', '?', 'NOW()'];
-
-        if ($isDeletedCol) {
-            $columns[] = $isDeletedCol;
-            $values[]  = '0';
-        }
-
-        $stmt    = $cnx->prepare("
-            INSERT INTO {$messageTable} (" . implode(', ', $columns) . ")
-            VALUES (" . implode(', ', $values) . ")
+        $stmt = $cnx->prepare("
+            INSERT INTO community_message (communityId, userId, message, isDeleted, createdAt)
+            VALUES (?, ?, ?, 0, NOW())
         ");
         $success = $stmt->execute([$communityId, $userId, $message]);
         $newId   = $success ? (int) $cnx->lastInsertId() : null;
@@ -477,14 +418,17 @@ function sendMessageAction(PDO $cnx): void
         return;
     }
 
-    $userName = $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Member';
+    $userName = resolveUserDisplayName($cnx, $userId);
 
     echo json_encode([
         'success' => $success,
         'message' => $success ? [
-            'id'       => $newId,
-            'userId'   => $userId,
-            'userName' => $userName,
+            'id'        => $newId,
+            'userId'    => $userId,
+            'userName'  => $userName,
+            'message'   => $message,
+            'createdAt' => date('Y-m-d H:i:s'),
+            'isMine'    => true,
         ] : null,
     ]);
 }
@@ -514,6 +458,339 @@ function checkMembershipAction(PDO $cnx): void
 }
 
 // ─────────────────────────────────────────────────────────
+// THREADS
+// ─────────────────────────────────────────────────────────
+function ensureCommunityThreadTables(PDO $cnx): void
+{
+    $cnx->exec("
+        CREATE TABLE IF NOT EXISTS community_thread (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            communityId INT UNSIGNED NOT NULL,
+            creatorId INT UNSIGNED NOT NULL,
+            title VARCHAR(180) NOT NULL,
+            isDeleted TINYINT(1) NOT NULL DEFAULT 0,
+            createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_ct_community (communityId),
+            INDEX idx_ct_creator (creatorId),
+            INDEX idx_ct_created (createdAt)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+
+    $cnx->exec("
+        CREATE TABLE IF NOT EXISTS community_thread_message (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            communityId INT UNSIGNED NOT NULL,
+            threadId INT UNSIGNED NOT NULL,
+            userId INT UNSIGNED NOT NULL,
+            message TEXT NOT NULL,
+            isDeleted TINYINT(1) NOT NULL DEFAULT 0,
+            createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ctm_thread (threadId),
+            INDEX idx_ctm_community (communityId),
+            INDEX idx_ctm_user (userId),
+            INDEX idx_ctm_created (createdAt)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+}
+
+function isCommunityMember(PDO $cnx, int $communityId, int $userId): bool
+{
+    $stmt = $cnx->prepare("
+        SELECT id
+        FROM communitymember
+        WHERE communityId = :communityId
+          AND userId = :userId
+          AND isBanned = 0
+        LIMIT 1
+    ");
+    $stmt->execute([':communityId' => $communityId, ':userId' => $userId]);
+    return (bool) $stmt->fetchColumn();
+}
+
+function isUserPremium(PDO $cnx, int $userId): bool
+{
+    if ($userId <= 0) return false;
+
+    $stmt = $cnx->prepare("
+        SELECT COALESCE(isPremium, 0) AS isPremium, COALESCE(plan, 'free') AS plan
+        FROM users
+        WHERE id = :id
+        LIMIT 1
+    ");
+    $stmt->execute([':id' => $userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    if (!$row) return false;
+
+    return (int) ($row['isPremium'] ?? 0) === 1 || strtolower((string) ($row['plan'] ?? 'free')) === 'premium';
+}
+
+function getThreadsAction(PDO $cnx): void
+{
+    header('Content-Type: application/json');
+    $communityId = (int) ($_GET['communityId'] ?? 0);
+    $userId      = resolveRequestUserId($cnx);
+
+    if ($communityId <= 0 || $userId <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Invalid request']);
+        return;
+    }
+
+    if (!isCommunityMember($cnx, $communityId, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'Only community members can access threads']);
+        return;
+    }
+
+    try {
+        ensureCommunityThreadTables($cnx);
+
+        $stmt = $cnx->prepare("
+            SELECT t.id, t.communityId, t.creatorId, t.title, t.createdAt,
+                   COALESCE(u.name, 'Member') AS creatorName,
+                   (
+                     SELECT COUNT(*)
+                     FROM community_thread_message tm
+                     WHERE tm.threadId = t.id AND tm.isDeleted = 0
+                   ) AS replyCount
+            FROM community_thread t
+            LEFT JOIN users u ON u.id = t.creatorId
+            WHERE t.communityId = :communityId
+              AND t.isDeleted = 0
+            ORDER BY t.createdAt DESC
+            LIMIT 200
+        ");
+        $stmt->execute([':communityId' => $communityId]);
+        $threads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(['success' => true, 'threads' => $threads]);
+    } catch (Throwable $e) {
+        error_log('[getThreadsAction] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Unable to load threads']);
+    }
+}
+
+function createThreadAction(PDO $cnx): void
+{
+    header('Content-Type: application/json');
+    $input       = readJsonInput();
+    $userId      = resolveRequestUserId($cnx, $input);
+    $communityId = (int) ($input['communityId'] ?? 0);
+    $title       = trim((string) ($input['title'] ?? ''));
+
+    if ($userId <= 0 || $communityId <= 0 || $title === '') {
+        echo json_encode(['success' => false, 'error' => 'Invalid data']);
+        return;
+    }
+    if (mb_strlen($title) > 180) {
+        echo json_encode(['success' => false, 'error' => 'Thread title is too long']);
+        return;
+    }
+    if (!isCommunityMember($cnx, $communityId, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'You must join the community first']);
+        return;
+    }
+    if (!isUserPremium($cnx, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'Premium subscription required to create threads']);
+        return;
+    }
+
+    try {
+        ensureCommunityThreadTables($cnx);
+
+        $stmt = $cnx->prepare("
+            INSERT INTO community_thread (communityId, creatorId, title, isDeleted, createdAt, updatedAt)
+            VALUES (:communityId, :creatorId, :title, 0, NOW(), NOW())
+        ");
+        $ok = $stmt->execute([
+            ':communityId' => $communityId,
+            ':creatorId'   => $userId,
+            ':title'       => $title,
+        ]);
+
+        if (!$ok) {
+            echo json_encode(['success' => false, 'error' => 'Unable to create thread']);
+            return;
+        }
+
+        $threadId = (int) $cnx->lastInsertId();
+        $userName = resolveUserDisplayName($cnx, $userId);
+        echo json_encode([
+            'success' => true,
+            'thread'  => [
+                'id'          => $threadId,
+                'communityId' => $communityId,
+                'creatorId'   => $userId,
+                'title'       => $title,
+                'createdAt'   => date('Y-m-d H:i:s'),
+                'creatorName' => $userName,
+                'replyCount'  => 0,
+            ],
+        ]);
+    } catch (Throwable $e) {
+        error_log('[createThreadAction] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Unable to create thread']);
+    }
+}
+
+function deleteThreadAction(PDO $cnx): void
+{
+    header('Content-Type: application/json');
+    $input       = readJsonInput();
+    $userId      = resolveRequestUserId($cnx, $input);
+    $communityId = (int) ($input['communityId'] ?? 0);
+    $threadId    = (int) ($input['threadId'] ?? 0);
+
+    if ($userId <= 0 || $communityId <= 0 || $threadId <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Invalid data']);
+        return;
+    }
+    if (!isCommunityMember($cnx, $communityId, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'You must join the community first']);
+        return;
+    }
+    if (!isUserPremium($cnx, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'Premium subscription required']);
+        return;
+    }
+
+    try {
+        ensureCommunityThreadTables($cnx);
+
+        $stmt = $cnx->prepare("
+            UPDATE community_thread
+            SET isDeleted = 1, updatedAt = NOW()
+            WHERE id = :threadId AND communityId = :communityId
+            LIMIT 1
+        ");
+        $stmt->execute([':threadId' => $threadId, ':communityId' => $communityId]);
+
+        $stmtMsg = $cnx->prepare("
+            UPDATE community_thread_message
+            SET isDeleted = 1
+            WHERE threadId = :threadId
+        ");
+        $stmtMsg->execute([':threadId' => $threadId]);
+
+        echo json_encode(['success' => true]);
+    } catch (Throwable $e) {
+        error_log('[deleteThreadAction] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Unable to delete thread']);
+    }
+}
+
+function getThreadMessagesAction(PDO $cnx): void
+{
+    header('Content-Type: application/json');
+    $communityId = (int) ($_GET['communityId'] ?? 0);
+    $threadId    = (int) ($_GET['threadId'] ?? 0);
+    $userId      = resolveRequestUserId($cnx);
+
+    if ($communityId <= 0 || $threadId <= 0 || $userId <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Invalid request']);
+        return;
+    }
+    if (!isCommunityMember($cnx, $communityId, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'Only community members can access thread messages']);
+        return;
+    }
+
+    try {
+        ensureCommunityThreadTables($cnx);
+
+        $stmt = $cnx->prepare("
+            SELECT tm.id, tm.threadId, tm.userId, tm.message, tm.createdAt,
+                   COALESCE(u.name, 'Member') AS userName
+            FROM community_thread_message tm
+            LEFT JOIN users u ON u.id = tm.userId
+            INNER JOIN community_thread t ON t.id = tm.threadId AND t.isDeleted = 0
+            WHERE tm.threadId = :threadId
+              AND tm.communityId = :communityId
+              AND tm.isDeleted = 0
+            ORDER BY tm.createdAt ASC
+            LIMIT 500
+        ");
+        $stmt->execute([':threadId' => $threadId, ':communityId' => $communityId]);
+
+        $messages = array_map(function (array $row) use ($userId) {
+            $row['isMine'] = ((int) ($row['userId'] ?? 0) === $userId);
+            return $row;
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        echo json_encode(['success' => true, 'messages' => $messages]);
+    } catch (Throwable $e) {
+        error_log('[getThreadMessagesAction] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Unable to load thread messages']);
+    }
+}
+
+function sendThreadMessageAction(PDO $cnx): void
+{
+    header('Content-Type: application/json');
+    $input       = readJsonInput();
+    $userId      = resolveRequestUserId($cnx, $input);
+    $communityId = (int) ($input['communityId'] ?? 0);
+    $threadId    = (int) ($input['threadId'] ?? 0);
+    $message     = trim((string) ($input['message'] ?? ''));
+
+    if ($userId <= 0 || $communityId <= 0 || $threadId <= 0 || $message === '') {
+        echo json_encode(['success' => false, 'error' => 'Invalid data']);
+        return;
+    }
+    if (!isCommunityMember($cnx, $communityId, $userId)) {
+        echo json_encode(['success' => false, 'error' => 'Only community members can post in threads']);
+        return;
+    }
+
+    try {
+        ensureCommunityThreadTables($cnx);
+
+        $threadCheck = $cnx->prepare("
+            SELECT id FROM community_thread
+            WHERE id = :threadId AND communityId = :communityId AND isDeleted = 0
+            LIMIT 1
+        ");
+        $threadCheck->execute([':threadId' => $threadId, ':communityId' => $communityId]);
+        if (!$threadCheck->fetchColumn()) {
+            echo json_encode(['success' => false, 'error' => 'Thread not found']);
+            return;
+        }
+
+        $stmt = $cnx->prepare("
+            INSERT INTO community_thread_message (communityId, threadId, userId, message, isDeleted, createdAt)
+            VALUES (:communityId, :threadId, :userId, :message, 0, NOW())
+        ");
+        $ok = $stmt->execute([
+            ':communityId' => $communityId,
+            ':threadId'    => $threadId,
+            ':userId'      => $userId,
+            ':message'     => $message,
+        ]);
+
+        if (!$ok) {
+            echo json_encode(['success' => false, 'error' => 'Unable to send message']);
+            return;
+        }
+
+        $userName = resolveUserDisplayName($cnx, $userId);
+        echo json_encode([
+            'success' => true,
+            'message' => [
+                'id'        => (int) $cnx->lastInsertId(),
+                'threadId'  => $threadId,
+                'userId'    => $userId,
+                'userName'  => $userName,
+                'message'   => $message,
+                'createdAt' => date('Y-m-d H:i:s'),
+                'isMine'    => true,
+            ],
+        ]);
+    } catch (Throwable $e) {
+        error_log('[sendThreadMessageAction] ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Unable to send thread message']);
+    }
+}
+
+// ─────────────────────────────────────────────────────────
 // ROUTER
 // ─────────────────────────────────────────────────────────
 if (basename($_SERVER['SCRIPT_FILENAME']) === 'CommunityController.php') {
@@ -524,8 +801,8 @@ if (basename($_SERVER['SCRIPT_FILENAME']) === 'CommunityController.php') {
             http_response_code(500);
             echo json_encode([
                 'success' => false,
-                'error' => 'Database connection failed',
-                'detail' => databaseConnectionError(),
+                'error'   => 'Database connection failed',
+                'detail'  => databaseConnectionError(),
             ]);
             return;
         }
@@ -540,6 +817,11 @@ if (basename($_SERVER['SCRIPT_FILENAME']) === 'CommunityController.php') {
             case 'getMessages':        getMessagesAction($cnx);          break;
             case 'sendMessage':        sendMessageAction($cnx);          break;
             case 'checkMembership':    checkMembershipAction($cnx);      break;
+            case 'getThreads':         getThreadsAction($cnx);           break;
+            case 'createThread':       createThreadAction($cnx);         break;
+            case 'deleteThread':       deleteThreadAction($cnx);         break;
+            case 'getThreadMessages':  getThreadMessagesAction($cnx);    break;
+            case 'sendThreadMessage':  sendThreadMessageAction($cnx);    break;
             default:
                 http_response_code(404);
                 echo json_encode(['success' => false, 'error' => 'Action not found: ' . htmlspecialchars($action)]);

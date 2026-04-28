@@ -1,7 +1,3 @@
-/* ═══════════════════════════════════════════════
-   IBLOG — How It Works Component
-   components/HIW/hiw.js
-═══════════════════════════════════════════════ */
 
 (function () {
   'use strict';

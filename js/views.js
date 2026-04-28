@@ -1,12 +1,12 @@
 IBlog.Views = (() => {
   let _mapInstance = null;
-  let _flowTimer = null;
 
   /* ── Map ─────────────────────────────────────────────── */
   function initMap() {
     const isPrem = IBlog.state.currentUser?.plan === 'premium';
     const overlay = document.getElementById('map-premium-overlay');
     if (overlay) overlay.style.display = isPrem ? 'none' : 'flex';
+    if (!isPrem) return;
     if (_mapInstance) {
       document.getElementById('country-feed').style.display = 'block';
       _buildCountryFeed('World');
@@ -50,25 +50,23 @@ IBlog.Views = (() => {
         Object.entries(IBlog.COUNTRY_DATA).forEach(([name, data]) => {
           if (!data.coords) return;
           const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b8960c';
+          const safeCountry = String(name).replace(/'/g, "\\'");
+          const safeFlag = String(data.flag || '🌐');
           const marker = L.circleMarker(data.coords, {
             radius: 10, fillColor: accent, color: '#fff', weight: 2,
             opacity: 1, fillOpacity: 0.85,
           }).addTo(_mapInstance);
 
           marker.bindPopup(`
-<div style="font-family:'DM Sans',sans-serif;min-width:170px;padding:4px;">
-  <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${data.flag} ${name}</div>
-  <div style="font-size:12px;color:#666;margin-bottom:8px;">${data.articles.length} trending articles</div>
-  <button onclick="IBlog.Views.selectCountry('${name}')" 
-    style="background:${accent};color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;">
-    View Feed →
-  </button>
-</div>`, { maxWidth: 220 });
+<div class="map-popup">
+  <div class="map-popup__eyebrow">${safeFlag} ${name}</div>
+  <div class="map-popup__title">${data.articles.length} trending articles</div>
+  <div class="map-popup__meta">Open the country feed to see the most relevant stories, authors, and topics right now.</div>
+  <button class="map-popup__button" onclick="IBlog.Views.selectCountry('${safeCountry}')">View Feed →</button>
+</div>`, { maxWidth: 260, className: 'map-popup-shell' });
           marker.bindTooltip(name, { permanent: false, direction: 'top' });
           marker.on('click', () => selectCountry(name));
         });
-
-        _drawCountryFlows();
 
         document.getElementById('country-feed').style.display = 'block';
         _buildCountryFeed('World');
@@ -76,88 +74,34 @@ IBlog.Views = (() => {
     }, 300);
   }
 
-  function _drawCountryFlows() {
-    if (!_mapInstance || typeof L === 'undefined') return;
-
-    const links = [
-      ['USA', 'UK'],
-      ['USA', 'Japan'],
-      ['Canada', 'UK'],
-      ['UK', 'France'],
-      ['France', 'Germany'],
-      ['Germany', 'India'],
-      ['India', 'Singapore'],
-      ['Singapore', 'South Korea'],
-      ['Japan', 'South Korea'],
-      ['UAE', 'India'],
-      ['Nigeria', 'UK'],
-      ['Kenya', 'UAE'],
-      ['Brazil', 'USA'],
-      ['Mexico', 'USA'],
-      ['Australia', 'Singapore'],
-      ['South Africa', 'Germany'],
-      ['Tunisia', 'France'],
-      ['Tunisia', 'Italy'],
-      ['Saudi Arabia', 'UAE'],
-      ['Saudi Arabia', 'India'],
-      ['Egypt', 'Saudi Arabia'],
-      ['Algeria', 'France'],
-      ['Morocco', 'Spain'],
-      ['Qatar', 'UK'],
-      ['Turkey', 'Germany'],
-      ['Italy', 'France'],
-      ['Spain', 'Portugal'],
-      ['Portugal', 'Brazil'],
-      ['Indonesia', 'Singapore'],
-      ['Malaysia', 'Singapore'],
-      ['Argentina', 'Brazil'],
-      ['Chile', 'USA'],
-    ];
-
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b8960c';
-    let dash = 0;
-
-    links.forEach(([from, to]) => {
-      const a = IBlog.COUNTRY_DATA[from];
-      const b = IBlog.COUNTRY_DATA[to];
-      if (!a?.coords || !b?.coords) return;
-
-      const flowGlow = L.polyline([a.coords, b.coords], {
-        color: '#ffd766',
-        weight: 5,
-        opacity: 0.16,
-        smoothFactor: 1,
-        className: 'map-flow-glow',
-      }).addTo(_mapInstance);
-
-      const flowLine = L.polyline([a.coords, b.coords], {
-        color: accent,
-        weight: 2,
-        opacity: 0.9,
-        dashArray: '8 10',
-        className: 'map-flow-line',
-      }).addTo(_mapInstance);
-
-      flowGlow.bringToBack();
-      flowLine.bindTooltip(`${from} → ${to}`, { sticky: true, direction: 'center' });
-      flowLine.on('click', () => selectCountry(to));
-    });
-
-    if (_flowTimer) clearInterval(_flowTimer);
-    _flowTimer = setInterval(() => {
-      dash = (dash + 2) % 200;
-      _mapInstance.eachLayer(layer => {
-        if (layer instanceof L.Polyline && layer.options?.className === 'map-flow-line') {
-          layer.setStyle({ dashOffset: String(-dash) });
-        }
-      });
-    }, 90);
-  }
-
   function selectCountry(name) {
     _buildCountryFeed(name);
     const feed = document.getElementById('country-feed');
     if (feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function openArticleFromLanding(index) {
+    const source = Array.isArray(IBlog.state?.articles) && IBlog.state.articles.length
+      ? IBlog.state.articles
+      : (IBlog.SEED_ARTICLES || []);
+    const article = source.find(item => String(item?.id) === String(index))
+      || source[index]
+      || source[0];
+
+    if (!article) return;
+
+    if (!window.IBlogSession?.getUser?.()) {
+      window.setPendingArticle?.(article.id);
+      if (typeof showSignin === 'function') showSignin();
+      return;
+    }
+
+    document.getElementById('landing-page')?.style.setProperty('display', 'none');
+    document.getElementById('dashboard')?.style.setProperty('display', 'block');
+    if (!document.getElementById('view-home')?.classList.contains('active')) {
+      IBlog.Dashboard?.enter?.();
+    }
+    setTimeout(() => IBlog.Feed?.openReader?.(article.id), 180);
   }
 
   function _buildCountryFeed(country) {
@@ -179,7 +123,7 @@ IBlog.Views = (() => {
 <div class="country-article-card" onclick="IBlog.Feed.openReader(${existing.id})">
   <div class="country-article-img" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${i*80%360},35%,${document.body.classList.contains('dark')?'18%':'85%'})`}"></div>
   <div class="country-article-info">
-    <div class="country-article-rank">#${i + 1} Trending in ${country}</div>
+    <div class="country-article-rank">#${i + 1} Trending</div>
     <div class="country-article-title">${a.title}</div>
     <div class="country-article-meta">✍️ ${a.author} &nbsp;·&nbsp; ⏱ ${a.readTime}</div>
   </div>
@@ -192,7 +136,7 @@ IBlog.Views = (() => {
 <div class="country-article-card" onclick="IBlog.Views.openMapArticle('${tempId}', '${safeTitle}', '${safeAuthor}', '${a.readTime}', '${a.img || ''}', '${country}')">
   <div class="country-article-img" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${i*80%360},35%,${document.body.classList.contains('dark')?'18%':'85%'})`}"></div>
   <div class="country-article-info">
-    <div class="country-article-rank">#${i + 1} Trending in ${country}</div>
+    <div class="country-article-rank">#${i + 1} Trending</div>
     <div class="country-article-title">${a.title}</div>
     <div class="country-article-meta">✍️ ${a.author} &nbsp;·&nbsp; ⏱ ${a.readTime}</div>
   </div>
@@ -207,7 +151,6 @@ IBlog.Views = (() => {
   }
 
   function openMapArticle(id, title, author, readTime, img, country) {
-    const seed = Array.from(`${title}|${author}|${country}`).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
     const tempArticle = {
       id: id,
       title: title,
@@ -219,9 +162,9 @@ IBlog.Views = (() => {
       readTime: readTime,
       excerpt: `A trending article from ${country} — one of the most-read pieces in this region right now.`,
       body: `This is a trending article from ${country}.\n\n"${title}" by ${author} is currently one of the most-read pieces in the region. This article has been identified as a top trend through IBlog's global reading pattern analysis.\n\nExplore more content from ${country} by clicking the topic chips above, or navigate to the Smart Search to find related articles in our full library.`,
-      likes: 80 + (seed % 240),
+      likes: Math.floor(Math.random() * 300 + 50),
       comments: [],
-      reposts: 12 + (seed % 48),
+      reposts: Math.floor(Math.random() * 60 + 10),
       bookmarked: false,
       liked: false,
       quality: 'high',
@@ -240,11 +183,10 @@ IBlog.Views = (() => {
   function buildActivity() {
     const grid = document.getElementById('activity-grid');
     if (!grid) return;
-    const days = window.IBlogTracker?.getDailyActivity?.(364) || [];
-    grid.innerHTML = days.map((day) => {
-      const count = Number(day.count || 0);
-      const lvl = count >= 7 ? 'l4' : count >= 4 ? 'l3' : count >= 2 ? 'l2' : count >= 1 ? 'l1' : '';
-      return `<div class="activity-cell ${lvl}" title="${count ? count + ' activities' : 'No activity'}" onclick="IBlog.utils.toast(this.title)"></div>`;
+    grid.innerHTML = Array.from({ length: 364 }, (_, i) => {
+      const r = Math.random();
+      const lvl = r > .82 ? 'l4' : r > .62 ? 'l3' : r > .42 ? 'l2' : r > .22 ? 'l1' : '';
+      return `<div class="activity-cell ${lvl}" title="${lvl ? Math.floor(Math.random()*4+1) + ' activities' : 'No activity'}" onclick="IBlog.utils.toast(this.title)"></div>`;
     }).join('');
   }
 
@@ -272,7 +214,7 @@ IBlog.Views = (() => {
 <div class="trend-cat-card" onclick="searchTopic('${c}')">
   <div style="font-size:22px;margin-bottom:6px;">${icons[i % icons.length]}</div>
   <strong style="font-size:13px;">${c}</strong>
-  <div style="font-size:11px;color:var(--text2);margin-top:3px;">${IBlog.TRENDS[i % IBlog.TRENDS.length]?.spike || '+84%'} this week</div>
+  <div style="font-size:11px;color:var(--text2);margin-top:3px;">+${Math.floor(Math.random()*180+40)}% this week</div>
 </div>`).join('');
     }
   }
@@ -284,7 +226,6 @@ IBlog.Views = (() => {
   function buildTemplates() {
     if (IBlog.Templates?.buildWriterSelector) {
       IBlog.Templates.buildWriterSelector();
-      IBlog.Templates.setSelected?.(IBlog.Templates.selectedId?.(), { silent: true });
     }
   }
 
@@ -311,81 +252,79 @@ IBlog.Views = (() => {
     injectSection(`[${text || url}](${url})`);
   }
 
-  function refreshCoverPreview() {
-    const imgEl = document.getElementById('article-img');
-    const previewEl = document.getElementById('writer-cover-preview');
+  function _syncCoverPreview(url = '', fileName = '') {
+    const preview = document.getElementById('writer-cover-preview');
     const nameEl = document.getElementById('writer-cover-name');
     const removeBtn = document.getElementById('writer-cover-remove');
-    const imageValue = imgEl?.value?.trim() || '';
-    const imageLabel = imgEl?.dataset?.fileName || 'Cover image selected';
+    const hiddenField = document.getElementById('article-img');
 
-    if (!previewEl) return;
+    if (hiddenField) hiddenField.value = url || '';
 
-    if (imageValue) {
-      previewEl.classList.remove('is-empty');
-      previewEl.classList.add('has-image');
-      previewEl.style.backgroundImage = `url("${imageValue}")`;
-      previewEl.innerHTML = `
-        <div class="writer-cover-preview-badge">
-          <div>
-            <strong>Ready to publish</strong>
-            <span>This image will be used as your article cover.</span>
-          </div>
-        </div>`;
-      if (nameEl) nameEl.textContent = imageLabel;
-      if (removeBtn) removeBtn.style.display = 'inline-flex';
-      return;
+    if (nameEl) {
+      nameEl.textContent = fileName || (url ? 'Cover image selected' : 'No cover image selected');
     }
 
-    previewEl.classList.add('is-empty');
-    previewEl.classList.remove('has-image');
-    previewEl.style.backgroundImage = '';
-    previewEl.innerHTML = `
-      <div class="writer-cover-placeholder">
-        <strong>Cover preview</strong>
-        <span>Your image will appear here before you publish.</span>
-      </div>`;
-    if (nameEl) nameEl.textContent = 'No cover image selected';
-    if (removeBtn) removeBtn.style.display = 'none';
+    if (!preview) return;
+
+    if (url) {
+      preview.classList.remove('is-empty');
+      preview.classList.add('has-image');
+      preview.style.backgroundImage = `url("${url}")`;
+    } else {
+      preview.classList.add('is-empty');
+      preview.classList.remove('has-image');
+      preview.style.backgroundImage = '';
+    }
+
+    if (removeBtn) {
+      removeBtn.style.display = url ? 'inline-flex' : 'none';
+    }
+  }
+
+  function _insertBodyImage(url, altText = 'Uploaded image') {
+    const editor = document.getElementById('article-editor');
+    if (!editor) return;
+
+    const snippet = `\n\n![${altText}](${url})\n\n`;
+    const start = Number(editor.selectionStart ?? editor.value.length);
+    const end = Number(editor.selectionEnd ?? editor.value.length);
+    const value = editor.value || '';
+
+    editor.value = value.slice(0, start) + snippet + value.slice(end);
+    editor.selectionStart = editor.selectionEnd = start + snippet.length;
+    editor.focus();
+
+    analyzeQuality();
+    IBlog.Writer?._renderNow?.();
   }
 
   function handleImgUpload(input) {
     const file = input?.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      IBlog.utils.toast('Please choose an image file.', 'error');
-      input.value = '';
-      return;
-    }
 
     const reader = new FileReader();
-    reader.onload = e => {
-      const imgEl = document.getElementById('article-img');
-      if (imgEl) {
-        imgEl.value = e.target.result;
-        imgEl.dataset.fileName = file.name;
+    reader.onload = (e) => {
+      const imageUrl = String(e?.target?.result || '');
+      const inputId = String(input?.id || '');
+
+      if (inputId === 'writer-img-upload') {
+        _insertBodyImage(imageUrl, file.name.replace(/\.[^.]+$/, '') || 'Uploaded image');
+        IBlog.utils.toast('Image inserted into the draft.', 'success');
+      } else {
+        _syncCoverPreview(imageUrl, file.name || 'Cover image selected');
+        IBlog.Writer?._renderNow?.();
+        IBlog.utils.toast('Image added as cover!', 'success');
       }
-      refreshCoverPreview();
-      IBlog.Writer?._renderNow?.();
-      IBlog.utils.toast('Image added as cover!', 'success');
+
+      input.value = '';
     };
     reader.readAsDataURL(file);
   }
 
   function removeCoverImage() {
-    const imgEl = document.getElementById('article-img');
-    const fileEl = document.getElementById('writer-img-file');
-
-    if (imgEl) {
-      imgEl.value = '';
-      delete imgEl.dataset.fileName;
-    }
-    if (fileEl) fileEl.value = '';
-
-    refreshCoverPreview();
+    _syncCoverPreview('', '');
     IBlog.Writer?._renderNow?.();
   }
-
 function analyzeQuality() {
     const text  = document.getElementById('article-editor')?.value || '';
     const title = document.getElementById('article-title')?.value  || '';
@@ -399,8 +338,7 @@ function analyzeQuality() {
         if (b) b.style.width = '0%';
       });
       document.getElementById('quality-overall')?.style.setProperty('display','none');
-      const tipsEl = document.getElementById('quality-tips');
-      if (tipsEl) tipsEl.innerHTML = '';
+      document.getElementById('quality-tips').innerHTML = '';
       return;
     }
  
@@ -549,301 +487,7 @@ function analyzeQuality() {
         </div>`).join('');
     }
   }
-
-  function _currentUserInitial() {
-    const user = IBlog.state.currentUser || {};
-    return user.initial || user.name?.trim()?.[0]?.toUpperCase() || 'A';
-  }
-
-  function _normalizeAuthor(value) {
-    return String(value || '').trim().toLowerCase();
-  }
-
-  function _isCurrentUsersArticle(article) {
-    const currentUser = IBlog.state.currentUser || {};
-    const currentUserId = currentUser.id ?? currentUser.userId ?? null;
-    const currentUserEmail = _normalizeAuthor(currentUser.email);
-    const articleAuthorId = article?.authorId ?? article?.userId ?? null;
-    const articleAuthorEmail = _normalizeAuthor(article?.authorEmail);
-    if (currentUserId !== null && currentUserId !== undefined && articleAuthorId !== null && articleAuthorId !== undefined) {
-      return String(currentUserId) === String(articleAuthorId);
-    }
-    if (currentUserEmail && articleAuthorEmail && currentUserEmail === articleAuthorEmail) return true;
-    return false;
-  }
-
-  function _captureWriterState() {
-    return {
-      title: document.getElementById('article-title')?.value || '',
-      body: document.getElementById('article-editor')?.value || '',
-      category: document.getElementById('article-cat')?.value || 'Select Category',
-      image: document.getElementById('article-img')?.value || '',
-      imageName: document.getElementById('article-img')?.dataset?.fileName || '',
-      tags: document.getElementById('article-tags')?.value || '',
-      editId: document.getElementById('article-editor')?.dataset?.editId || '',
-    };
-  }
-
-  function _restoreWriterState(state) {
-    if (!state) return;
-    const titleEl = document.getElementById('article-title');
-    const editorEl = document.getElementById('article-editor');
-    const catEl = document.getElementById('article-cat');
-    const imgEl = document.getElementById('article-img');
-    const tagsEl = document.getElementById('article-tags');
-
-    if (titleEl) titleEl.value = state.title || '';
-    if (editorEl) {
-      editorEl.value = state.body || '';
-      if (state.editId) editorEl.dataset.editId = state.editId;
-      else delete editorEl.dataset.editId;
-    }
-    if (catEl) catEl.value = state.category || 'Select Category';
-    if (imgEl) {
-      imgEl.value = state.image || '';
-      if (state.imageName) imgEl.dataset.fileName = state.imageName;
-      else delete imgEl.dataset.fileName;
-    }
-    if (tagsEl) tagsEl.value = state.tags || '';
-
-    refreshCoverPreview();
-    analyzeQuality();
-    IBlog.Writer?._renderNow?.();
-  }
-
-  function _runSafe(stepName, fn) {
-    try {
-      return fn();
-    } catch (err) {
-      console.error(`${stepName} failed:`, err);
-      return null;
-    }
-  }
-
-  function _escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function _wordCount(text) {
-    return String(text || '').trim().split(/\s+/).filter(Boolean).length;
-  }
-
-  function _articleExcerpt(text, fallback = '') {
-    const source = String(text || fallback || '').trim();
-    if (!source) return 'No preview yet.';
-    return source.length > 160 ? `${source.substring(0, 160)}...` : source;
-  }
-
-  function _myArticleThumbStyle(article) {
-    const cover = article?.cover || article?.img;
-    if (cover) {
-      return `background-image:url('${cover}');background-size:cover;background-position:center;`;
-    }
-    return `background:hsl(${(Number(article?.id) || 1) * 44 % 360},40%,${document.body.classList.contains('dark') ? '20%' : '85%'});`;
-  }
-
-  function _renderMyArticleRow(article, options = {}) {
-    const isDraft = options.isDraft === true;
-    const isPrem = options.isPrem === true;
-    const articleId = JSON.stringify(article?.id);
-    const category = _escapeHtml(article?.cat || article?.category || 'General');
-    const title = _escapeHtml(article?.title || (isDraft ? 'Untitled draft' : 'Untitled'));
-    const quality = article?.quality === 'high' ? 'quality-high' : 'quality-med';
-    const qualityLabel = article?.quality === 'high' ? 'High' : 'Good';
-    const views = IBlog.utils.formatNumber(Number(article?.views ?? ((article?.likes || 0) * 8)));
-    const statusClass = isDraft ? 'is-draft' : 'is-live';
-    const statusLabel = isDraft ? 'Draft' : 'Published';
-    const metaBits = isDraft
-      ? `Saved privately · ⏱ ${_escapeHtml(article?.readTime || '1 min')} · ${category}`
-      : `♥ ${Number(article?.likes || 0)} · 👁 ${views} · ⏱ ${_escapeHtml(article?.readTime || '1 min')} · ${category}`;
-
-    return `
-<div class="my-article-row" id="myart-${_escapeHtml(article?.id)}">
-  <div class="my-article-thumb" style="${_myArticleThumbStyle(article)}">
-    ${article?.cover || article?.img ? '' : '✍️'}
-  </div>
-  <div class="my-article-info">
-    <div class="my-article-title">${title}</div>
-    <div class="my-article-excerpt">${_escapeHtml(article?.excerpt || _articleExcerpt(article?.body, article?.title))}</div>
-    <div class="my-article-meta">
-      <span class="my-article-status ${statusClass}">${statusLabel}</span>
-      <span>${metaBits}</span>
-      <span class="${quality}">${qualityLabel}</span>
-    </div>
-  </div>
-  <div class="my-article-actions">
-    <button class="edit-btn-small" onclick="IBlog.ArticleCard.editArticle(${articleId})">
-      ${isDraft ? 'Continue' : 'Edit'} ${!isPrem ? '<span class="badge badge-premium" style="font-size:9px">⭐</span>' : ''}
-    </button>
-    <button class="delete-btn-small" onclick="IBlog.ArticleCard.deleteArticle(${articleId})">🗑</button>
-  </div>
-</div>`;
-  }
-
-  function _renderMyArticleSection(title, description, items, options = {}) {
-    const isDraft = options.isDraft === true;
-    const isPrem = options.isPrem === true;
-    const emptyCopy = isDraft
-      ? 'No drafts yet. Save one from the writer to continue later.'
-      : 'No published articles yet. Publish one when you are ready.';
-
-    return `
-<section class="my-article-section">
-  <div class="my-article-section-head">
-    <div>
-      <h3>${_escapeHtml(title)}</h3>
-      <p>${_escapeHtml(description)}</p>
-    </div>
-    <span class="my-article-section-count">${items.length}</span>
-  </div>
-  ${items.length
-    ? items.map(article => _renderMyArticleRow(article, { isDraft, isPrem })).join('')
-    : `<div class="my-article-section-empty">${_escapeHtml(emptyCopy)}</div>`}
-</section>`;
-  }
-
-  async function saveDraftArticle() {
-    const title   = document.getElementById('article-title')?.value.trim() || '';
-    const text    = document.getElementById('article-editor')?.value.trim() || '';
-    const cat     = document.getElementById('article-cat')?.value;
-    const imgUrl  = document.getElementById('article-img')?.value.trim() || '';
-    const tagsVal = document.getElementById('article-tags')?.value || '';
-    const editId  = document.getElementById('article-editor')?.dataset?.editId;
-
-    if (!title && !text && !imgUrl) {
-      IBlog.utils.toast('Add a title, some content, or a cover before saving a draft.', 'error');
-      return;
-    }
-
-    const isPrem = IBlog.state.currentUser?.plan === 'premium';
-    const tags = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
-    const draftState = _captureWriterState();
-    const userName = IBlog.state.currentUser?.name || 'Amara';
-    const userInitial = _currentUserInitial();
-    const normalizedCategory = cat !== 'Select Category' ? cat : 'General';
-    const readingTime = Math.max(1, Math.ceil(Math.max(1, _wordCount(text)) / 200)) + ' min';
-    const safeTitle = title || 'Untitled draft';
-    const safeExcerpt = _articleExcerpt(text, title);
-    const selectedTemplateId = IBlog.Templates?.selectedId?.() || null;
-    const apiPayload = {
-      title,
-      body: text,
-      category: normalizedCategory,
-      tags: tags.join(', '),
-      status: 'draft',
-      coverImage: imgUrl,
-      readingTime,
-      label: selectedTemplateId || 'none',
-      authorEmail: IBlog.state.currentUser?.email || '',
-      authorName: userName,
-    };
-
-    IBlog.state.articles = IBlog.state.articles || [];
-
-    if (editId) {
-      const existing = IBlog.state.articles.find(x => x.id === parseInt(editId) || String(x.id) === String(editId));
-      if (existing) {
-        const previous = { ...existing };
-        try {
-          let persisted = null;
-          if (/^\d+$/.test(String(editId)) && window.IBlogArticleSync?.update) {
-            persisted = await window.IBlogArticleSync.update(Number(editId), apiPayload);
-          }
-          Object.assign(existing, {
-            ...(persisted || {}),
-            title: persisted?.title || safeTitle,
-            body: text,
-            excerpt: persisted?.excerpt || safeExcerpt,
-            cat: normalizedCategory,
-            category: normalizedCategory,
-            img: (persisted?.img ?? imgUrl) || null,
-            cover: (persisted?.cover ?? imgUrl) || null,
-            readTime: persisted?.readTime || readingTime,
-            tags,
-            status: 'draft',
-            templateId: persisted?.templateId ?? selectedTemplateId,
-            author: persisted?.author || userName,
-            authorInitial: persisted?.authorInitial || userInitial,
-          });
-          _runSafe('Feed rebuild after draft save', () => IBlog.Feed.build());
-          _runSafe('My Articles rebuild after draft save', () => buildMyArticles());
-          _runSafe('Legacy My Articles refresh after draft save', () => IBlog.MyArticles?.load?.());
-          _runSafe('Analytics refresh after draft save', () => IBlog.Analytics?.init?.());
-          _runSafe('Activity refresh after draft save', () => IBlog.Activity?.init?.());
-          _runSafe('Draft navigation', () => IBlog.Dashboard.navigateTo('articles'));
-          _clearWriter();
-          IBlog.utils.toast('Draft saved in My Articles.', 'success');
-          return;
-        } catch (err) {
-          Object.assign(existing, previous);
-          _restoreWriterState(draftState);
-          console.error('Draft update failed:', err);
-          IBlog.utils.toast('Could not save the draft. Your writing is still here.', 'error');
-          return;
-        }
-      }
-    }
-
-    const localDraft = {
-      id: Date.now(),
-      author: userName,
-      authorInitial: userInitial,
-      authorColor: 'var(--accent)',
-      cat: normalizedCategory,
-      category: normalizedCategory,
-      img: imgUrl || null,
-      cover: imgUrl || null,
-      title: safeTitle,
-      excerpt: safeExcerpt,
-      body: text,
-      templateId: selectedTemplateId,
-      readTime: readingTime,
-      likes: 0, comments: [], reposts: 0,
-      bookmarked: false, liked: false,
-      quality: text.length > 300 ? 'high' : 'med',
-      isPremiumAuthor: isPrem,
-      tags,
-      date: 'Just now',
-      status: 'draft',
-    };
-
-    try {
-      const persisted = window.IBlogArticleSync?.save
-        ? await window.IBlogArticleSync.save(apiPayload)
-        : null;
-      const articleToShow = persisted || localDraft;
-      if (!persisted) {
-        IBlog.state.articles.unshift(articleToShow);
-      } else {
-        Object.assign(articleToShow, {
-          title: articleToShow.title || safeTitle,
-          excerpt: articleToShow.excerpt || safeExcerpt,
-          body: text,
-          status: 'draft',
-        });
-      }
-      _runSafe('Feed rebuild after draft create', () => IBlog.Feed.build());
-      _runSafe('My Articles rebuild after draft create', () => buildMyArticles());
-      _runSafe('Legacy My Articles refresh after draft create', () => IBlog.MyArticles?.load?.());
-      _runSafe('Analytics refresh after draft create', () => IBlog.Analytics?.init?.());
-      _runSafe('Activity refresh after draft create', () => IBlog.Activity?.init?.());
-      _runSafe('Draft navigation', () => IBlog.Dashboard.navigateTo('articles'));
-      _clearWriter();
-      IBlog.utils.toast('Draft saved in My Articles.', 'success');
-    } catch (err) {
-      IBlog.state.articles = (IBlog.state.articles || []).filter(article => article.id !== localDraft.id && String(article.id) !== String(localDraft.id));
-      _restoreWriterState(draftState);
-      console.error('Draft save failed:', err);
-      IBlog.utils.toast(err?.message || 'Could not save the draft. Your writing is still here.', 'error');
-    }
-  }
-
-async function publishArticle() {
+function legacyPublishArticle() {
     const title   = document.getElementById('article-title')?.value.trim();
     const text    = document.getElementById('article-editor')?.value.trim();
     const cat     = document.getElementById('article-cat')?.value;
@@ -854,134 +498,178 @@ async function publishArticle() {
     if (!title || !text) { IBlog.utils.toast('Add a title and content first!', 'error'); return; }
     const isPrem = IBlog.state.currentUser?.plan === 'premium';
     const tags   = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
-    const draftState = _captureWriterState();
-    const userName = IBlog.state.currentUser?.name || 'Amara';
-    const userInitial = _currentUserInitial();
-    const normalizedCategory = cat !== 'Select Category' ? cat : 'General';
-    const readingTime = Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min';
-    const apiPayload = {
-      title,
-      body: text,
-      category: normalizedCategory,
-      tags: tags.join(', '),
-      status: 'published',
-      coverImage: imgUrl,
-      readingTime,
-      label: (IBlog.Templates?.selectedId?.() || null) || 'none',
-      authorEmail: IBlog.state.currentUser?.email || '',
-      authorName: userName,
-    };
-    IBlog.state.articles = IBlog.state.articles || [];
  
     if (editId) {
-      const existing = IBlog.state.articles.find(x => x.id === parseInt(editId) || String(x.id) === String(editId));
+      const existing = IBlog.state.articles.find(x => x.id === parseInt(editId));
       if (existing) {
-        const previous = { ...existing };
-        try {
-          let persisted = null;
-          if (/^\d+$/.test(String(editId)) && window.IBlogArticleSync?.update) {
-            persisted = await window.IBlogArticleSync.update(Number(editId), apiPayload);
-          }
-          Object.assign(existing, {
-            ...(persisted || {}),
-            title,
-            body: text,
-            excerpt: text.substring(0,160) + (text.length>160?'…':''),
-            cat: normalizedCategory,
-            category: normalizedCategory,
-            img: (persisted?.img ?? imgUrl) || null,
-            cover: (persisted?.cover ?? imgUrl) || null,
-            readTime: persisted?.readTime || readingTime,
-            tags,
-            templateId: persisted?.templateId ?? (IBlog.Templates?.selectedId?.() || null),
-          });
-          delete document.getElementById('article-editor').dataset.editId;
-          if (persisted) {
-            window.IBlogTracker?.log('publish_article', {
-              entityType: 'article',
-              entityId: persisted.id,
-              title: persisted.title,
-              category: persisted.cat || persisted.category || normalizedCategory,
-              value: 1,
-            });
-          }
-          const feedBuilt = !!_runSafe('Feed rebuild', () => IBlog.Feed.build());
-          const articlesBuilt = !!_runSafe('My Articles rebuild', () => buildMyArticles());
-          _runSafe('Legacy My Articles refresh', () => IBlog.MyArticles?.load?.());
-          _runSafe('Analytics refresh', () => IBlog.Analytics?.init?.());
-          _runSafe('Post-update navigation', () => {
-            IBlog.Dashboard.navigateTo(feedBuilt ? 'home' : (articlesBuilt ? 'articles' : 'write'));
-          });
-          _clearWriter();
-          IBlog.utils.toast('Article updated!', 'success');
-          return;
-        } catch (err) {
-          Object.assign(existing, previous);
-          _restoreWriterState(draftState);
-          console.error('Article update failed:', err);
-          IBlog.utils.toast('Could not update the article. Your draft is still here.', 'error');
-          return;
-        }
+        Object.assign(existing, {
+          title, body: text,
+          excerpt: text.substring(0,160) + (text.length>160?'…':''),
+          cat: cat !== 'Select Category' ? cat : existing.cat,
+          img: imgUrl || existing.img,
+          readTime: Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min',
+          tags,
+        });
+        delete document.getElementById('article-editor').dataset.editId;
+        _clearWriter();
+        IBlog.Feed.build();
+        buildMyArticles();
+        IBlog.Dashboard.navigateTo('home');
+        IBlog.utils.toast('Article updated!', 'success');
+        return;
       }
     }
  
     const a = {
       id: Date.now(),
-      author:        userName,
-      authorInitial: userInitial,
+      author:        IBlog.state.currentUser?.name || 'Amara',
+      authorInitial: IBlog.state.currentUser?.initial || 'A',
       authorColor:   'var(--accent)',
-      cat:           normalizedCategory,
-      category:      normalizedCategory,
+      cat:           cat !== 'Select Category' ? cat : 'General',
       img:           imgUrl || null,
-      cover:         imgUrl || null,
       title,
       excerpt:       text.substring(0,160) + (text.length>160?'…':''),
       body:          text,
       templateId:    IBlog.Templates?.selectedId() || null,
-      readTime:      readingTime,
+      readTime:      Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min',
       likes: 0, comments: [], reposts: 0,
       bookmarked: false, liked: false,
       quality: text.length > 300 ? 'high' : 'med',
       isPremiumAuthor: isPrem,
       tags,
       date: 'Just now',
-      status: 'published',
     };
+    IBlog.state.articles.unshift(a);
+    _clearWriter();
+    IBlog.Feed.build();
+    buildMyArticles();
+    IBlog.Dashboard.navigateTo('home');
+    IBlog.utils.toast(isPrem ? '⭐ Premium article published!' : '🚀 Article published!', 'success');
+  }
+
+  async function _saveWriterArticle(nextStatus) {
+    const title   = document.getElementById('article-title')?.value.trim();
+    const text    = document.getElementById('article-editor')?.value.trim();
+    const cat     = document.getElementById('article-cat')?.value;
+    const imgUrl  = document.getElementById('article-img')?.value.trim() || '';
+    const tagsVal = document.getElementById('article-tags')?.value || '';
+    const editor  = document.getElementById('article-editor');
+    const editId  = editor?.dataset?.editId;
+    const normalizedStatus = nextStatus === 'draft' ? 'draft' : 'published';
+    const hasContent = !!title || !!text;
+    if (normalizedStatus === 'published' && (!title || !text)) {
+      IBlog.utils.toast('Add a title and content first!', 'error');
+      return false;
+    }
+    if (normalizedStatus === 'draft' && !hasContent) {
+      IBlog.utils.toast('Add a title or some content before saving a draft.', 'error');
+      return false;
+    }
+    const isPrem = IBlog.state.currentUser?.plan === 'premium';
+    const tags   = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
+    const category = cat !== 'Select Category' ? cat : 'General';
+    const existing = editId
+      ? (IBlog.state.articles || []).find(x => String(x?.id) === String(editId))
+      : null;
+    const previousStatus = editor?.dataset?.editStatus || existing?.status || 'published';
+    const payload = {
+      title,
+      body: text,
+      category,
+      tags: tags.join(', '),
+      status: normalizedStatus,
+      coverImage: imgUrl,
+      readingTime: Math.max(1, Math.ceil(Math.max(1, text.split(/\s+/).filter(Boolean).length) / 200)) + ' min',
+      label: IBlog.Templates?.selectedId?.() || 'none',
+    };
+
     try {
-      const persisted = window.IBlogArticleSync?.save
-        ? await window.IBlogArticleSync.save(apiPayload)
-        : null;
-      const articleToShow = persisted || a;
-      if (!persisted) {
-        IBlog.state.articles.unshift(articleToShow);
+      if (editId && /^\d+$/.test(String(editId)) && window.IBlogArticleSync?.update) {
+        await window.IBlogArticleSync.update(Number(editId), payload);
+        _clearWriter();
+        IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+        if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+        else if (previousStatus === 'draft') IBlog.utils.toast('Draft published!', 'success');
+        else IBlog.utils.toast('Article updated!', 'success');
+        return true;
       }
-      window.IBlogTracker?.log('publish_article', {
-        entityType: 'article',
-        entityId: articleToShow.id,
-        title: articleToShow.title,
-        category: articleToShow.cat || articleToShow.category || normalizedCategory,
-        value: 1,
-      });
-      const feedBuilt = !!_runSafe('Feed rebuild', () => IBlog.Feed.build());
-      const articlesBuilt = !!_runSafe('My Articles rebuild', () => buildMyArticles());
-      _runSafe('Legacy My Articles refresh', () => IBlog.MyArticles?.load?.());
-      _runSafe('Right rail refresh', () => {
-        window.RightRail?.refreshStats?.();
-        window.RightRail?.refreshAuthors?.();
-      });
-      _runSafe('Analytics refresh', () => IBlog.Analytics?.init?.());
-      _runSafe('Activity refresh', () => IBlog.Activity?.init?.());
-      _runSafe('Post-publish navigation', () => {
-        IBlog.Dashboard.navigateTo(feedBuilt ? 'home' : (articlesBuilt ? 'articles' : 'write'));
+
+      if (!editId && window.IBlogArticleSync?.save) {
+        await window.IBlogArticleSync.save(payload);
+        _clearWriter();
+        IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+        if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+        else IBlog.utils.toast(isPrem ? 'Premium article published!' : 'Article published!', 'success');
+        return true;
+      }
+    } catch (error) {
+      console.error('Writer save failed:', error);
+      IBlog.utils.toast(error?.message || 'Could not save this article.', 'error');
+      return false;
+    }
+
+    if (editId && existing) {
+      Object.assign(existing, {
+        title,
+        body: text,
+        excerpt: text.substring(0,160) + (text.length>160?'...':''),
+        cat: category,
+        category,
+        img: imgUrl || existing.img || null,
+        cover: imgUrl || existing.cover || existing.img || null,
+        readTime: payload.readingTime,
+        tags,
+        templateId: IBlog.Templates?.selectedId?.() || existing.templateId || null,
+        status: normalizedStatus,
       });
       _clearWriter();
-      IBlog.utils.toast(isPrem ? '⭐ Premium article published!' : '🚀 Article published!', 'success');
-    } catch (err) {
-      IBlog.state.articles = (IBlog.state.articles || []).filter(article => article.id !== a.id && String(article.id) !== String(a.id));
-      _restoreWriterState(draftState);
-      console.error('Article publish failed:', err);
-      IBlog.utils.toast(err?.message || 'Could not publish the article. Your draft is still here.', 'error');
+      IBlog.Feed.build();
+      buildMyArticles();
+      IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+      if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+      else if (previousStatus === 'draft') IBlog.utils.toast('Draft published!', 'success');
+      else IBlog.utils.toast('Article updated!', 'success');
+      return true;
     }
+
+    const a = {
+      id: Date.now(),
+      author:        IBlog.state.currentUser?.name || 'Amara',
+      authorInitial: IBlog.state.currentUser?.initial || 'A',
+      authorColor:   'var(--accent)',
+      cat:           category,
+      category,
+      img:           imgUrl || null,
+      cover:         imgUrl || null,
+      title,
+      excerpt:       text.substring(0,160) + (text.length>160?'...':''),
+      body:          text,
+      templateId:    IBlog.Templates?.selectedId() || null,
+      readTime:      payload.readingTime,
+      likes: 0, comments: [], reposts: 0,
+      bookmarked: false, liked: false,
+      quality: text.length > 300 ? 'high' : 'med',
+      isPremiumAuthor: isPrem,
+      tags,
+      date: 'Just now',
+      status: normalizedStatus,
+    };
+    IBlog.state.articles.unshift(a);
+    _clearWriter();
+    IBlog.Feed.build();
+    buildMyArticles();
+    IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+    if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+    else IBlog.utils.toast(isPrem ? 'Premium article published!' : 'Article published!', 'success');
+    return true;
+  }
+
+  function publishArticle() {
+    return _saveWriterArticle('published');
+  }
+
+  function saveDraftArticle() {
+    return _saveWriterArticle('draft');
   }
 
   function _clearWriter() {
@@ -989,14 +677,14 @@ async function publishArticle() {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    const imgEl = document.getElementById('article-img');
-    const fileEl = document.getElementById('writer-img-file');
-    if (imgEl) delete imgEl.dataset.fileName;
-    if (fileEl) fileEl.value = '';
     const catEl = document.getElementById('article-cat');
     if (catEl) catEl.value = 'Select Category';
+    const editor = document.getElementById('article-editor');
+    if (editor) {
+      delete editor.dataset.editId;
+      delete editor.dataset.editStatus;
+    }
     document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
-    IBlog.Templates?.setSelected?.(null, { silent: true });
     const badge = document.getElementById('wtr-tpl-badge');
     if (badge) badge.style.display = 'none';
     /* Reset quality */
@@ -1007,59 +695,56 @@ async function publishArticle() {
       if (b) b.style.width = '0%';
     });
     document.getElementById('quality-overall')?.style.setProperty('display','none');
-    const tipsEl = document.getElementById('quality-tips');
-    if (tipsEl) tipsEl.innerHTML = '';
-    refreshCoverPreview();
-    IBlog.Writer?._renderNow?.();
-  }
-
-  function buildMessages() {
-    window.IBlogMessageCenter?.build?.();
+    document.getElementById('quality-tips').innerHTML = '';
   }
  
 
 
   /* ── My Articles ─────────────────────────────────────── */
   function buildMyArticles() {
-    const el = document.getElementById('my-articles-list');
-    if (!el) return;
-    const mine = IBlog.state.articles
-      .filter(_isCurrentUsersArticle)
-      .sort((a, b) => Number(b?.id || 0) - Number(a?.id || 0));
-    const published = mine.filter(article => (article?.status || 'published') !== 'draft');
-    const drafts = mine.filter(article => (article?.status || 'published') === 'draft');
+    IBlog.MyArticles?.load?.();
+  }
 
-    if (!mine.length) {
-      el.innerHTML = '<div class="empty-state"><div class="emoji">📝</div><p>No articles yet.</p><button class="btn btn-primary" onclick="IBlog.Dashboard.navigateTo(\'write\')" style="margin-top:14px;">Write your first article</button></div>';
-      return;
-    }
-    const isPrem = IBlog.state.currentUser?.plan === 'premium';
-    el.innerHTML = `
-<div class="my-articles-groups">
-  ${_renderMyArticleSection('Published', 'These are already live on your profile and feed.', published, { isPrem })}
-  ${_renderMyArticleSection('Drafts', 'Private pieces you saved to finish later.', drafts, { isDraft: true, isPrem })}
-</div>`;
+  function buildMessages() {
+    return IBlog.MessageCenter?.build?.();
   }
 
   /* ── Saved ───────────────────────────────────────────── */
   function buildSaved() {
     const el = document.getElementById('saved-list');
     if (!el) return;
-    const saved = Array.isArray(IBlog.state.savedArticles) ? IBlog.state.savedArticles : [];
-    if (!saved.length) {
+    if (!IBlog.state.savedArticles.length) {
       el.innerHTML = '<div class="empty-state"><div class="emoji">🔖</div><p>No saved articles. Bookmark from the feed.</p></div>';
       return;
     }
     el.innerHTML = '';
-    saved.forEach((article, index) => {
-      const card = IBlog.ArticleCard?.render?.(article, index) || null;
-      if (card) el.appendChild(card);
+    IBlog.state.savedArticles.forEach((article, index) => {
+      const card = IBlog.ArticleCard?.render?.(article, index);
+      if (card) {
+        el.appendChild(card);
+      }
     });
   }
 
   /* ── Notifications ───────────────────────────────────── */
   function buildNotifications() {
-    IBlog.Notifications?.init?.();
+    const el = document.getElementById('notif-list');
+    if (!el) return;
+    const notifs = [
+      { text: '<strong>Léa Moreau</strong> liked your article on Quantum AI', time: '5 min ago', unread: true },
+      { text: '<strong>3 new followers</strong> this week — keep publishing!', time: '1 hour ago', unread: true },
+      { text: 'Your article is <strong>trending</strong> in the AI community 🔥', time: '3 hours ago', unread: true },
+      { text: '<strong>Weekly Digest</strong> is ready — 5 curated picks for you', time: 'Yesterday', unread: false },
+      { text: '<strong>Karim Osei</strong> commented on your post', time: '2 days ago', unread: false },
+    ];
+    el.innerHTML = notifs.map(n => `
+<div class="notif-item">
+  <div class="notif-dot ${n.unread ? '' : 'read'}"></div>
+  <div>
+    <div class="notif-text">${n.text}</div>
+    <div class="notif-time">${n.time}</div>
+  </div>
+</div>`).join('');
   }
 
   /* ── Right Rail ──────────────────────────────────────── */
@@ -1082,18 +767,21 @@ async function publishArticle() {
     if (!sel) return;
     sel.innerHTML = '<option>Select Category</option>' +
       IBlog.CATEGORIES.map(c => `<option>${c}</option>`).join('');
-    refreshCoverPreview();
   }
 
   /* ── Public API ──────────────────────────────────────── */
   return {
     initMap, selectCountry, openMapArticle,
+    openArticleFromLanding,
     buildActivity,
     buildTrends,
-    buildTemplates, selectTemplate, injectSection,
-    handleImgUpload, removeCoverImage, refreshCoverPreview,
-    analyzeQuality, saveDraftArticle, publishArticle,
+    buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle, saveDraftArticle,
+    handleImgUpload, removeCoverImage, refreshCoverPreview: _syncCoverPreview,
     buildMyArticles, buildSaved, buildNotifications, buildMessages,
      buildAccentPicker, buildCategorySelect,
   };
 })();
+
+window.openArticleFromLanding = function (index) {
+  return IBlog.Views.openArticleFromLanding(index);
+};

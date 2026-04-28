@@ -6,11 +6,7 @@
     onclick="IBlog.Profile?.showOwnProfile?.(true)"
     style="cursor: pointer"
   >
-    <div class="dash-avatar" id="dash-avatar">A</div>
-    <div class="user-info">
-      <strong id="dash-name">Amara Diallo</strong>
-      <small id="dash-plan-label">Free Member</small>
-    </div>
+    
   </div>
   <button class="write-btn" onclick="IBlog.Dashboard.navigateTo('write')">
     Write Article
@@ -60,13 +56,7 @@
     >
       My Articles
     </div>
-    <div
-      class="nav-item"
-      data-view="analytics"
-      onclick="IBlog.Dashboard.navigateTo('analytics')"
-    >
-      Analytics
-    </div>
+    <
     
     <div
       class="nav-item"
@@ -106,11 +96,7 @@
     <div class="nav-item" onclick="IBlog.Dashboard.signout()">Sign Out</div>
   </div>
 
-  <div class="rail-bottom">
-    <div class="accent-picker">
-      <div class="accent-picker-label">Accent Color</div>
-      <div class="accent-dots" id="accent-dots"></div>
-    </div>
+  
     <div class="dark-toggle">
       <label class="toggle-switch">
         <input

@@ -9,6 +9,7 @@ IBlog.Profile = (() => {
     return fetch(AUTH_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ action: 'me' }),
     })
       .then((r) => r.text())
@@ -37,6 +38,14 @@ IBlog.Profile = (() => {
   function init() {
     const root = document.getElementById('profile-root');
     if (!root) return;
+
+    if (!window.__iblogProfileSessionBound) {
+      window.addEventListener('iblog:session-changed', () => {
+        IBlog.state.profileView = { mode: 'self' };
+        renderCurrentView();
+      });
+      window.__iblogProfileSessionBound = true;
+    }
 
     root.innerHTML = `
       <div class="view-panel" id="view-profile">
@@ -143,6 +152,15 @@ IBlog.Profile = (() => {
 
   function _payload(value) {
     return encodeURIComponent(JSON.stringify(value ?? {}));
+  }
+
+  function _decodePayload(value) {
+    if (!value) return {};
+    try {
+      return JSON.parse(decodeURIComponent(value));
+    } catch (_) {
+      return {};
+    }
   }
 
   function _cu() {
@@ -320,6 +338,11 @@ IBlog.Profile = (() => {
     IBlog.Dashboard?.navigateTo?.('profile');
   }
 
+  function openUserProfileFromElement(element) {
+    if (!element?.dataset?.profile) return;
+    openUserProfile(_decodePayload(element.dataset.profile));
+  }
+
   function _setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
@@ -493,6 +516,7 @@ IBlog.Profile = (() => {
     fetch(AUTH_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ action: 'update_profile', name, email, bio }),
     })
       .then((r) => r.text())
@@ -590,6 +614,7 @@ IBlog.Profile = (() => {
     fetch(AUTH_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({
         action: 'update_profile',
         name: current.name || '',
@@ -681,6 +706,8 @@ IBlog.Profile = (() => {
     renderCurrentView,
     showOwnProfile,
     openUserProfile,
+    openUserProfileFromElement,
+    decodeProfilePayload: _decodePayload,
     toggleEdit,
     saveProfile,
     logout,

@@ -21,13 +21,6 @@ IBlog.Feed = (() => {
     close:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
   };
 
-  const REACTIONS = [
-    { key:'love',    label:'Love',       svgKey:'love',    color:'#e25555' },
-    { key:'save',    label:'Insightful', svgKey:'insight', color:'#4a90d9' },
-    { key:'insight', label:'Insightful', svgKey:'insight', color:'#4a90d9' },
-    { key:'helpful', label:'Helpful',    svgKey:'helpful', color:'#4caf7d' },
-  ];
-
   /* ══════════════════════════════════════════════════════
      TTS — Web Speech API
      ══════════════════════════════════════════════════════ */
@@ -178,35 +171,6 @@ IBlog.Feed = (() => {
     const initial = (article.author||'A')[0].toUpperCase();
     const hasCover = !!(article.cover||article.img);
     const comments = article.comments||[];
-    const AC = IBlog.ArticleCard;
-
-    const reactionBar = AC ? `
-      <div class="reaction-bar reader-reaction-bar" id="reader-reaction-bar-${id}">
-        <div class="reaction-summary" id="reader-reaction-summary-${id}">
-          ${AC._summaryHTML(article)}
-        </div>
-        <button class="react-trigger ${article._userReaction?'reacted':''}"
-                id="reader-react-trigger-${id}"
-                onclick="IBlog.ArticleCard.toggleReaderPicker(${id})">
-          ${article._userReaction
-            ? AC.SVG[AC.REACTIONS.find(r=>r.key===article._userReaction)?.svgKey||'love'] + ' Reacted'
-            : AC.SVG.love + ' React'}
-        </button>
-        <div class="reaction-picker" id="reader-reaction-picker-${id}">
-          <div class="reaction-picker-inner">
-            ${AC.REACTIONS.map(r=>`
-              <button class="reaction-option ${article._userReaction===r.key?'chosen':''}"
-                      data-key="${r.key}" title="${r.label}"
-                      style="${article._userReaction===r.key?`--rc:${r.color}`:`--rc:var(--text2)`}"
-                      onclick="IBlog.ArticleCard.setReaction(${id},'${r.key}')">
-                <span class="r-icon">${AC.SVG[r.svgKey]}</span>
-                <span class="r-label">${r.label}</span>
-                <span class="r-count" id="reader-rc-${id}-${r.key}">${article._reactions?.[r.key]||0}</span>
-              </button>`).join('')}
-          </div>
-        </div>
-      </div>` : '';
-
     content.innerHTML = `
       <div class="article-reader">
         <div class="reader-progress-bar">
@@ -260,9 +224,6 @@ IBlog.Feed = (() => {
               </button>
             </div>
           </div>
-
-          <!-- Reactions -->
-          ${reactionBar}
 
           <!-- Podcast -->
           <div class="reader-podcast">
@@ -343,11 +304,41 @@ IBlog.Feed = (() => {
   /* ══════════════════════════════════════════════════════
      READER ACTIONS — synced with feed cards
      ══════════════════════════════════════════════════════ */
-  function readerLike(id) {
+  async function readerLike(id) {
     const article = (IBlog.state.articles||[]).find(a=>a.id===id);
     if (!article) return;
-    article._liked = !article._liked;
-    article.likes  = Math.max(0,(article.likes||0)+(article._liked?1:-1));
+    const nextLiked = !article._liked;
+
+    if (/^\d+$/.test(String(id))) {
+      try {
+        const currentUser = window.IBlogSession?.getUser?.() || null;
+        const response = await fetch('backend/view/components/article/api-articles.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            action: 'like_toggle',
+            articleId: Number(id),
+            liked: nextLiked,
+            ...(currentUser?.email ? { authorEmail: currentUser.email } : {}),
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || 'Could not update like.');
+        }
+        article._liked = !!payload.liked;
+        article.liked = !!payload.liked;
+        article.likes = Number(payload.likesCount || 0);
+      } catch (error) {
+        IBlog.utils.toast(error?.message || 'Could not update like.', 'error');
+        return;
+      }
+    } else {
+      article._liked = nextLiked;
+      article.liked = nextLiked;
+      article.likes  = Math.max(0,(article.likes||0)+(article._liked?1:-1));
+    }
 
     /* Update reader button */
     const btn = document.getElementById(`reader-like-btn-${id}`);
@@ -359,6 +350,12 @@ IBlog.Feed = (() => {
     /* Sync feed card */
     const fc = document.getElementById(`like-count-${id}`);
     if (fc) fc.textContent = article.likes;
+    const fb = document.getElementById(`like-btn-${id}`);
+    if (fb) {
+      fb.className = `interact-btn ${article._liked?'active-like':''}`;
+      fb.innerHTML = (article._liked ? I.heartFill : I.heart)
+        + `<span id="like-count-${id}">${article.likes}</span>`;
+    }
     if (article._liked) {
       window.IBlogTracker?.log('like_article', {
         entityType: 'article',
@@ -483,11 +480,3 @@ IBlog.Feed = (() => {
   };
 
 })();
-
-/* ── Patch ArticleCard to handle reader picker ── */
-IBlog.ArticleCard.toggleReaderPicker = function(id) {
-  const picker = document.getElementById(`reader-reaction-picker-${id}`);
-  if (!picker) return;
-  document.querySelectorAll('.reaction-picker.open').forEach(p=>{if(p!==picker)p.classList.remove('open');});
-  picker.classList.toggle('open');
-};

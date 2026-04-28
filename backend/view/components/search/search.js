@@ -52,6 +52,10 @@
     return String(value || '').trim().toLowerCase();
   }
 
+  function payload(value) {
+    return encodeURIComponent(JSON.stringify(value ?? {})).replace(/'/g, '%27');
+  }
+
   function matchesAuthor(source = {}, target = {}) {
     const sourceId = source?.id ?? source?.userId ?? source?.authorId ?? null;
     const targetId = target?.id ?? target?.userId ?? target?.authorId ?? null;
@@ -62,6 +66,10 @@
     const sourceEmail = normalizeIdentity(source?.email || source?.authorEmail);
     const targetEmail = normalizeIdentity(target?.email || target?.authorEmail);
     return !!(sourceEmail && targetEmail && sourceEmail === targetEmail);
+  }
+
+  function isCurrentUser(target = {}) {
+    return matchesAuthor(window.IBlog?.state?.currentUser || {}, target);
   }
 
   function resolveProfileRecord(target = {}) {
@@ -138,6 +146,7 @@
       const response = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           q,
           mode: currentMode,
@@ -155,11 +164,28 @@
         throw new Error(data.error || 'Search failed');
       }
 
-      lastPayload = data;
-      renderResults(data.results || []);
+      const mergedResults = mergeResults(
+        Array.isArray(data.results) ? data.results : [],
+        buildLocalResults(q, currentMode)
+      );
+
+      lastPayload = {
+        ...data,
+        results: mergedResults,
+      };
+      renderResults(mergedResults);
     } catch (error) {
       console.warn('Search request failed:', error?.message || error);
-      renderResults([]);
+      const fallbackResults = buildLocalResults(q, currentMode);
+      lastPayload = {
+        ok: true,
+        query: q,
+        results: fallbackResults,
+        articles: fallbackResults.filter((item) => item.type === 'article'),
+        users: fallbackResults.filter((item) => item.type === 'user'),
+        method: 'local_fallback',
+      };
+      renderResults(fallbackResults);
     }
   }
 
@@ -199,6 +225,7 @@
     if (item.type === 'user') {
       const resolved = resolveProfileRecord(item);
       const match = matchMeta(item);
+      const ownProfile = isCurrentUser(item);
       const profilePayload = {
         id: item.id ?? null,
         name: item.name || '',
@@ -236,10 +263,12 @@
                       type="button"
                       data-search-action="open-profile"
                       data-profile="${payload(profilePayload)}">View</button>
-              <button class="src-btn src-btn-primary"
-                      type="button"
-                      data-search-action="message-user"
-                      data-profile="${payload(profilePayload)}">Message</button>
+              ${ownProfile ? '' : `
+                <button class="src-btn src-btn-primary"
+                        type="button"
+                        data-search-action="message-user"
+                        data-profile="${payload(profilePayload)}">Message</button>
+              `}
             </div>
           </div>
         </div>
@@ -256,6 +285,7 @@
     const authorProfilePayload = {
       id: item.authorId ?? null,
       name: item.author || 'Unknown',
+      email: item.authorEmail || '',
       avatar: resolvedAuthor.avatar,
       cover: resolvedAuthor.cover,
       bio: resolvedAuthor.bio,
@@ -263,6 +293,7 @@
       plan: resolvedAuthor.plan,
       isPremium: resolvedAuthor.isPremium,
     };
+    const ownAuthorProfile = isCurrentUser(authorProfilePayload);
 
     const authorAvatarHtml = resolvedAuthor.avatar
       ? `<div class="src-avatar" style="background-image:url('${escAttr(resolvedAuthor.avatar)}');background-size:cover;background-position:center;background-color:transparent;flex-shrink:0"></div>`
@@ -291,10 +322,17 @@
                     type="button"
                     data-search-action="open-profile"
                     data-profile="${payload(authorProfilePayload)}">Author</button>
-            <button class="src-btn src-btn-primary"
-                    type="button"
-                    data-search-action="message-user"
-                    data-profile="${payload(authorProfilePayload)}">Message</button>
+            ${ownAuthorProfile ? `
+              <button class="src-btn src-btn-primary"
+                      type="button"
+                      data-search-action="open-article"
+                      data-article-id="${Number(item.id ?? 0)}">Open</button>
+            ` : `
+              <button class="src-btn src-btn-primary"
+                      type="button"
+                      data-search-action="message-user"
+                      data-profile="${payload(authorProfilePayload)}">Message</button>
+            `}
           </div>
         </div>
       </div>
@@ -381,8 +419,180 @@
     return esc(value).replace(/'/g, '&#39;');
   }
 
-  function payload(value) {
-    return encodeURIComponent(JSON.stringify(value ?? {}));
+  function buildLocalResults(query, mode) {
+    const localArticles = mode === 'people' ? [] : buildLocalArticleResults(query);
+    const localUsers = mode === 'articles' ? [] : buildLocalUserResults(query);
+    return mergeResults(localArticles, localUsers);
+  }
+
+  function mergeResults(...groups) {
+    const seen = new Set();
+    const merged = [];
+
+    groups.flat().forEach((item) => {
+      if (!item || !item.type) return;
+      const key = resultKey(item);
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(item);
+    });
+
+    return merged
+      .sort((a, b) =>
+        (Number(b.confidence || 0) - Number(a.confidence || 0))
+        || (Number(b.score || 0) - Number(a.score || 0))
+        || String(a.title || a.name || '').localeCompare(String(b.title || b.name || ''))
+      )
+      .slice(0, 20);
+  }
+
+  function resultKey(item = {}) {
+    if (item.type === 'user') {
+      return `user:${item.id ?? normalizeIdentity(item.email || item.name)}`;
+    }
+    return `article:${item.id ?? normalizeIdentity(item.title)}`;
+  }
+
+  function buildLocalUserResults(query) {
+    const q = normalizeIdentity(query);
+    const users = dedupeUsers([
+      window.IBlog?.state?.currentUser || null,
+      ...(window.IBlog?.state?.articles || []).map((article) => ({
+        id: article?.authorId ?? article?.userId ?? null,
+        name: article?.author || '',
+        email: article?.authorEmail || '',
+        avatar: article?.authorAvatar || '',
+        initial: article?.authorInitial || article?.author?.[0] || 'U',
+        bio: article?.authorBio || '',
+        plan: article?.isPremiumAuthor ? 'premium' : 'free',
+        isPremium: !!article?.isPremiumAuthor,
+      })),
+    ]);
+
+    return users
+      .map((user) => {
+        const confidence = localConfidence(q, [
+          user?.name,
+          user?.email,
+          user?.bio,
+        ]);
+        if (confidence <= 0) return null;
+
+        const resolved = resolveProfileRecord(user);
+        return {
+          id: user?.id ?? null,
+          type: 'user',
+          name: user?.name || 'Unknown',
+          email: user?.email || '',
+          plan: user?.plan || resolved.plan || 'free',
+          isPremium: !!user?.isPremium || resolved.isPremium,
+          avatar: user?.avatar || resolved.avatar,
+          cover: user?.cover || resolved.cover,
+          bio: user?.bio || resolved.bio,
+          initial: user?.initial || resolved.initial,
+          score: Math.round(confidence * 100),
+          confidence,
+          matchTier: confidence >= 0.99 ? 'exact' : confidence >= 0.88 ? 'strong_match' : 'good_match',
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function buildLocalArticleResults(query) {
+    const q = normalizeIdentity(query);
+    return (window.IBlog?.state?.articles || [])
+      .filter((article) => (article?.status || 'published') !== 'draft')
+      .map((article) => {
+        const confidence = localConfidence(q, [
+          article?.title,
+          article?.author,
+          article?.cat,
+          article?.category,
+          Array.isArray(article?.tags) ? article.tags.join(' ') : article?.tags,
+          article?.excerpt,
+          article?.body,
+        ]);
+        if (confidence <= 0) return null;
+
+        return {
+          id: article?.id ?? 0,
+          type: 'article',
+          authorId: article?.authorId ?? article?.userId ?? null,
+          author: article?.author || 'Unknown',
+          authorEmail: article?.authorEmail || '',
+          authorAvatar: article?.authorAvatar || '',
+          title: article?.title || 'Untitled article',
+          cat: article?.cat || article?.category || 'General',
+          tags: Array.isArray(article?.tags) ? article.tags.join(', ') : (article?.tags || ''),
+          img: article?.img || article?.cover || '',
+          readTime: article?.readTime || '5 min',
+          likes: Number(article?.likesCount ?? article?.likes ?? 0),
+          views: Number(article?.views || 0),
+          score: Math.round(confidence * 100),
+          confidence,
+          matchTier: confidence >= 0.99 ? 'exact' : confidence >= 0.88 ? 'strong_match' : 'good_match',
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function dedupeUsers(users = []) {
+    const seen = new Set();
+    const output = [];
+
+    users.forEach((user) => {
+      if (!user?.name && !user?.email && !user?.id) return;
+      const key = String(user?.id || '') || normalizeIdentity(user?.email || user?.name);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      output.push(user);
+    });
+
+    return output;
+  }
+
+  function localConfidence(query, fields = []) {
+    if (!query) return 0;
+    let best = 0;
+
+    fields.forEach((field) => {
+      const value = normalizeIdentity(field);
+      if (!value) return;
+
+      if (value === query) {
+        best = Math.max(best, 1);
+        return;
+      }
+
+      if (value.startsWith(query)) {
+        best = Math.max(best, 0.94);
+      }
+
+      if (value.includes(query)) {
+        best = Math.max(best, 0.86);
+      }
+
+      const words = value.split(/\s+/).filter(Boolean);
+      const queryWords = query.split(/\s+/).filter(Boolean);
+      if (!words.length || !queryWords.length) return;
+
+      let hits = 0;
+      queryWords.forEach((part) => {
+        if (words.some((word) => word === part)) {
+          hits += 1;
+          return;
+        }
+        if (words.some((word) => word.startsWith(part))) {
+          hits += 0.7;
+        }
+      });
+
+      if (hits > 0) {
+        best = Math.max(best, Math.min(0.9, 0.54 + (hits / queryWords.length) * 0.28));
+      }
+    });
+
+    return Number(best.toFixed(4));
   }
 
   window.IBlog = window.IBlog || {};
@@ -392,6 +602,9 @@
     focusAndNavigate,
     getLastPayload: () => lastPayload,
   };
+  window.IBlog.Views = window.IBlog.Views || {};
+  window.IBlog.Views.doSearch = doSearch;
+  window.IBlog.Views.searchTopic = focusAndNavigate;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

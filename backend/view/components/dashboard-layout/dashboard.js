@@ -14,7 +14,26 @@ IBlog.Dashboard = (() => {
     return ['foryou', 'following', 'trending', 'latest'].includes(key) ? key : 'foryou';
   }
 
+  function _bindSessionRefresh() {
+    if (window.__iblogDashboardSessionBound) return;
+    window.addEventListener('iblog:session-changed', () => {
+      if (document.getElementById('dashboard')?.style.display === 'none') return;
+      _runInitStep('Left rail session refresh', () => IBlog.LeftRail?.init?.());
+      _runInitStep('Right rail session refresh', () => typeof initRightRail === 'function' && initRightRail());
+      _runInitStep('Dashboard session refresh', () => updateUserUI());
+      _runInitStep('Gate refresh', () => refreshGates());
+      _runInitStep('Communities refresh', () => IBlog.Communities?.refresh?.());
+      _runInitStep('Messages refresh', () => IBlog.Views?.buildMessages?.());
+      _runInitStep('Saved refresh', () => window.IBlogSavedSync?.load?.({ quiet: true }));
+      IBlogArticleSync?.load?.().catch((error) => {
+        console.warn('Article sync refresh failed:', error?.message || error);
+      });
+    });
+    window.__iblogDashboardSessionBound = true;
+  }
+
   function enter() {
+    _bindSessionRefresh();
     _runInitStep('Right rail init', () => typeof initRightRail === 'function' && initRightRail());
     _runInitStep('Left rail init', () => IBlog.LeftRail?.init?.());
     _runInitStep('Profile init', () => IBlog.Profile?.init?.());

@@ -96,14 +96,15 @@ IBlog.ArticleCard = {
     const safeCategory = this._esc(article.category || article.cat || 'General');
     const safeTitle = this._esc(article.title || '');
     const safeExcerpt = this._esc(article.excerpt || '');
-    const authorProfilePayload = JSON.stringify({
+    const authorProfilePayload = encodeURIComponent(JSON.stringify({
       id: article.authorId ?? null,
       name: article.author || 'Anonymous',
+      email: article.authorEmail || '',
       avatar: article.authorAvatar || '',
       initial,
       plan: article.isPremiumAuthor ? 'premium' : 'free',
       isPremium: !!article.isPremiumAuthor,
-    });
+    }));
     const avatarStyle = article.authorAvatar
       ? `background-image:url('${this._esc(article.authorAvatar)}');background-size:cover;background-position:center;background-color:transparent;cursor:pointer`
       : `background:${color};cursor:pointer`;
@@ -113,11 +114,7 @@ IBlog.ArticleCard = {
       ? 'Discussion starter'
       : article.reposts > 40
       ? 'Widely shared'
-      : 'Editor pick';
-    article._reactions    = article._reactions    || { love:0, insight:0, helpful:0, save:0 };
-    article._userReaction = article._userReaction || null;
-    const activeReaction = this._reactionMeta(article);
-
+      : 'Curated feed';
     const qualityBadge = (article.quality >= 80 || article.quality === 'high')
       ? `<span class="quality-high">High quality</span>`
       : (article.quality >= 60 || article.quality === 'med')
@@ -133,8 +130,11 @@ IBlog.ArticleCard = {
       <div class="card-body">
         <div class="card-header">
           <div class="card-avatar" style="${avatarStyle}"
-               onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">${article.authorAvatar ? '' : initial}</div>
-          <div style="cursor:pointer" onclick="IBlog.Profile?.openUserProfile?.(${authorProfilePayload})">
+               data-profile="${this._esc(authorProfilePayload)}"
+               onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">${article.authorAvatar ? '' : initial}</div>
+          <div style="cursor:pointer"
+               data-profile="${this._esc(authorProfilePayload)}"
+               onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">
             <div class="card-author">${safeAuthor}</div>
             <div class="card-date">${safeDate}</div>
           </div>
@@ -165,30 +165,6 @@ IBlog.ArticleCard = {
 
         <!-- Interact bar -->
         <div class="interact-bar">
-          <div class="reaction-inline" id="reaction-inline-${article.id}">
-            <button class="interact-btn react-trigger ${article._userReaction?'reacted':''}"
-                    id="react-trigger-${article.id}"
-                    onclick="IBlog.ArticleCard.togglePicker(${article.id})">
-              ${(activeReaction ? this.SVG[activeReaction.svgKey] : this.SVG.love)}
-              <span>${activeReaction ? activeReaction.label : 'React'}</span>
-            </button>
-            <div class="reaction-summary" id="reaction-summary-${article.id}">
-              ${this._summaryHTML(article)}
-            </div>
-            <div class="reaction-picker" id="reaction-picker-${article.id}">
-              <div class="reaction-picker-inner">
-                ${this.REACTIONS.map(r=>`
-                  <button class="reaction-option ${article._userReaction===r.key?'chosen':''}"
-                          data-key="${r.key}" title="${r.label}"
-                          style="--rc:${article._userReaction===r.key?r.color:'var(--text2)'}"
-                          onclick="IBlog.ArticleCard.setReaction(${article.id},'${r.key}')">
-                    <span class="r-icon">${this.SVG[r.svgKey]}</span>
-                    <span class="r-label">${r.label}</span>
-                    <span class="r-count" id="rc-${article.id}-${r.key}">${article._reactions[r.key]||0}</span>
-                  </button>`).join('')}
-              </div>
-            </div>
-          </div>
           <button class="interact-btn ${article._liked?'active-like':''}"
                   id="like-btn-${article.id}"
                   onclick="IBlog.Feed.readerLike(${article.id})">
@@ -453,6 +429,7 @@ IBlog.ArticleCard = {
         const response = await fetch('backend/view/components/article/api-articles.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({
             action: 'comment_add',
             articleId: Number(id),
@@ -507,7 +484,7 @@ IBlog.ArticleCard = {
         const g=document.getElementById('article-tags');
         const i=document.getElementById('article-img');
         if(t) t.value=a.title;
-        if(e){e.value=a.body||a.excerpt||'';e.dataset.editId=id;}
+        if(e){e.value=a.body||a.excerpt||'';e.dataset.editId=id;e.dataset.editStatus=a.status||'published';}
         if(c) c.value=a.cat||a.category||'';
         if(g) g.value=(a.tags||[]).join(', ');
         if(i) {
@@ -521,7 +498,7 @@ IBlog.ArticleCard = {
         IBlog.Templates?.setSelected?.(a.templateId || null, { silent: true });
         const writerImgFile = document.getElementById('writer-img-file');
         if (writerImgFile) writerImgFile.value='';
-        IBlog.Views?.refreshCoverPreview?.();
+        IBlog.Views?.refreshCoverPreview?.(i?.value || '', i?.value ? 'Current cover image' : '');
         IBlog.Views?.analyzeQuality?.();
         IBlog.Writer?._renderNow?.();
       },200);

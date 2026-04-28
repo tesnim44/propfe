@@ -15,10 +15,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <ul class="l-nav-links">
         <li><a href="#hero">Home</a></li>
         <li><a href="#features">Features</a></li>
-        <li><a href="#trending">Trending</a></li>
+        <li><a href="#hiw">How it works</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#testimonials">Stories</a></li>
-        <li><a href="#" onclick="showPremium(); return false;">Premium </a></li>
+        <li><a href="#" onclick="showPremium(); return false;">Premium</a></li>
       </ul>
       <div class="l-nav-btns">
         <div class="nav-dark-pill" id="landing-dark-pill" onclick="toggleDark()" title="Toggle dark">🌙</div>

@@ -1,18 +1,29 @@
-const STATS_API = 'backend/view/components/auth/api-stats.php';
+/* ═══════════════════════════════════════════════════════════
+   RIGHT RAIL — Complete corrected JS
+   ═══════════════════════════════════════════════════════════ */
+
+const STATS_API     = 'backend/view/components/auth/api-stats.php';
 const COMMUNITY_API = 'backend/controller/CommunityController.php';
 let _statsIntervalId = null;
 
+/* ── Helpers ─────────────────────────────────────────────── */
+
 function _payload(value) {
-  return encodeURIComponent(JSON.stringify(value ?? {}));
+  return encodeURIComponent(JSON.stringify(value ?? {})).replace(/'/g, '%27');
 }
 
 function _esc(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g,  '&quot;')
+    .replace(/'/g,  '&#39;');
+}
+
+function _fmt(n) {
+  const num = Number(n || 0);
+  return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : String(num);
 }
 
 function _normalizeIdentity(value) {
@@ -25,29 +36,30 @@ function _authorMatches(source = {}, author = {}) {
   if (sourceId !== null && authorId !== null && String(sourceId) === String(authorId)) {
     return true;
   }
-
   const sourceEmail = _normalizeIdentity(source?.email || source?.authorEmail);
   const authorEmail = _normalizeIdentity(author?.email || author?.authorEmail);
   return !!(sourceEmail && authorEmail && sourceEmail === authorEmail);
 }
 
 function _resolveAuthorProfile(author = {}) {
-  let avatar = String(author?.avatar || '').trim();
-  let cover = String(author?.cover || '').trim();
-  let bio = String(author?.bio || '').trim();
-  let plan = author?.isPremium ? 'premium' : 'free';
+  let avatar    = String(author?.avatar || '').trim();
+  let cover     = String(author?.cover  || '').trim();
+  let bio       = String(author?.bio    || '').trim();
+  let plan      = author?.isPremium ? 'premium' : 'free';
   let isPremium = !!author?.isPremium;
 
   const current = window.IBlog?.state?.currentUser || null;
   if (_authorMatches(current, author)) {
-    avatar = avatar || String(current?.avatar || '').trim();
-    cover = cover || String(current?.cover || '').trim();
-    bio = bio || String(current?.bio || '').trim();
-    plan = String(current?.plan || plan || 'free');
+    avatar    = avatar || String(current?.avatar || '').trim();
+    cover     = cover  || String(current?.cover  || '').trim();
+    bio       = bio    || String(current?.bio    || '').trim();
+    plan      = String(current?.plan || plan || 'free');
     isPremium = isPremium || current?.plan === 'premium' || !!current?.isPremium;
   }
 
-  const articleMatch = (window.IBlog?.state?.articles || []).find((article) => _authorMatches(article, author) && article?.authorAvatar);
+  const articleMatch = (window.IBlog?.state?.articles || []).find(
+    (article) => _authorMatches(article, author) && article?.authorAvatar
+  );
   if (articleMatch?.authorAvatar) {
     avatar = avatar || String(articleMatch.authorAvatar).trim();
   }
@@ -58,9 +70,38 @@ function _resolveAuthorProfile(author = {}) {
     bio,
     plan,
     isPremium,
-    initial: String(author?.initial || author?.name?.[0] || author?.author?.[0] || 'U').slice(0, 1).toUpperCase(),
+    initial: String(
+      author?.initial || author?.name?.[0] || author?.author?.[0] || 'U'
+    ).slice(0, 1).toUpperCase(),
   };
 }
+
+/* ── Compute real author stats from articles ─────────────── */
+
+function _computeAuthorStats(author) {
+  const allArticles = Array.isArray(window.IBlog?.state?.articles)
+    ? window.IBlog.state.articles
+    : [];
+
+  const authorArticles = allArticles.filter((article) =>
+    _authorMatches(article, author)
+  );
+
+  return {
+    articleCount : authorArticles.length,
+    totalLikes   : authorArticles.reduce(
+      (sum, a) => sum + Number(a?.likesCount ?? a?.likes ?? 0), 0
+    ),
+    totalComments: authorArticles.reduce(
+      (sum, a) => sum + Number(a?.comments?.length ?? a?.commentCount ?? 0), 0
+    ),
+    totalViews   : authorArticles.reduce(
+      (sum, a) => sum + Number(a?.views ?? 0), 0
+    ),
+  };
+}
+
+/* ── API helper ──────────────────────────────────────────── */
 
 async function _statsPost(action) {
   try {
@@ -71,7 +112,7 @@ async function _statsPost(action) {
       credentials: 'same-origin',
       body: JSON.stringify({
         action,
-        userId: currentUser?.id ?? 0,
+        userId   : currentUser?.id    ?? 0,
         userEmail: currentUser?.email || '',
       }),
     });
@@ -83,15 +124,18 @@ async function _statsPost(action) {
   }
 }
 
+/* ── HTML injection ──────────────────────────────────────── */
+
 function injectRightRail() {
   const root = document.getElementById('right-rail-root');
   if (!root) return;
 
   root.innerHTML = `
     <div class="right-rail">
+
       <div class="search-bar">
-        <input type="text" placeholder="Search IBlog..."
-          onclick="IBlog.Search?.focusAndNavigate('')"
+        <input type="text" placeholder="Search IBlog…"
+          onclick="IBlog.Search?.focusAndNavigate(this.value)"
           onkeydown="if(event.key==='Enter') IBlog.Search?.focusAndNavigate(this.value);" />
       </div>
 
@@ -100,7 +144,6 @@ function injectRightRail() {
         <div class="stats-grid" id="rr-stats-grid">
           <div class="stat-box"><span class="stat-value" id="rr-articles">-</span><div class="stat-label">Articles</div></div>
           <div class="stat-box"><span class="stat-value" id="rr-likes">-</span><div class="stat-label">Likes</div></div>
-          <div class="stat-box"><span class="stat-value" id="rr-views">-</span><div class="stat-label">Views</div></div>
           <div class="stat-box"><span class="stat-value" id="rr-comments">-</span><div class="stat-label">Comments</div></div>
           <div class="stat-box"><span class="stat-value" id="rr-saved">-</span><div class="stat-label">Saved</div></div>
         </div>
@@ -119,7 +162,7 @@ function injectRightRail() {
       <div class="rail-section">
         <div class="rail-title">Top Authors</div>
         <div id="top-authors">
-          <div style="text-align:center;padding:16px;color:var(--text2);font-size:13px;">Loading...</div>
+          <div style="text-align:center;padding:16px;color:var(--text2);font-size:13px;">Loading…</div>
         </div>
       </div>
 
@@ -135,10 +178,13 @@ function injectRightRail() {
 
       <div class="footer-links">
         <a href="#">About</a><a href="#">Blog</a><a href="#">Privacy</a>
-        <a href="#">Terms</a><a href="#">(c) 2026 IBlog</a>
+        <a href="#">Terms</a><a href="#">© 2026 IBlog</a>
       </div>
+
     </div>`;
 }
+
+/* ── Init ────────────────────────────────────────────────── */
 
 async function initRightRail() {
   injectRightRail();
@@ -148,111 +194,175 @@ async function initRightRail() {
   setupStatsAutoRefresh();
 }
 
+/* ── User stats ──────────────────────────────────────────── */
+
 async function loadUserStats() {
-  const data = await _statsPost('my_stats');
+  const data        = await _statsPost('my_stats');
   const currentUser = window.IBlog?.state?.currentUser || {};
+
+  // Compute fallback from local articles scoped to current user
   const scopedArticles = Array.isArray(window.IBlog?.state?.articles)
     ? window.IBlog.state.articles.filter((article) => {
         const authorId = article?.authorId ?? article?.userId ?? null;
         if (authorId !== null && authorId !== undefined && String(authorId) !== '') {
           return String(authorId) === String(currentUser?.id ?? '');
         }
-        return String(article?.authorEmail || '').trim().toLowerCase() === String(currentUser?.email || '').trim().toLowerCase();
+        return (
+          String(article?.authorEmail || '').trim().toLowerCase() ===
+          String(currentUser?.email   || '').trim().toLowerCase()
+        );
       })
     : [];
+
   const fallback = {
     articles: scopedArticles.length,
-    likes: scopedArticles.reduce((sum, article) => sum + Number(article?.likesCount ?? article?.likes ?? 0), 0),
-    views: scopedArticles.reduce((sum, article) => sum + Number(article?.views ?? 0), 0),
-    comments: scopedArticles.reduce((sum, article) => sum + Number(article?.comments?.length ?? article?.commentCount ?? 0), 0),
-    saved: Array.isArray(window.IBlog?.state?.savedArticles) ? window.IBlog.state.savedArticles.length : 0,
+    likes   : scopedArticles.reduce((sum, a) => sum + Number(a?.likesCount ?? a?.likes ?? 0), 0),
+    comments: scopedArticles.reduce((sum, a) => sum + Number(a?.comments?.length ?? a?.commentCount ?? 0), 0),
+    saved   : Array.isArray(window.IBlog?.state?.savedArticles) ? window.IBlog.state.savedArticles.length : 0,
   };
 
   const set = (id, val) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = typeof val === 'number' && val >= 1000
-      ? `${(val / 1000).toFixed(1)}k`
-      : String(val);
+    if (el) el.textContent = _fmt(Number(val));
   };
 
-  set('rr-articles', Number(data?.articles ?? fallback.articles));
-  set('rr-likes', Number(data?.likes ?? fallback.likes));
-  set('rr-views', Number(data?.views ?? fallback.views));
-  set('rr-comments', Number(data?.comments ?? fallback.comments));
-  set('rr-saved', Number(data?.saved ?? fallback.saved));
+  set('rr-articles', data?.articles ?? fallback.articles);
+  set('rr-likes',    data?.likes    ?? fallback.likes);
+  set('rr-comments', data?.comments ?? fallback.comments);
+  set('rr-saved',    data?.saved    ?? fallback.saved);
 }
+
+/* ── Top Authors ─────────────────────────────────────────── */
 
 async function loadTopAuthors() {
   const container = document.getElementById('top-authors');
   if (!container) return;
 
-  const data = await _statsPost('top_authors');
-  const authors = data?.ok && Array.isArray(data.authors) ? data.authors : [];
+  const data    = await _statsPost('top_authors');
+  let   authors = data?.ok && Array.isArray(data.authors) ? data.authors : [];
+  const current = window.IBlog?.state?.currentUser || null;
 
   if (!authors.length) {
-    container.innerHTML = '<div style="font-size:13px;color:var(--text2);padding:8px 0;">No data yet.</div>';
+    container.innerHTML = '<div style="font-size:13px;color:var(--text2);padding:8px 0;font-style:italic;">No data yet.</div>';
     return;
   }
 
-  container.innerHTML = authors.map((author, index) => {
-    const colors = ['hsl(40,75%,48%)', 'hsl(200,60%,46%)', 'hsl(140,42%,42%)', 'hsl(12,72%,56%)', 'hsl(325,50%,48%)'];
-    const color = colors[index % colors.length];
-    const resolved = _resolveAuthorProfile(author);
-    const profilePayload = {
-      id: author.id ?? null,
-      name: author.name || '',
-      plan: resolved.plan,
-      isPremium: resolved.isPremium,
-      avatar: resolved.avatar,
-      cover: resolved.cover,
-      bio: resolved.bio,
-      initial: resolved.initial,
+  // Enrich every author with real stats from local articles
+  authors = authors.map((author) => {
+    const local = _computeAuthorStats(author);
+    const totalInteractions = Number(author.totalInteractions || 0)
+      || (local.articleCount + local.totalLikes + local.totalComments + local.totalViews);
+    return {
+      ...author,
+      // Prefer API value if non-zero, otherwise fall back to local count
+      articleCount : Number(author.articleCount  || 0) || local.articleCount,
+      totalLikes   : Number(author.totalLikes    || 0) || local.totalLikes,
+      totalComments: Number(author.totalComments || 0) || local.totalComments,
+      totalViews   : Number(author.totalViews    || 0) || local.totalViews,
+      totalInteractions,
     };
+  });
+  authors = authors
+    .filter((author) => Number(author?.totalInteractions || 0) > 0)
+    .sort((a, b) =>
+      (Number(b.totalInteractions || 0) - Number(a.totalInteractions || 0))
+      || (Number(b.totalLikes || 0) - Number(a.totalLikes || 0))
+      || (Number(b.totalComments || 0) - Number(a.totalComments || 0))
+      || (Number(b.totalViews || 0) - Number(a.totalViews || 0))
+      || (Number(b.articleCount || 0) - Number(a.articleCount || 0))
+      || String(a.name || '').localeCompare(String(b.name || ''))
+    );
+
+  if (!authors.length) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text2);padding:8px 0;font-style:italic;">No data yet.</div>';
+    return;
+  }
+
+  const colors = [
+    'hsl(40,75%,48%)',
+    'hsl(200,60%,46%)',
+    'hsl(140,42%,42%)',
+    'hsl(12,72%,56%)',
+    'hsl(325,50%,48%)',
+  ];
+
+  container.innerHTML = authors.map((author, index) => {
+    const color    = colors[index % colors.length];
+    const resolved = _resolveAuthorProfile(author);
+    const isCurrentUser = _authorMatches(current, author);
+
+    const profilePayload = {
+      id       : author.id ?? null,
+      name     : author.name  || '',
+      email    : author.email || '',
+      plan     : resolved.plan,
+      isPremium: resolved.isPremium,
+      avatar   : resolved.avatar,
+      cover    : resolved.cover,
+      bio      : resolved.bio,
+      initial  : resolved.initial,
+    };
+
     const avatarStyle = resolved.avatar
-      ? `background-image:url('${String(resolved.avatar).replace(/'/g, '&#39;')}');background-size:cover;background-position:center;background-color:transparent;`
+      ? `background-image:url('${String(resolved.avatar).replace(/'/g, "&#39;")}');background-size:cover;background-position:center;`
       : `background:${color};`;
+
     const avatarHtml = `
       <div class="author-avatar${resolved.avatar ? ' has-image' : ''}" style="${avatarStyle}">
         ${resolved.avatar ? '' : resolved.initial}
       </div>`;
-    const authorMeta = `${Number(author.totalLikes || 0)} likes | ${Number(author.articleCount || 0)} articles`;
+
+    // Meta line: likes · comments · articles
+    const metaParts = [
+      `${_fmt(author.totalLikes)}    likes`,
+      `${_fmt(author.totalComments)} comments`,
+      `${author.articleCount} art.`,
+      `${_fmt(author.totalInteractions)} interactions`,
+    ].join(' · ');
 
     return `
-      <div class="author-item">
+      <div class="author-item${isCurrentUser ? ' is-self' : ''}">
         <div class="author-main"
              onclick="IBlog.Profile?.openUserProfile?.(JSON.parse(decodeURIComponent('${_payload(profilePayload)}')))">
           ${avatarHtml}
           <div class="author-copy">
             <div class="author-name-row">
               <div class="author-name">${_esc(author.name)}</div>
-              ${author.isPremium ? '<span class="author-badge">Premium</span>' : ''}
+              ${resolved.isPremium ? '<span class="author-badge">Premium</span>' : ''}
             </div>
-            <div class="author-meta">${_esc(authorMeta)}</div>
+            <div class="author-meta">${_esc(metaParts)}</div>
           </div>
         </div>
-        <div class="author-actions">
-          <button class="follow-btn follow-btn-accent"
-            onclick="event.stopPropagation(); IBlog.MessageCenter?.startConversation?.(JSON.parse(decodeURIComponent('${_payload(profilePayload)}')))">
-            Message
-          </button>
-          <button class="follow-btn"
-            onclick="event.stopPropagation(); this.classList.toggle('following'); this.textContent=this.classList.contains('following')?'Following':'Follow';">
-            Follow
-          </button>
-        </div>
+        ${isCurrentUser ? '' : `
+          <div class="author-actions">
+            <button class="follow-btn follow-btn-accent"
+              onclick="event.stopPropagation(); IBlog.MessageCenter?.startConversation?.(JSON.parse(decodeURIComponent('${_payload(profilePayload)}')))">
+              Message
+            </button>
+            <button class="follow-btn"
+              onclick="event.stopPropagation(); this.classList.toggle('following'); this.textContent = this.classList.contains('following') ? 'Following' : 'Follow';">
+              Follow
+            </button>
+          </div>
+        `}
       </div>`;
   }).join('');
 }
 
+/* ── Trending topics ─────────────────────────────────────── */
+
 function loadTrendingTopics() {
   const container = document.getElementById('trending-chips');
   if (!container) return;
+
   const trendingTopics = Array.isArray(window.IBlog?.TRENDS)
-    ? window.IBlog.TRENDS.map((trend, index) => ({
-        name: trend?.topic || '',
-        count: trend?.searches || '',
-        active: index === 0,
-      })).filter((topic) => topic.name)
+    ? window.IBlog.TRENDS
+        .map((trend, index) => ({
+          name  : trend?.topic    || '',
+          count : trend?.searches || '',
+          active: index === 0,
+        }))
+        .filter((topic) => topic.name)
     : [];
 
   if (!trendingTopics.length) {
@@ -264,9 +374,8 @@ function loadTrendingTopics() {
     <span class="topic-chip${topic.active ? ' active' : ''}"
       onclick="selectTrendingTopic(JSON.parse(decodeURIComponent('${_payload(topic.name)}')))">
       ${_esc(topic.name)}
-      <span style="font-size:10px;opacity:.65;margin-left:3px;">${topic.count}</span>
-    </span>
-  `).join('');
+      <span style="font-size:10px;opacity:.6;margin-left:2px;">${topic.count}</span>
+    </span>`).join('');
 }
 
 function selectTrendingTopic(topic) {
@@ -275,6 +384,8 @@ function selectTrendingTopic(topic) {
   });
   IBlog.Search?.focusAndNavigate(topic);
 }
+
+/* ── Communities ─────────────────────────────────────────── */
 
 function _railAbbr(name) {
   if (!name) return '?';
@@ -295,17 +406,17 @@ function _extractJsonObject(text) {
 async function _fetchJoinedCommunityIds() {
   try {
     const currentUser = window.IBlog?.state?.currentUser || {};
-    const params = new URLSearchParams({ action: 'getUserCommunities' });
-    if (currentUser?.id) params.set('userId', String(currentUser.id));
+    const params      = new URLSearchParams({ action: 'getUserCommunities' });
+    if (currentUser?.id)    params.set('userId',    String(currentUser.id));
     if (currentUser?.email) params.set('userEmail', currentUser.email);
     const response = await fetch(`${COMMUNITY_API}?${params.toString()}`, {
       credentials: 'same-origin',
     });
-    const text = await response.text();
+    const text    = await response.text();
     const payload = _extractJsonObject(text);
     if (!payload) return new Set();
-    const parsed = JSON.parse(payload);
-    const rows = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.communities) ? parsed.communities : []);
+    const parsed  = JSON.parse(payload);
+    const rows    = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.communities) ? parsed.communities : []);
     return new Set(rows.map((item) => String(item?.id)));
   } catch (_) {
     return new Set();
@@ -324,8 +435,8 @@ function _resolveJoinedCommunityIds() {
   return new Set(
     window.IBlog.COMMUNITIES
       .map((community, idx) => ({ community, idx }))
-      .filter(({ idx }) => joinedIndexes.has(idx))
-      .map(({ community }) => String(community?.id))
+      .filter(({ idx })      => joinedIndexes.has(idx))
+      .map(({ community })   => String(community?.id))
   );
 }
 
@@ -333,38 +444,42 @@ async function loadRailCommunities() {
   const container = document.getElementById('rail-communities');
   if (!container) return;
 
-  if (window.IBlog?.COMMUNITIES) {
-    let joinedIds = _resolveJoinedCommunityIds();
-    if (!joinedIds.size) {
-      joinedIds = await _fetchJoinedCommunityIds();
-      IBlog.state.joinedCommunityIds = joinedIds;
-    }
-
-    const joinedComms = IBlog.COMMUNITIES.filter((community) => joinedIds.has(String(community?.id)));
-
-    if (!joinedComms.length) {
-      container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
-      return;
-    }
-
-    container.innerHTML = joinedComms.map((community) => `
-      <div class="rail-comm-item">
-        <div class="rail-comm-icon">${_railAbbr(community.name)}</div>
-        <div class="rail-comm-info">
-          <div class="rail-comm-name">${_esc(community.name)}</div>
-        </div>
-        <div class="rail-comm-actions">
-          <button class="rail-comm-btn rail-comm-btn-open"
-            onclick="IBlog.Communities?.openChat(${Number(community?.id || 0)})">Enter Chat</button>
-          <button class="rail-comm-btn rail-comm-btn-leave"
-            onclick="IBlog.Communities?.leave(${Number(community?.id || 0)}); setTimeout(loadRailCommunities, 120);">Leave</button>
-        </div>
-      </div>`).join('');
+  if (!window.IBlog?.COMMUNITIES) {
+    container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
     return;
   }
 
-  container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+  let joinedIds = _resolveJoinedCommunityIds();
+  if (!joinedIds.size) {
+    joinedIds = await _fetchJoinedCommunityIds();
+    IBlog.state.joinedCommunityIds = joinedIds;
+  }
+
+  const joinedComms = IBlog.COMMUNITIES.filter(
+    (community) => joinedIds.has(String(community?.id))
+  );
+
+  if (!joinedComms.length) {
+    container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+    return;
+  }
+
+  container.innerHTML = joinedComms.map((community) => `
+    <div class="rail-comm-item">
+      <div class="rail-comm-icon">${_railAbbr(community.name)}</div>
+      <div class="rail-comm-info">
+        <div class="rail-comm-name">${_esc(community.name)}</div>
+      </div>
+      <div class="rail-comm-actions">
+        <button class="rail-comm-btn rail-comm-btn-open"
+          onclick="IBlog.Communities?.openChat(${Number(community?.id || 0)})">Enter Chat</button>
+        <button class="rail-comm-btn rail-comm-btn-leave"
+          onclick="IBlog.Communities?.leave(${Number(community?.id || 0)}); setTimeout(loadRailCommunities, 120);">Leave</button>
+      </div>
+    </div>`).join('');
 }
+
+/* ── Digest ──────────────────────────────────────────────── */
 
 function subscribeToDigest() {
   const emailInput = document.querySelector('.digest-email');
@@ -378,10 +493,11 @@ function subscribeToDigest() {
   IBlog.utils?.toast('Subscribed! Weekly digest incoming.', 'success');
 }
 
+/* ── Auto-refresh ────────────────────────────────────────── */
+
 function setupStatsAutoRefresh() {
-  if (_statsIntervalId) {
-    clearInterval(_statsIntervalId);
-  }
+  if (_statsIntervalId) clearInterval(_statsIntervalId);
+
   _statsIntervalId = setInterval(() => {
     loadUserStats();
     loadTopAuthors();
@@ -400,7 +516,10 @@ function setupStatsAutoRefresh() {
     });
     window.addEventListener('storage', (event) => {
       if (!event?.key) return;
-      if (String(event.key).includes('savedarticle') || String(event.key).includes('iblog_')) {
+      if (
+        String(event.key).includes('savedarticle') ||
+        String(event.key).includes('iblog_')
+      ) {
         loadUserStats();
         loadTopAuthors();
       }
@@ -409,13 +528,15 @@ function setupStatsAutoRefresh() {
   }
 }
 
+/* ── Public API ──────────────────────────────────────────── */
+
 window.RightRail = {
-  init: initRightRail,
+  init           : initRightRail,
   buildCommunities: loadRailCommunities,
-  loadCommunities: loadRailCommunities,
-  buildTopics: loadTrendingTopics,
-  buildAuthors: loadTopAuthors,
-  refreshStats: loadUserStats,
-  refreshAuthors: loadTopAuthors,
-  subscribe: subscribeToDigest,
+  loadCommunities : loadRailCommunities,
+  buildTopics    : loadTrendingTopics,
+  buildAuthors   : loadTopAuthors,
+  refreshStats   : loadUserStats,
+  refreshAuthors : loadTopAuthors,
+  subscribe      : subscribeToDigest,
 };

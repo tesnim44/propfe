@@ -9,7 +9,7 @@
   <div class="search-full">
     <input
       type="text"
-      id="smart-search-input"
+      id="search-input"
       placeholder='Essayez : "IA éthique" ou "futur du travail"…'
       onkeydown="if (event.key === 'Enter') IBlog.Search.doSearch();"
     />

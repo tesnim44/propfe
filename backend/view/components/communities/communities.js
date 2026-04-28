@@ -69,7 +69,41 @@ IBlog.Communities = (() => {
 
     root.innerHTML = `
       <div class="view-panel" id="view-communities">
-        <div class="view-header"><h1>Community Spaces</h1><p>Topic-based communities for deep knowledge sharing</p></div>
+        <div class="view-header">
+          <div class="comm-header-row">
+            <div>
+              <h1>Community Spaces</h1>
+              <p>Topic-based communities for deep knowledge sharing</p>
+            </div>
+            <button
+              class="btn btn-primary comm-create-btn"
+              id="create-community-btn"
+              type="button"
+            >
+              Create Community
+            </button>
+          </div>
+        </div>
+        <div class="comm-search-wrap">
+          <span class="comm-search-icon">⌕</span>
+          <input
+            id="comm-search"
+            class="comm-search-input"
+            type="search"
+            placeholder="Search communities, topics, or creators..."
+            autocomplete="off"
+          />
+          <button
+            class="comm-search-clear"
+            id="comm-search-clear"
+            type="button"
+            onclick="IBlog.Communities.clearSearch()"
+            style="display:none"
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        </div>
         <div class="community-grid" id="comm-grid"></div>
       </div>
     `;
@@ -160,8 +194,8 @@ IBlog.Communities = (() => {
     _injectCreateModal();
 
     if (!_initialized) {
-      window.addEventListener('auth:login', async () => {
-        await _fetchJoined();
+      window.addEventListener('iblog:session-changed', async () => {
+        await Promise.all([_fetchCommunities(), _fetchJoined()]);
         _checkCreateBtn();
         _buildCards();
         _syncRail();
@@ -177,13 +211,7 @@ IBlog.Communities = (() => {
     btn.style.display = 'flex';
     const f = btn.cloneNode(true);
     btn.parentNode.replaceChild(f, btn);
-    const u = _cu();
-    f.onclick = _prem(u)
-      ? () => showCreateCommunityModal()
-      : () => {
-          IBlog.utils?.toast('Create communities with Premium!', 'info');
-          typeof showPremium === 'function' && showPremium();
-        };
+    f.onclick = () => showCreateCommunityModal();
   }
 
   /* ── Build community cards ───────────────────────────── */
@@ -454,7 +482,8 @@ IBlog.Communities = (() => {
       const res  = await fetch(`${API}?action=create`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, description: desc, topics: tags }),
+        credentials: 'same-origin',
+        body:    JSON.stringify({ name, description: desc, topics: tags, ..._authPayload() }),
       });
       const text = await res.text();
       let data;

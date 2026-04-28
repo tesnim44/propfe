@@ -8,4 +8,7 @@
 @media(max-width:1400px){.dash-layout{grid-template-columns:280px minmax(0,1fr) 320px;}}
 @media(max-width:1200px){.dash-layout{grid-template-columns:248px minmax(0,1fr) 288px;}}
 @media(max-width:1000px){#right-rail-root,.right-rail{display:none;}.dash-layout{grid-template-columns:248px minmax(0,1fr);}}
-@media(max-width:700px){#left-rail-root,.left-rail{display:none;}.dash-layout{grid-template-columns:1fr;}}
+@media(max-width:700px){
+  .dash-layout{grid-template-columns:1fr;}
+  #left-rail-root{grid-column:auto;height:auto;overflow:visible;}
+}
