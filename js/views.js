@@ -50,20 +50,20 @@ IBlog.Views = (() => {
         Object.entries(IBlog.COUNTRY_DATA).forEach(([name, data]) => {
           if (!data.coords) return;
           const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b8960c';
+          const safeCountry = String(name).replace(/'/g, "\\'");
+          const safeFlag = String(data.flag || '🌐');
           const marker = L.circleMarker(data.coords, {
             radius: 10, fillColor: accent, color: '#fff', weight: 2,
             opacity: 1, fillOpacity: 0.85,
           }).addTo(_mapInstance);
 
           marker.bindPopup(`
-<div style="font-family:'DM Sans',sans-serif;min-width:170px;padding:4px;">
-  <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${data.flag} ${name}</div>
-  <div style="font-size:12px;color:#666;margin-bottom:8px;">${data.articles.length} trending articles</div>
-  <button onclick="IBlog.Views.selectCountry('${name}')" 
-    style="background:${accent};color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;">
-    View Feed →
-  </button>
-</div>`, { maxWidth: 220 });
+<div class="map-popup">
+  <div class="map-popup__eyebrow">${safeFlag} ${name}</div>
+  <div class="map-popup__title">${data.articles.length} trending articles</div>
+  <div class="map-popup__meta">Open the country feed to see the most relevant stories, authors, and topics right now.</div>
+  <button class="map-popup__button" onclick="IBlog.Views.selectCountry('${safeCountry}')">View Feed →</button>
+</div>`, { maxWidth: 260, className: 'map-popup-shell' });
           marker.bindTooltip(name, { permanent: false, direction: 'top' });
           marker.on('click', () => selectCountry(name));
         });
@@ -78,6 +78,30 @@ IBlog.Views = (() => {
     _buildCountryFeed(name);
     const feed = document.getElementById('country-feed');
     if (feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function openArticleFromLanding(index) {
+    const source = Array.isArray(IBlog.state?.articles) && IBlog.state.articles.length
+      ? IBlog.state.articles
+      : (IBlog.SEED_ARTICLES || []);
+    const article = source.find(item => String(item?.id) === String(index))
+      || source[index]
+      || source[0];
+
+    if (!article) return;
+
+    if (!window.IBlogSession?.getUser?.()) {
+      window.setPendingArticle?.(article.id);
+      if (typeof showSignin === 'function') showSignin();
+      return;
+    }
+
+    document.getElementById('landing-page')?.style.setProperty('display', 'none');
+    document.getElementById('dashboard')?.style.setProperty('display', 'block');
+    if (!document.getElementById('view-home')?.classList.contains('active')) {
+      IBlog.Dashboard?.enter?.();
+    }
+    setTimeout(() => IBlog.Feed?.openReader?.(article.id), 180);
   }
 
   function _buildCountryFeed(country) {
@@ -196,56 +220,7 @@ IBlog.Views = (() => {
   }
 
   /* ── Smart Search ────────────────────────────────────── */
-  function doSearch() {
-    const q = document.getElementById('smart-search-input')?.value.trim();
-    const results = document.getElementById('search-results');
-    if (!results) return;
-    if (!q) {
-      results.innerHTML = '<div class="empty-state"><div class="emoji">🔍</div><p>Type to search the IBlog universe…</p></div>';
-      return;
-    }
-    const semantic = {
-      'ethics': ['AI ethics', 'bias', 'responsibility', 'moral'],
-      'quantum': ['quantum computing', 'physics', 'qubit'],
-      'startup': ['founder', 'bootstrapped', 'growth', 'venture'],
-      'future': ['trends', 'prediction', 'emerging', 'next decade'],
-      'climate': ['climate change', 'carbon', 'renewable', 'green'],
-      'sleep': ['sleep', 'rest', 'circadian', 'nap'],
-    };
-    const extra = Object.entries(semantic).find(([k]) => q.toLowerCase().includes(k))?.[1] || [];
-    const terms = [q, ...extra];
-    const matched = IBlog.state.articles.filter(a =>
-      terms.some(s =>
-        a.title.toLowerCase().includes(s.toLowerCase()) ||
-        a.excerpt.toLowerCase().includes(s.toLowerCase()) ||
-        (a.tags || []).some(t => t.toLowerCase().includes(s.toLowerCase())) ||
-        a.cat.toLowerCase().includes(s.toLowerCase())
-      )
-    );
-    const hl = (text, s) => text.replace(new RegExp(s, 'gi'), m => `<span class="search-highlight">${m}</span>`);
-    if (!matched.length) {
-      results.innerHTML = `<div class="search-semantic-info">🧠 Semantic expansion for "${q}" found no matches</div><div class="empty-state"><div class="emoji">😕</div><p>No results. Try: AI, Science, Startups, Climate…</p></div>`;
-      return;
-    }
-    results.innerHTML =
-      `<div class="search-semantic-info">🧠 AI found ${matched.length} semantically relevant result${matched.length > 1 ? 's' : ''} for "${q}"</div>` +
-      matched.map(a => `
-<div class="search-result" onclick="IBlog.Feed.openReader(${a.id})">
-  <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
-    <span class="card-cat">${a.cat}</span>
-    <span style="font-size:11px;color:var(--text2);">⏱ ${a.readTime}</span>
-    <span style="font-size:11px;color:var(--text2);">♥ ${a.likes}</span>
-  </div>
-  <h4>${hl(a.title, q)}</h4>
-  <p>${hl(a.excerpt.substring(0, 130) + '…', q)}</p>
-</div>`).join('');
-  }
-
-  function searchTopic(t) {
-    IBlog.Dashboard.navigateTo('search');
-    const inp = document.getElementById('smart-search-input');
-    if (inp) { inp.value = t; doSearch(); }
-  }
+  
 
   /* ── Writer ──────────────────────────────────────────── */
   function buildTemplates() {
@@ -277,16 +252,78 @@ IBlog.Views = (() => {
     injectSection(`[${text || url}](${url})`);
   }
 
+  function _syncCoverPreview(url = '', fileName = '') {
+    const preview = document.getElementById('writer-cover-preview');
+    const nameEl = document.getElementById('writer-cover-name');
+    const removeBtn = document.getElementById('writer-cover-remove');
+    const hiddenField = document.getElementById('article-img');
+
+    if (hiddenField) hiddenField.value = url || '';
+
+    if (nameEl) {
+      nameEl.textContent = fileName || (url ? 'Cover image selected' : 'No cover image selected');
+    }
+
+    if (!preview) return;
+
+    if (url) {
+      preview.classList.remove('is-empty');
+      preview.classList.add('has-image');
+      preview.style.backgroundImage = `url("${url}")`;
+    } else {
+      preview.classList.add('is-empty');
+      preview.classList.remove('has-image');
+      preview.style.backgroundImage = '';
+    }
+
+    if (removeBtn) {
+      removeBtn.style.display = url ? 'inline-flex' : 'none';
+    }
+  }
+
+  function _insertBodyImage(url, altText = 'Uploaded image') {
+    const editor = document.getElementById('article-editor');
+    if (!editor) return;
+
+    const snippet = `\n\n![${altText}](${url})\n\n`;
+    const start = Number(editor.selectionStart ?? editor.value.length);
+    const end = Number(editor.selectionEnd ?? editor.value.length);
+    const value = editor.value || '';
+
+    editor.value = value.slice(0, start) + snippet + value.slice(end);
+    editor.selectionStart = editor.selectionEnd = start + snippet.length;
+    editor.focus();
+
+    analyzeQuality();
+    IBlog.Writer?._renderNow?.();
+  }
+
   function handleImgUpload(input) {
-    const file = input.files[0];
+    const file = input?.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = e => {
-      const imgEl = document.getElementById('article-img');
-      if (imgEl) imgEl.value = e.target.result;
-      IBlog.utils.toast('Image added as cover!', 'success');
+    reader.onload = (e) => {
+      const imageUrl = String(e?.target?.result || '');
+      const inputId = String(input?.id || '');
+
+      if (inputId === 'writer-img-upload') {
+        _insertBodyImage(imageUrl, file.name.replace(/\.[^.]+$/, '') || 'Uploaded image');
+        IBlog.utils.toast('Image inserted into the draft.', 'success');
+      } else {
+        _syncCoverPreview(imageUrl, file.name || 'Cover image selected');
+        IBlog.Writer?._renderNow?.();
+        IBlog.utils.toast('Image added as cover!', 'success');
+      }
+
+      input.value = '';
     };
     reader.readAsDataURL(file);
+  }
+
+  function removeCoverImage() {
+    _syncCoverPreview('', '');
+    IBlog.Writer?._renderNow?.();
   }
 function analyzeQuality() {
     const text  = document.getElementById('article-editor')?.value || '';
@@ -450,7 +487,7 @@ function analyzeQuality() {
         </div>`).join('');
     }
   }
-function publishArticle() {
+function legacyPublishArticle() {
     const title   = document.getElementById('article-title')?.value.trim();
     const text    = document.getElementById('article-editor')?.value.trim();
     const cat     = document.getElementById('article-cat')?.value;
@@ -510,6 +547,131 @@ function publishArticle() {
     IBlog.utils.toast(isPrem ? '⭐ Premium article published!' : '🚀 Article published!', 'success');
   }
 
+  async function _saveWriterArticle(nextStatus) {
+    const title   = document.getElementById('article-title')?.value.trim();
+    const text    = document.getElementById('article-editor')?.value.trim();
+    const cat     = document.getElementById('article-cat')?.value;
+    const imgUrl  = document.getElementById('article-img')?.value.trim() || '';
+    const tagsVal = document.getElementById('article-tags')?.value || '';
+    const editor  = document.getElementById('article-editor');
+    const editId  = editor?.dataset?.editId;
+    const normalizedStatus = nextStatus === 'draft' ? 'draft' : 'published';
+    const hasContent = !!title || !!text;
+    if (normalizedStatus === 'published' && (!title || !text)) {
+      IBlog.utils.toast('Add a title and content first!', 'error');
+      return false;
+    }
+    if (normalizedStatus === 'draft' && !hasContent) {
+      IBlog.utils.toast('Add a title or some content before saving a draft.', 'error');
+      return false;
+    }
+    const isPrem = IBlog.state.currentUser?.plan === 'premium';
+    const tags   = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
+    const category = cat !== 'Select Category' ? cat : 'General';
+    const existing = editId
+      ? (IBlog.state.articles || []).find(x => String(x?.id) === String(editId))
+      : null;
+    const previousStatus = editor?.dataset?.editStatus || existing?.status || 'published';
+    const payload = {
+      title,
+      body: text,
+      category,
+      tags: tags.join(', '),
+      status: normalizedStatus,
+      coverImage: imgUrl,
+      readingTime: Math.max(1, Math.ceil(Math.max(1, text.split(/\s+/).filter(Boolean).length) / 200)) + ' min',
+      label: IBlog.Templates?.selectedId?.() || 'none',
+    };
+
+    try {
+      if (editId && /^\d+$/.test(String(editId)) && window.IBlogArticleSync?.update) {
+        await window.IBlogArticleSync.update(Number(editId), payload);
+        _clearWriter();
+        IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+        if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+        else if (previousStatus === 'draft') IBlog.utils.toast('Draft published!', 'success');
+        else IBlog.utils.toast('Article updated!', 'success');
+        return true;
+      }
+
+      if (!editId && window.IBlogArticleSync?.save) {
+        await window.IBlogArticleSync.save(payload);
+        _clearWriter();
+        IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+        if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+        else IBlog.utils.toast(isPrem ? 'Premium article published!' : 'Article published!', 'success');
+        return true;
+      }
+    } catch (error) {
+      console.error('Writer save failed:', error);
+      IBlog.utils.toast(error?.message || 'Could not save this article.', 'error');
+      return false;
+    }
+
+    if (editId && existing) {
+      Object.assign(existing, {
+        title,
+        body: text,
+        excerpt: text.substring(0,160) + (text.length>160?'...':''),
+        cat: category,
+        category,
+        img: imgUrl || existing.img || null,
+        cover: imgUrl || existing.cover || existing.img || null,
+        readTime: payload.readingTime,
+        tags,
+        templateId: IBlog.Templates?.selectedId?.() || existing.templateId || null,
+        status: normalizedStatus,
+      });
+      _clearWriter();
+      IBlog.Feed.build();
+      buildMyArticles();
+      IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+      if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+      else if (previousStatus === 'draft') IBlog.utils.toast('Draft published!', 'success');
+      else IBlog.utils.toast('Article updated!', 'success');
+      return true;
+    }
+
+    const a = {
+      id: Date.now(),
+      author:        IBlog.state.currentUser?.name || 'Amara',
+      authorInitial: IBlog.state.currentUser?.initial || 'A',
+      authorColor:   'var(--accent)',
+      cat:           category,
+      category,
+      img:           imgUrl || null,
+      cover:         imgUrl || null,
+      title,
+      excerpt:       text.substring(0,160) + (text.length>160?'...':''),
+      body:          text,
+      templateId:    IBlog.Templates?.selectedId() || null,
+      readTime:      payload.readingTime,
+      likes: 0, comments: [], reposts: 0,
+      bookmarked: false, liked: false,
+      quality: text.length > 300 ? 'high' : 'med',
+      isPremiumAuthor: isPrem,
+      tags,
+      date: 'Just now',
+      status: normalizedStatus,
+    };
+    IBlog.state.articles.unshift(a);
+    _clearWriter();
+    IBlog.Feed.build();
+    buildMyArticles();
+    IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+    if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+    else IBlog.utils.toast(isPrem ? 'Premium article published!' : 'Article published!', 'success');
+    return true;
+  }
+
+  function publishArticle() {
+    return _saveWriterArticle('published');
+  }
+
+  function saveDraftArticle() {
+    return _saveWriterArticle('draft');
+  }
+
   function _clearWriter() {
     ['article-title','article-editor','article-img','article-tags'].forEach(id => {
       const el = document.getElementById(id);
@@ -517,6 +679,11 @@ function publishArticle() {
     });
     const catEl = document.getElementById('article-cat');
     if (catEl) catEl.value = 'Select Category';
+    const editor = document.getElementById('article-editor');
+    if (editor) {
+      delete editor.dataset.editId;
+      delete editor.dataset.editStatus;
+    }
     document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
     const badge = document.getElementById('wtr-tpl-badge');
     if (badge) badge.style.display = 'none';
@@ -535,33 +702,11 @@ function publishArticle() {
 
   /* ── My Articles ─────────────────────────────────────── */
   function buildMyArticles() {
-    const el = document.getElementById('my-articles-list');
-    if (!el) return;
-    const mine = IBlog.state.articles.filter(a => a.authorInitial === IBlog.state.currentUser?.initial);
-    if (!mine.length) {
-      el.innerHTML = '<div class="empty-state"><div class="emoji">📝</div><p>No articles yet.</p><button class="btn btn-primary" onclick="IBlog.Dashboard.navigateTo(\'write\')" style="margin-top:14px;">Write your first article</button></div>';
-      return;
-    }
-    const isPrem = IBlog.state.currentUser?.plan === 'premium';
-    el.innerHTML = mine.map(a => `
-<div class="my-article-row" id="myart-${a.id}">
-  <div class="my-article-thumb" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${a.id*44%360},40%,${document.body.classList.contains('dark')?'20%':'85%'});`}">
-    ${a.img ? '' : '✍️'}
-  </div>
-  <div class="my-article-info">
-    <div class="my-article-title">${a.title}</div>
-    <div class="my-article-meta">
-      ♥ ${a.likes} &nbsp;·&nbsp; 👁 ${IBlog.utils.formatNumber(a.likes * 8)} &nbsp;·&nbsp; ⏱ ${a.readTime} &nbsp;·&nbsp; ${a.cat}
-      &nbsp;·&nbsp; <span class="${a.quality === 'high' ? 'quality-high' : 'quality-med'}">${a.quality === 'high' ? '★ High' : '◐ Good'}</span>
-    </div>
-  </div>
-  <div class="my-article-actions">
-    <button class="edit-btn-small" onclick="IBlog.Feed.editArticle(${a.id})">
-      ✏️ Edit ${!isPrem ? '<span class="badge badge-premium" style="font-size:9px">⭐</span>' : ''}
-    </button>
-    <button class="delete-btn-small" onclick="IBlog.Feed.deleteArticle(${a.id})">🗑</button>
-  </div>
-</div>`).join('');
+    IBlog.MyArticles?.load?.();
+  }
+
+  function buildMessages() {
+    return IBlog.MessageCenter?.build?.();
   }
 
   /* ── Saved ───────────────────────────────────────────── */
@@ -572,11 +717,12 @@ function publishArticle() {
       el.innerHTML = '<div class="empty-state"><div class="emoji">🔖</div><p>No saved articles. Bookmark from the feed.</p></div>';
       return;
     }
-    const tmp = document.createElement('div');
-    IBlog.state.savedArticles.forEach(a => {
-      const card = document.createElement('div');
-      card.innerHTML = IBlog.Feed._cardHTML ? IBlog.Feed._cardHTML(a) : '';
-      el.appendChild(card.firstChild || card);
+    el.innerHTML = '';
+    IBlog.state.savedArticles.forEach((article, index) => {
+      const card = IBlog.ArticleCard?.render?.(article, index);
+      if (card) {
+        el.appendChild(card);
+      }
     });
   }
 
@@ -626,11 +772,16 @@ function publishArticle() {
   /* ── Public API ──────────────────────────────────────── */
   return {
     initMap, selectCountry, openMapArticle,
+    openArticleFromLanding,
     buildActivity,
     buildTrends,
-    doSearch, searchTopic,
-    buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle,
-    buildMyArticles, buildSaved, buildNotifications,
+    buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle, saveDraftArticle,
+    handleImgUpload, removeCoverImage, refreshCoverPreview: _syncCoverPreview,
+    buildMyArticles, buildSaved, buildNotifications, buildMessages,
      buildAccentPicker, buildCategorySelect,
   };
 })();
+
+window.openArticleFromLanding = function (index) {
+  return IBlog.Views.openArticleFromLanding(index);
+};

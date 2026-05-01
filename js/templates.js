@@ -250,24 +250,32 @@ IBlog.Templates = (() => {
 
   let _selected = null;
 
-  function selectTemplate(id, el) {
-    const isPrem = IBlog.state.currentUser?.plan === 'premium';
-    if (!isPrem) { IBlog.Auth?.showPremium?.(); return; }
-    _selected = id;
-    document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('selected'));
-    if (el) el.classList.add('selected');
-    /* Update badge */
+  function setSelected(id, options = {}) {
+    _selected = id || null;
+    document.querySelectorAll('.tpl-card').forEach(c => {
+      c.classList.toggle('selected', !!id && c.dataset.tpl === id);
+    });
+
     const badge  = document.getElementById('wtr-tpl-badge');
     const nameEl = document.getElementById('wtr-tpl-name');
     const tpl    = get(id);
-    if (badge)  badge.style.display  = tpl ? 'flex' : 'none';
-    if (nameEl) nameEl.textContent   = tpl ? tpl.name : '';
-    /* Update subtitle (no hint text) */
+    if (badge)  badge.style.display = tpl ? 'flex' : 'none';
+    if (nameEl) nameEl.textContent  = tpl ? tpl.name : 'No template';
+
     const sub = document.getElementById('template-subtitle');
     if (sub) sub.textContent = tpl ? `${tpl.name} selected` : '';
+
+    if (!options.silent && tpl) {
+      IBlog.utils.toast(`${tpl.name} template selected`, 'success');
+    }
+  }
+
+  function selectTemplate(id, el) {
+    const isPrem = IBlog.state.currentUser?.plan === 'premium';
+    if (!isPrem) { IBlog.Auth?.showPremium?.(); return; }
+    setSelected(id, { silent: false });
     /* Trigger preview refresh if in preview mode */
     if (IBlog.Writer?._mode === 'preview') IBlog.Writer._renderNow?.();
-    IBlog.utils.toast(`${tpl?.name} template selected`, 'success');
   }
 
   function selectedId()  { return _selected; }
@@ -277,6 +285,6 @@ IBlog.Templates = (() => {
     return tpl ? tpl.render(article) : null;
   }
 
-  return { all, get, buildWriterSelector, selectTemplate, selectedId, renderForReader };
+  return { all, get, buildWriterSelector, selectTemplate, selectedId, setSelected, renderForReader };
 
 })();

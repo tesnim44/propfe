@@ -1,0 +1,14 @@
+/* ── Dashboard Layout ────────────────────────────────────── */
+#dashboard{display:none;height:100vh;min-height:100vh;overflow:hidden;background:linear-gradient(180deg,var(--bg),var(--bg2));width:100%;}
+.dash-layout{display:grid;grid-template-columns:300px minmax(0,1fr) 360px;align-items:stretch;height:100vh;min-height:100vh;width:100%;margin:0;}
+.dash-layout > *{min-width:0;}
+#left-rail-root{grid-column:1;min-width:0;height:100vh;overflow:hidden;}
+#center-feed{grid-column:2;min-width:0;height:100vh;position:relative;}
+#right-rail-root{grid-column:3;min-width:0;height:100vh;overflow:hidden;justify-self:stretch;align-self:stretch;position:relative;}
+@media(max-width:1400px){.dash-layout{grid-template-columns:280px minmax(0,1fr) 320px;}}
+@media(max-width:1200px){.dash-layout{grid-template-columns:248px minmax(0,1fr) 288px;}}
+@media(max-width:1000px){#right-rail-root,.right-rail{display:none;}.dash-layout{grid-template-columns:248px minmax(0,1fr);}}
+@media(max-width:700px){
+  .dash-layout{grid-template-columns:1fr;}
+  #left-rail-root{grid-column:auto;height:auto;overflow:visible;}
+}
