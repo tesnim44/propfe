@@ -50,20 +50,20 @@ IBlog.Views = (() => {
         Object.entries(IBlog.COUNTRY_DATA).forEach(([name, data]) => {
           if (!data.coords) return;
           const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b8960c';
+          const safeCountry = String(name).replace(/'/g, "\\'");
+          const safeFlag = String(data.flag || '🌐');
           const marker = L.circleMarker(data.coords, {
             radius: 10, fillColor: accent, color: '#fff', weight: 2,
             opacity: 1, fillOpacity: 0.85,
           }).addTo(_mapInstance);
 
           marker.bindPopup(`
-<div style="font-family:'DM Sans',sans-serif;min-width:170px;padding:4px;">
-  <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${data.flag} ${name}</div>
-  <div style="font-size:12px;color:#666;margin-bottom:8px;">${data.articles.length} trending articles</div>
-  <button onclick="IBlog.Views.selectCountry('${name}')" 
-    style="background:${accent};color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;">
-    View Feed →
-  </button>
-</div>`, { maxWidth: 220 });
+<div class="map-popup">
+  <div class="map-popup__eyebrow">${safeFlag} ${name}</div>
+  <div class="map-popup__title">${data.articles.length} trending articles</div>
+  <div class="map-popup__meta">Open the country feed to see the most relevant stories, authors, and topics right now.</div>
+  <button class="map-popup__button" onclick="IBlog.Views.selectCountry('${safeCountry}')">View Feed →</button>
+</div>`, { maxWidth: 260, className: 'map-popup-shell' });
           marker.bindTooltip(name, { permanent: false, direction: 'top' });
           marker.on('click', () => selectCountry(name));
         });
@@ -78,6 +78,30 @@ IBlog.Views = (() => {
     _buildCountryFeed(name);
     const feed = document.getElementById('country-feed');
     if (feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function openArticleFromLanding(index) {
+    const source = Array.isArray(IBlog.state?.articles) && IBlog.state.articles.length
+      ? IBlog.state.articles
+      : (IBlog.SEED_ARTICLES || []);
+    const article = source.find(item => String(item?.id) === String(index))
+      || source[index]
+      || source[0];
+
+    if (!article) return;
+
+    if (!window.IBlogSession?.getUser?.()) {
+      window.setPendingArticle?.(article.id);
+      if (typeof showSignin === 'function') showSignin();
+      return;
+    }
+
+    document.getElementById('landing-page')?.style.setProperty('display', 'none');
+    document.getElementById('dashboard')?.style.setProperty('display', 'block');
+    if (!document.getElementById('view-home')?.classList.contains('active')) {
+      IBlog.Dashboard?.enter?.();
+    }
+    setTimeout(() => IBlog.Feed?.openReader?.(article.id), 180);
   }
 
   function _buildCountryFeed(country) {
@@ -200,98 +224,314 @@ IBlog.Views = (() => {
 
   /* ── Writer ──────────────────────────────────────────── */
   function buildTemplates() {
-    IBlog.Templates.buildWriterSelector();
+    if (IBlog.Templates?.buildWriterSelector) {
+      IBlog.Templates.buildWriterSelector();
+    }
   }
 
-  function selectTemplate(i) {
-    if (IBlog.state.currentUser?.plan !== 'premium') { IBlog.Auth.showPremium(); return; }
-    const t = IBlog.TEMPLATES[i];
-    document.querySelectorAll('.template-card').forEach((c, j) => c.classList.toggle('selected', j === i));
-    const preview = document.getElementById('template-preview');
-    const structure = document.getElementById('template-structure');
-    if (preview) preview.classList.add('visible');
-    if (structure) structure.innerHTML = t.structure.map(s =>
-      `<div onclick="IBlog.Views.injectSection('${s}')">${s}</div>`
-    ).join('');
-    IBlog.utils.toast(`📋 ${t.name} template selected`, 'success');
+  function selectTemplate(id) {
+    const el = document.querySelector(`.tpl-card[data-tpl="${id}"]`);
+    IBlog.Templates?.selectTemplate(id, el);
   }
 
-  function injectSection(s) {
+  function injectSection(prefix) {
     const ed = document.getElementById('article-editor');
-    if (ed) { ed.value += (ed.value ? '\n\n' : '') + '## ' + s + '\n\n'; analyzeQuality(); }
-    IBlog.utils.toast('Section added to editor', 'success');
+    if (!ed) return;
+    const val = ed.value;
+    const pos = ed.selectionStart;
+    ed.value = val.slice(0, pos) + prefix + val.slice(pos);
+    ed.selectionStart = ed.selectionEnd = pos + prefix.length;
+    ed.focus();
+    analyzeQuality();
   }
 
-  function analyzeQuality() {
+  function insertLink() {
+    const url = prompt('Enter URL:');
+    if (!url) return;
+    const text = prompt('Link text:', url);
+    injectSection(`[${text || url}](${url})`);
+  }
+
+  function _syncCoverPreview(url = '', fileName = '') {
+    const preview = document.getElementById('writer-cover-preview');
+    const nameEl = document.getElementById('writer-cover-name');
+    const removeBtn = document.getElementById('writer-cover-remove');
+    const hiddenField = document.getElementById('article-img');
+
+    if (hiddenField) hiddenField.value = url || '';
+
+    if (nameEl) {
+      nameEl.textContent = fileName || (url ? 'Cover image selected' : 'No cover image selected');
+    }
+
+    if (!preview) return;
+
+    if (url) {
+      preview.classList.remove('is-empty');
+      preview.classList.add('has-image');
+      preview.style.backgroundImage = `url("${url}")`;
+    } else {
+      preview.classList.add('is-empty');
+      preview.classList.remove('has-image');
+      preview.style.backgroundImage = '';
+    }
+
+    if (removeBtn) {
+      removeBtn.style.display = url ? 'inline-flex' : 'none';
+    }
+  }
+
+  function _insertBodyImage(url, altText = 'Uploaded image') {
+    const editor = document.getElementById('article-editor');
+    if (!editor) return;
+
+    const snippet = `\n\n![${altText}](${url})\n\n`;
+    const start = Number(editor.selectionStart ?? editor.value.length);
+    const end = Number(editor.selectionEnd ?? editor.value.length);
+    const value = editor.value || '';
+
+    editor.value = value.slice(0, start) + snippet + value.slice(end);
+    editor.selectionStart = editor.selectionEnd = start + snippet.length;
+    editor.focus();
+
+    analyzeQuality();
+    IBlog.Writer?._renderNow?.();
+  }
+
+  function handleImgUpload(input) {
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = String(e?.target?.result || '');
+      const inputId = String(input?.id || '');
+
+      if (inputId === 'writer-img-upload') {
+        _insertBodyImage(imageUrl, file.name.replace(/\.[^.]+$/, '') || 'Uploaded image');
+        IBlog.utils.toast('Image inserted into the draft.', 'success');
+      } else {
+        _syncCoverPreview(imageUrl, file.name || 'Cover image selected');
+        IBlog.Writer?._renderNow?.();
+        IBlog.utils.toast('Image added as cover!', 'success');
+      }
+
+      input.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeCoverImage() {
+    _syncCoverPreview('', '');
+    IBlog.Writer?._renderNow?.();
+  }
+function analyzeQuality() {
     const text  = document.getElementById('article-editor')?.value || '';
-    const title = document.getElementById('article-title')?.value || '';
-    if (text.length < 10) return;
-    const words     = text.split(/\s+/).length;
-    const sentences = (text.match(/[.!?]+/g) || []).length || 1;
-    const r = Math.min(100, Math.round(words / sentences * 6 + 15));
-    const o = Math.min(100, Math.round(text.length / 4.5));
-    const k = Math.min(100, Math.round(title.split(' ').length * 12 + 20));
-    const e = Math.min(100, Math.round((r + o) / 2));
-    [['read', r], ['orig', o], ['kw', k], ['eng', e]].forEach(([key, v]) => {
-      const val = document.getElementById('q-' + key);
-      const bar = document.getElementById('qb-' + key);
-      if (val) val.textContent = v + '%';
-      if (bar) bar.style.width = v + '%';
+    const title = document.getElementById('article-title')?.value  || '';
+ 
+    if (text.length < 20) {
+      /* Reset all */
+      ['read','depth','struct','eng'].forEach(k => {
+        const v = document.getElementById('q-' + k);
+        const b = document.getElementById('qb-' + k);
+        if (v) v.textContent = '—';
+        if (b) b.style.width = '0%';
+      });
+      document.getElementById('quality-overall')?.style.setProperty('display','none');
+      document.getElementById('quality-tips').innerHTML = '';
+      return;
+    }
+ 
+    const words      = text.trim().split(/\s+/).filter(Boolean);
+    const wordCount  = words.length;
+    const sentences  = text.split(/[.!?]+/).filter(s => s.trim().length > 3).length || 1;
+    const paragraphs = text.split(/\n\n+/).filter(p => p.trim()).length;
+    const hasHeaders = /^#{1,3} /m.test(text);
+    const hasLists   = /^[-*] /m.test(text) || /^\d+\. /m.test(text);
+    const hasQuotes  = /^> /m.test(text);
+    const titleWords = title.trim().split(/\s+/).filter(Boolean).length;
+    const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g,''))).size;
+    const avgSentLen = wordCount / sentences;
+ 
+    /* ── READABILITY ─────────────────────────────────────
+       Based on average sentence length.
+       Ideal: 15-20 words/sentence. Too long = hard to read.
+       Too short = choppy. */
+    let readScore = 100;
+    if (avgSentLen > 30)      readScore -= 40;
+    else if (avgSentLen > 25) readScore -= 25;
+    else if (avgSentLen > 20) readScore -= 10;
+    else if (avgSentLen < 8)  readScore -= 15;
+    /* Vocabulary diversity: unique/total ratio */
+    const diversity = uniqueWords / wordCount;
+    if (diversity > 0.7)      readScore += 10;
+    else if (diversity < 0.4) readScore -= 15;
+    /* Penalize very short articles */
+    if (wordCount < 50)  readScore -= 30;
+    if (wordCount < 150) readScore -= 15;
+    readScore = Math.max(5, Math.min(100, readScore));
+ 
+    /* ── DEPTH ───────────────────────────────────────────
+       Word count is the main signal. Also rewards long words
+       (technical vocabulary). */
+    let depthScore = 0;
+    if (wordCount >= 800)      depthScore = 100;
+    else if (wordCount >= 500) depthScore = 80 + Math.round((wordCount - 500) / 15);
+    else if (wordCount >= 300) depthScore = 55 + Math.round((wordCount - 300) / 10);
+    else if (wordCount >= 150) depthScore = 30 + Math.round((wordCount - 150) / 6);
+    else if (wordCount >= 50)  depthScore = 10 + Math.round((wordCount - 50) / 5);
+    else                        depthScore = Math.round(wordCount / 5);
+    /* Reward long/technical words */
+    const longWords = words.filter(w => w.length > 8).length;
+    const longRatio = longWords / wordCount;
+    if (longRatio > 0.2) depthScore += 8;
+    depthScore = Math.max(5, Math.min(100, depthScore));
+ 
+    /* ── STRUCTURE ───────────────────────────────────────
+       Rewards: good title, headers, lists, quotes, paragraphs */
+    let structScore = 20; /* base */
+    /* Title quality */
+    if (titleWords >= 5 && titleWords <= 12) structScore += 20;
+    else if (titleWords >= 3)                structScore += 10;
+    /* Headers */
+    if (hasHeaders)  structScore += 20;
+    /* Lists */
+    if (hasLists)    structScore += 15;
+    /* Quotes */
+    if (hasQuotes)   structScore += 10;
+    /* Multiple paragraphs */
+    if (paragraphs >= 5) structScore += 20;
+    else if (paragraphs >= 3) structScore += 10;
+    else if (paragraphs >= 2) structScore += 5;
+    structScore = Math.max(5, Math.min(100, structScore));
+ 
+    /* ── ENGAGEMENT ──────────────────────────────────────
+       Rewards: questions, exclamations, numbers/stats, 
+       strong openers, varied paragraph lengths */
+    let engScore = 20;
+    /* Questions engage readers */
+    const questions = (text.match(/\?/g) || []).length;
+    engScore += Math.min(20, questions * 5);
+    /* Numbers/stats add credibility */
+    const numbers = (text.match(/\b\d+[\d,.]*\s*[%kKmMbB]?\b/g) || []).length;
+    engScore += Math.min(20, numbers * 3);
+    /* Strong opener (first 100 chars not generic) */
+    const opener = text.trim().substring(0, 100).toLowerCase();
+    const weakOpeners = ['the ', 'this ', 'in this', 'today ', 'i will', 'i want'];
+    const isWeakOpener = weakOpeners.some(w => opener.startsWith(w));
+    if (!isWeakOpener && text.length > 50) engScore += 15;
+    /* Varied paragraph lengths (not all same size) */
+    const paraLengths = text.split(/\n\n+/).filter(p=>p.trim()).map(p=>p.split(/\s+/).length);
+    const avgLen = paraLengths.reduce((a,b)=>a+b,0) / (paraLengths.length||1);
+    const variance = paraLengths.reduce((s,l)=>s+Math.abs(l-avgLen),0) / (paraLengths.length||1);
+    if (variance > 20) engScore += 15;
+    engScore = Math.max(5, Math.min(100, engScore));
+ 
+    /* ── Overall ─────────────────────────────────────── */
+    const overall = Math.round((readScore * 0.25) + (depthScore * 0.35) + (structScore * 0.25) + (engScore * 0.15));
+ 
+    /* ── Update DOM ──────────────────────────────────── */
+    const scores = [['read',readScore],['depth',depthScore],['struct',structScore],['eng',engScore]];
+    scores.forEach(([k, v]) => {
+      const valEl = document.getElementById('q-' + k);
+      const barEl = document.getElementById('qb-' + k);
+      if (valEl) valEl.textContent = v + '%';
+      if (barEl) barEl.style.width = v + '%';
     });
-    const avg = (r + o + k + e) / 4;
-    const fb = document.getElementById('quality-feedback');
-    if (fb) fb.innerHTML = avg > 80
-      ? '✅ <span style="color:var(--green)">Excellent quality — ready to publish.</span>'
-      : avg > 55
-      ? '💡 <span style="color:var(--gold)">Good start — add more depth and unique angles.</span>'
-      : '📝 <span style="color:var(--text2)">Keep writing! More content = higher quality score.</span>';
+ 
+    /* Overall bar */
+    const overallEl = document.getElementById('quality-overall');
+    const gradeEl   = document.getElementById('quality-grade');
+    const pctEl     = document.getElementById('quality-pct');
+    const barEl     = document.getElementById('quality-bar-overall');
+    if (overallEl) overallEl.style.display = 'block';
+    if (pctEl)     pctEl.textContent = overall + '%';
+    if (barEl) {
+      barEl.style.width = overall + '%';
+      barEl.style.background = overall >= 75 ? 'var(--green)' : overall >= 50 ? 'var(--accent)' : 'var(--red)';
+    }
+    if (gradeEl) {
+      if (overall >= 85) gradeEl.textContent = '🏆 Excellent';
+      else if (overall >= 70) gradeEl.textContent = '✅ Good';
+      else if (overall >= 50) gradeEl.textContent = '💡 Developing';
+      else gradeEl.textContent = '📝 Early draft';
+    }
+ 
+    /* ── Specific actionable tips ───────────────────── */
+    const tips = [];
+    if (wordCount < 300)
+      tips.push({ type:'warn', text: `Only ${wordCount} words — aim for 300+ for a complete article` });
+    if (avgSentLen > 25)
+      tips.push({ type:'warn', text: `Average sentence is ${Math.round(avgSentLen)} words — try breaking long sentences` });
+    if (!hasHeaders && wordCount > 200)
+      tips.push({ type:'tip', text: 'Add ## headers to break your article into sections' });
+    if (!hasLists && wordCount > 150)
+      tips.push({ type:'tip', text: 'Use - bullet points or 1. numbered lists to improve scannability' });
+    if (titleWords < 5)
+      tips.push({ type:'warn', text: 'Title is too short — aim for 5–12 words for better engagement' });
+    if (titleWords > 15)
+      tips.push({ type:'warn', text: 'Title is too long — trim it to under 15 words' });
+    if (questions === 0 && wordCount > 100)
+      tips.push({ type:'tip', text: 'Add a question to engage your readers' });
+    if (numbers < 2 && wordCount > 200)
+      tips.push({ type:'tip', text: 'Add statistics or numbers to add credibility' });
+    if (overall >= 75 && tips.length === 0)
+      tips.push({ type:'good', text: 'Great quality! Your article is ready to publish.' });
+ 
+    const tipsEl = document.getElementById('quality-tips');
+    if (tipsEl) {
+      tipsEl.innerHTML = tips.slice(0,4).map(t => `
+        <div class="quality-tip quality-tip-${t.type}">
+          ${t.type === 'warn' ? '⚠️' : t.type === 'good' ? '✅' : '💡'}
+          <span>${t.text}</span>
+        </div>`).join('');
+    }
   }
-
-  function publishArticle() {
+function legacyPublishArticle() {
     const title   = document.getElementById('article-title')?.value.trim();
     const text    = document.getElementById('article-editor')?.value.trim();
     const cat     = document.getElementById('article-cat')?.value;
     const imgUrl  = document.getElementById('article-img')?.value.trim() || '';
     const tagsVal = document.getElementById('article-tags')?.value || '';
     const editId  = document.getElementById('article-editor')?.dataset?.editId;
-
+ 
     if (!title || !text) { IBlog.utils.toast('Add a title and content first!', 'error'); return; }
     const isPrem = IBlog.state.currentUser?.plan === 'premium';
     const tags   = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
-
+ 
     if (editId) {
       const existing = IBlog.state.articles.find(x => x.id === parseInt(editId));
       if (existing) {
-        existing.title   = title;
-        existing.excerpt = text.substring(0, 160) + (text.length > 160 ? '…' : '');
-        existing.body    = text;
-        existing.cat     = cat !== 'Select Category' ? cat : existing.cat;
-        if (imgUrl) existing.img = imgUrl;
-        existing.readTime = Math.max(1, Math.ceil(text.split(' ').length / 200)) + ' min';
-        existing.tags    = tags;
+        Object.assign(existing, {
+          title, body: text,
+          excerpt: text.substring(0,160) + (text.length>160?'…':''),
+          cat: cat !== 'Select Category' ? cat : existing.cat,
+          img: imgUrl || existing.img,
+          readTime: Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min',
+          tags,
+        });
         delete document.getElementById('article-editor').dataset.editId;
         _clearWriter();
         IBlog.Feed.build();
         buildMyArticles();
         IBlog.Dashboard.navigateTo('home');
-        IBlog.utils.toast('✏️ Article updated successfully!', 'success');
+        IBlog.utils.toast('Article updated!', 'success');
         return;
       }
     }
-
+ 
     const a = {
       id: Date.now(),
-      author: IBlog.state.currentUser?.name || 'Amara',
+      author:        IBlog.state.currentUser?.name || 'Amara',
       authorInitial: IBlog.state.currentUser?.initial || 'A',
-      authorColor: 'var(--accent)',
-      cat: cat !== 'Select Category' ? cat : 'General',
-      img: imgUrl || null,
+      authorColor:   'var(--accent)',
+      cat:           cat !== 'Select Category' ? cat : 'General',
+      img:           imgUrl || null,
       title,
-      excerpt: text.substring(0, 160) + (text.length > 160 ? '…' : ''),
-      body: text,
-
-      templateId: IBlog.Templates.selectedId() || null,
-      readTime: Math.max(1, Math.ceil(text.split(' ').length / 200)) + ' min',
+      excerpt:       text.substring(0,160) + (text.length>160?'…':''),
+      body:          text,
+      templateId:    IBlog.Templates?.selectedId() || null,
+      readTime:      Math.max(1, Math.ceil(text.split(' ').length/200)) + ' min',
       likes: 0, comments: [], reposts: 0,
       bookmarked: false, liked: false,
       quality: text.length > 300 ? 'high' : 'med',
@@ -304,49 +544,169 @@ IBlog.Views = (() => {
     IBlog.Feed.build();
     buildMyArticles();
     IBlog.Dashboard.navigateTo('home');
-    IBlog.utils.toast(isPrem ? '⭐ Premium article published & featured!' : '🚀 Article published!', 'success');
+    IBlog.utils.toast(isPrem ? '⭐ Premium article published!' : '🚀 Article published!', 'success');
+  }
+
+  async function _saveWriterArticle(nextStatus) {
+    const title   = document.getElementById('article-title')?.value.trim();
+    const text    = document.getElementById('article-editor')?.value.trim();
+    const cat     = document.getElementById('article-cat')?.value;
+    const imgUrl  = document.getElementById('article-img')?.value.trim() || '';
+    const tagsVal = document.getElementById('article-tags')?.value || '';
+    const editor  = document.getElementById('article-editor');
+    const editId  = editor?.dataset?.editId;
+    const normalizedStatus = nextStatus === 'draft' ? 'draft' : 'published';
+    const hasContent = !!title || !!text;
+    if (normalizedStatus === 'published' && (!title || !text)) {
+      IBlog.utils.toast('Add a title and content first!', 'error');
+      return false;
+    }
+    if (normalizedStatus === 'draft' && !hasContent) {
+      IBlog.utils.toast('Add a title or some content before saving a draft.', 'error');
+      return false;
+    }
+    const isPrem = IBlog.state.currentUser?.plan === 'premium';
+    const tags   = tagsVal.split(',').map(t => t.trim()).filter(Boolean);
+    const category = cat !== 'Select Category' ? cat : 'General';
+    const existing = editId
+      ? (IBlog.state.articles || []).find(x => String(x?.id) === String(editId))
+      : null;
+    const previousStatus = editor?.dataset?.editStatus || existing?.status || 'published';
+    const payload = {
+      title,
+      body: text,
+      category,
+      tags: tags.join(', '),
+      status: normalizedStatus,
+      coverImage: imgUrl,
+      readingTime: Math.max(1, Math.ceil(Math.max(1, text.split(/\s+/).filter(Boolean).length) / 200)) + ' min',
+      label: IBlog.Templates?.selectedId?.() || 'none',
+    };
+
+    try {
+      if (editId && /^\d+$/.test(String(editId)) && window.IBlogArticleSync?.update) {
+        await window.IBlogArticleSync.update(Number(editId), payload);
+        _clearWriter();
+        IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+        if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+        else if (previousStatus === 'draft') IBlog.utils.toast('Draft published!', 'success');
+        else IBlog.utils.toast('Article updated!', 'success');
+        return true;
+      }
+
+      if (!editId && window.IBlogArticleSync?.save) {
+        await window.IBlogArticleSync.save(payload);
+        _clearWriter();
+        IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+        if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+        else IBlog.utils.toast(isPrem ? 'Premium article published!' : 'Article published!', 'success');
+        return true;
+      }
+    } catch (error) {
+      console.error('Writer save failed:', error);
+      IBlog.utils.toast(error?.message || 'Could not save this article.', 'error');
+      return false;
+    }
+
+    if (editId && existing) {
+      Object.assign(existing, {
+        title,
+        body: text,
+        excerpt: text.substring(0,160) + (text.length>160?'...':''),
+        cat: category,
+        category,
+        img: imgUrl || existing.img || null,
+        cover: imgUrl || existing.cover || existing.img || null,
+        readTime: payload.readingTime,
+        tags,
+        templateId: IBlog.Templates?.selectedId?.() || existing.templateId || null,
+        status: normalizedStatus,
+      });
+      _clearWriter();
+      IBlog.Feed.build();
+      buildMyArticles();
+      IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+      if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+      else if (previousStatus === 'draft') IBlog.utils.toast('Draft published!', 'success');
+      else IBlog.utils.toast('Article updated!', 'success');
+      return true;
+    }
+
+    const a = {
+      id: Date.now(),
+      author:        IBlog.state.currentUser?.name || 'Amara',
+      authorInitial: IBlog.state.currentUser?.initial || 'A',
+      authorColor:   'var(--accent)',
+      cat:           category,
+      category,
+      img:           imgUrl || null,
+      cover:         imgUrl || null,
+      title,
+      excerpt:       text.substring(0,160) + (text.length>160?'...':''),
+      body:          text,
+      templateId:    IBlog.Templates?.selectedId() || null,
+      readTime:      payload.readingTime,
+      likes: 0, comments: [], reposts: 0,
+      bookmarked: false, liked: false,
+      quality: text.length > 300 ? 'high' : 'med',
+      isPremiumAuthor: isPrem,
+      tags,
+      date: 'Just now',
+      status: normalizedStatus,
+    };
+    IBlog.state.articles.unshift(a);
+    _clearWriter();
+    IBlog.Feed.build();
+    buildMyArticles();
+    IBlog.Dashboard.navigateTo(normalizedStatus === 'draft' ? 'articles' : 'home');
+    if (normalizedStatus === 'draft') IBlog.utils.toast('Draft saved!', 'success');
+    else IBlog.utils.toast(isPrem ? 'Premium article published!' : 'Article published!', 'success');
+    return true;
+  }
+
+  function publishArticle() {
+    return _saveWriterArticle('published');
+  }
+
+  function saveDraftArticle() {
+    return _saveWriterArticle('draft');
   }
 
   function _clearWriter() {
-    ['article-title', 'article-editor', 'article-img', 'article-tags'].forEach(id => {
+    ['article-title','article-editor','article-img','article-tags'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
     const catEl = document.getElementById('article-cat');
     if (catEl) catEl.value = 'Select Category';
-    document.getElementById('template-preview')?.classList.remove('visible');
-    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    const editor = document.getElementById('article-editor');
+    if (editor) {
+      delete editor.dataset.editId;
+      delete editor.dataset.editStatus;
+    }
+    document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
+    const badge = document.getElementById('wtr-tpl-badge');
+    if (badge) badge.style.display = 'none';
+    /* Reset quality */
+    ['read','depth','struct','eng'].forEach(k => {
+      const v = document.getElementById('q-'+k);
+      const b = document.getElementById('qb-'+k);
+      if (v) v.textContent = '—';
+      if (b) b.style.width = '0%';
+    });
+    document.getElementById('quality-overall')?.style.setProperty('display','none');
+    document.getElementById('quality-tips').innerHTML = '';
   }
+ 
+
 
   /* ── My Articles ─────────────────────────────────────── */
   function buildMyArticles() {
-    const el = document.getElementById('my-articles-list');
-    if (!el) return;
-    const mine = IBlog.state.articles.filter(a => a.authorInitial === IBlog.state.currentUser?.initial);
-    if (!mine.length) {
-      el.innerHTML = '<div class="empty-state"><div class="emoji">📝</div><p>No articles yet.</p><button class="btn btn-primary" onclick="IBlog.Dashboard.navigateTo(\'write\')" style="margin-top:14px;">Write your first article</button></div>';
-      return;
-    }
-    const isPrem = IBlog.state.currentUser?.plan === 'premium';
-    el.innerHTML = mine.map(a => `
-<div class="my-article-row" id="myart-${a.id}">
-  <div class="my-article-thumb" style="${a.img ? `background-image:url('${a.img}')` : `background:hsl(${a.id*44%360},40%,${document.body.classList.contains('dark')?'20%':'85%'});`}">
-    ${a.img ? '' : '✍️'}
-  </div>
-  <div class="my-article-info">
-    <div class="my-article-title">${a.title}</div>
-    <div class="my-article-meta">
-      ♥ ${a.likes} &nbsp;·&nbsp; 👁 ${IBlog.utils.formatNumber(a.likes * 8)} &nbsp;·&nbsp; ⏱ ${a.readTime} &nbsp;·&nbsp; ${a.cat}
-      &nbsp;·&nbsp; <span class="${a.quality === 'high' ? 'quality-high' : 'quality-med'}">${a.quality === 'high' ? '★ High' : '◐ Good'}</span>
-    </div>
-  </div>
-  <div class="my-article-actions">
-    <button class="edit-btn-small" onclick="IBlog.Feed.editArticle(${a.id})">
-      ✏️ Edit ${!isPrem ? '<span class="badge badge-premium" style="font-size:9px">⭐</span>' : ''}
-    </button>
-    <button class="delete-btn-small" onclick="IBlog.Feed.deleteArticle(${a.id})">🗑</button>
-  </div>
-</div>`).join('');
+    IBlog.MyArticles?.load?.();
+  }
+
+  function buildMessages() {
+    return IBlog.MessageCenter?.build?.();
   }
 
   /* ── Saved ───────────────────────────────────────────── */
@@ -357,11 +717,12 @@ IBlog.Views = (() => {
       el.innerHTML = '<div class="empty-state"><div class="emoji">🔖</div><p>No saved articles. Bookmark from the feed.</p></div>';
       return;
     }
-    const tmp = document.createElement('div');
-    IBlog.state.savedArticles.forEach(a => {
-      const card = document.createElement('div');
-      card.innerHTML = IBlog.Feed._cardHTML ? IBlog.Feed._cardHTML(a) : '';
-      el.appendChild(card.firstChild || card);
+    el.innerHTML = '';
+    IBlog.state.savedArticles.forEach((article, index) => {
+      const card = IBlog.ArticleCard?.render?.(article, index);
+      if (card) {
+        el.appendChild(card);
+      }
     });
   }
 
@@ -411,10 +772,16 @@ IBlog.Views = (() => {
   /* ── Public API ──────────────────────────────────────── */
   return {
     initMap, selectCountry, openMapArticle,
+    openArticleFromLanding,
     buildActivity,
     buildTrends,
-    buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle,
-    buildMyArticles, buildSaved, buildNotifications,
+    buildTemplates, selectTemplate, injectSection, analyzeQuality, publishArticle, saveDraftArticle,
+    handleImgUpload, removeCoverImage, refreshCoverPreview: _syncCoverPreview,
+    buildMyArticles, buildSaved, buildNotifications, buildMessages,
      buildAccentPicker, buildCategorySelect,
   };
 })();
+
+window.openArticleFromLanding = function (index) {
+  return IBlog.Views.openArticleFromLanding(index);
+};
