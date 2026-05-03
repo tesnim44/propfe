@@ -1,9 +1,9 @@
 #view-search {
   padding: 32px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(255, 214, 104, .18), transparent 28%),
-    radial-gradient(circle at 100% 18%, rgba(184, 150, 12, .12), transparent 32%),
-    linear-gradient(180deg, rgba(255, 250, 236, .95), rgba(255, 255, 255, .78) 230px, transparent 360px);
+    radial-gradient(circle at 0% 0%, rgba(148, 163, 184, .16), transparent 28%),
+    radial-gradient(circle at 100% 18%, rgba(191, 200, 214, .14), transparent 32%),
+    linear-gradient(180deg, rgba(248, 250, 252, .96), rgba(255, 255, 255, .82) 230px, transparent 360px);
 }
 
 .search-hero {
@@ -18,7 +18,7 @@
   padding: 12px;
   border-radius: 24px;
   border: 1.5px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), .18);
-  background: linear-gradient(145deg, rgba(255, 249, 230, .88), rgba(255, 255, 255, .96));
+  background: linear-gradient(145deg, rgba(246, 248, 251, .92), rgba(255, 255, 255, .97));
   box-shadow: 0 18px 36px rgba(12, 12, 10, .06);
 }
 
@@ -89,7 +89,7 @@
 
 .search-tab.active {
   border-color: var(--accent);
-  background: linear-gradient(140deg, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .16), rgba(255, 218, 119, .2));
+  background: linear-gradient(140deg, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .14), rgba(226, 232, 240, .72));
   color: var(--accent);
   font-weight: 700;
 }
@@ -112,7 +112,7 @@
   gap: 14px;
   position: relative;
   border: 1.5px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), .18);
-  background: linear-gradient(155deg, rgba(255, 255, 255, .98), rgba(255, 248, 224, .58));
+  background: linear-gradient(155deg, rgba(255, 255, 255, .98), rgba(241, 245, 249, .78));
   border-radius: 22px;
   padding: 16px 18px;
   transition: .2s;
@@ -125,7 +125,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(110deg, transparent 20%, rgba(255, 230, 142, .12) 38%, transparent 56%);
+  background: linear-gradient(110deg, transparent 20%, rgba(226, 232, 240, .28) 38%, transparent 56%);
   opacity: 0;
   transition: .2s;
 }
@@ -168,7 +168,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: linear-gradient(145deg, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .25), rgba(255, 232, 156, .25));
+  background: linear-gradient(145deg, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .20), rgba(226, 232, 240, .52));
   border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), .16);
   color: var(--accent);
   font-weight: 800;
@@ -246,7 +246,7 @@
   border-radius: 20px;
   padding: 26px 24px;
   color: var(--text2);
-  background: linear-gradient(145deg, rgba(255, 251, 239, .92), rgba(255, 239, 188, .16));
+  background: linear-gradient(145deg, rgba(248, 250, 252, .94), rgba(241, 245, 249, .72));
 }
 
 .search-empty strong {

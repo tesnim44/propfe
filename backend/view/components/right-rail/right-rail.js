@@ -6,6 +6,10 @@ const STATS_API     = 'backend/view/components/auth/api-stats.php';
 const COMMUNITY_API = 'backend/controller/CommunityController.php';
 let _statsIntervalId = null;
 
+function _t(key, vars = {}) {
+  return window.IBlog?.I18n?.t?.(key, vars) || key;
+}
+
 /* ── Helpers ─────────────────────────────────────────────── */
 
 function _payload(value) {
@@ -134,51 +138,51 @@ function injectRightRail() {
     <div class="right-rail">
 
       <div class="search-bar">
-        <input type="text" placeholder="Search IBlog…"
+        <input type="text" placeholder="${_esc(_t('rightRail.searchPlaceholder'))}"
           onclick="IBlog.Search?.focusAndNavigate(this.value)"
           onkeydown="if(event.key==='Enter') IBlog.Search?.focusAndNavigate(this.value);" />
       </div>
 
       <div class="rail-section">
-        <div class="rail-title">Your Stats</div>
+        <div class="rail-title">${_t('rightRail.yourStats')}</div>
         <div class="stats-grid" id="rr-stats-grid">
-          <div class="stat-box"><span class="stat-value" id="rr-articles">-</span><div class="stat-label">Articles</div></div>
-          <div class="stat-box"><span class="stat-value" id="rr-likes">-</span><div class="stat-label">Likes</div></div>
-          <div class="stat-box"><span class="stat-value" id="rr-comments">-</span><div class="stat-label">Comments</div></div>
-          <div class="stat-box"><span class="stat-value" id="rr-saved">-</span><div class="stat-label">Saved</div></div>
+          <div class="stat-box"><span class="stat-value" id="rr-articles">-</span><div class="stat-label">${_t('rightRail.articles')}</div></div>
+          <div class="stat-box"><span class="stat-value" id="rr-likes">-</span><div class="stat-label">${_t('rightRail.likes')}</div></div>
+          <div class="stat-box"><span class="stat-value" id="rr-comments">-</span><div class="stat-label">${_t('rightRail.comments')}</div></div>
+          <div class="stat-box"><span class="stat-value" id="rr-saved">-</span><div class="stat-label">${_t('rightRail.saved')}</div></div>
         </div>
       </div>
 
       <div class="rail-section">
-        <div class="rail-title">Trending Topics</div>
+        <div class="rail-title">${_t('rightRail.trendingTopics')}</div>
         <div class="topic-chips" id="trending-chips"></div>
       </div>
 
       <div class="rail-section">
-        <div class="rail-title">Communities</div>
+        <div class="rail-title">${_t('rightRail.communities')}</div>
         <div id="rail-communities"></div>
       </div>
 
       <div class="rail-section">
-        <div class="rail-title">Top Authors</div>
+        <div class="rail-title">${_t('rightRail.topAuthors')}</div>
         <div id="top-authors">
-          <div style="text-align:center;padding:16px;color:var(--text2);font-size:13px;">Loading…</div>
+          <div style="text-align:center;padding:16px;color:var(--text2);font-size:13px;">${_t('rightRail.loading')}</div>
         </div>
       </div>
 
       <div class="rail-section">
-        <div class="rail-title">Weekly Digest</div>
+        <div class="rail-title">${_t('rightRail.weeklyDigest')}</div>
         <div class="digest-widget">
-          <h4>Stay in the loop</h4>
-          <p>5 best articles, curated every week.</p>
+          <h4>${_t('rightRail.stayInLoop')}</h4>
+          <p>${_t('rightRail.digestCopy')}</p>
           <input class="digest-email" type="email" placeholder="your@email.com" />
-          <button class="digest-sub-btn" onclick="subscribeToDigest()">Subscribe</button>
+          <button class="digest-sub-btn" onclick="subscribeToDigest()">${_t('rightRail.subscribe')}</button>
         </div>
       </div>
 
       <div class="footer-links">
-        <a href="#">About</a><a href="#">Blog</a><a href="#">Privacy</a>
-        <a href="#">Terms</a><a href="#">© 2026 IBlog</a>
+        <a href="#">${_t('rightRail.about')}</a><a href="#">${_t('rightRail.blog')}</a><a href="#">${_t('rightRail.privacy')}</a>
+        <a href="#">${_t('rightRail.terms')}</a><a href="#">© 2026 IBlog</a>
       </div>
 
     </div>`;
@@ -243,7 +247,7 @@ async function loadTopAuthors() {
   const current = window.IBlog?.state?.currentUser || null;
 
   if (!authors.length) {
-    container.innerHTML = '<div style="font-size:13px;color:var(--text2);padding:8px 0;font-style:italic;">No data yet.</div>';
+    container.innerHTML = `<div style="font-size:13px;color:var(--text2);padding:8px 0;font-style:italic;">${_t('rightRail.noDataYet')}</div>`;
     return;
   }
 
@@ -274,7 +278,7 @@ async function loadTopAuthors() {
     );
 
   if (!authors.length) {
-    container.innerHTML = '<div style="font-size:13px;color:var(--text2);padding:8px 0;font-style:italic;">No data yet.</div>';
+    container.innerHTML = `<div style="font-size:13px;color:var(--text2);padding:8px 0;font-style:italic;">${_t('rightRail.noDataYet')}</div>`;
     return;
   }
 
@@ -314,10 +318,10 @@ async function loadTopAuthors() {
 
     // Meta line: likes · comments · articles
     const metaParts = [
-      `${_fmt(author.totalLikes)}    likes`,
-      `${_fmt(author.totalComments)} comments`,
-      `${author.articleCount} art.`,
-      `${_fmt(author.totalInteractions)} interactions`,
+      `${_fmt(author.totalLikes)} ${_t('rightRail.likesUnit')}`,
+      `${_fmt(author.totalComments)} ${_t('rightRail.commentsUnit')}`,
+      `${author.articleCount} ${_t('rightRail.articlesUnit')}`,
+      `${_fmt(author.totalInteractions)} ${_t('rightRail.interactionsUnit')}`,
     ].join(' · ');
 
     return `
@@ -328,7 +332,7 @@ async function loadTopAuthors() {
           <div class="author-copy">
             <div class="author-name-row">
               <div class="author-name">${_esc(author.name)}</div>
-              ${resolved.isPremium ? '<span class="author-badge">Premium</span>' : ''}
+              ${resolved.isPremium ? `<span class="author-badge">${_t('rightRail.premium')}</span>` : ''}
             </div>
             <div class="author-meta">${_esc(metaParts)}</div>
           </div>
@@ -337,11 +341,11 @@ async function loadTopAuthors() {
           <div class="author-actions">
             <button class="follow-btn follow-btn-accent"
               onclick="event.stopPropagation(); IBlog.MessageCenter?.startConversation?.(JSON.parse(decodeURIComponent('${_payload(profilePayload)}')))">
-              Message
+              ${_t('rightRail.message')}
             </button>
             <button class="follow-btn"
-              onclick="event.stopPropagation(); this.classList.toggle('following'); this.textContent = this.classList.contains('following') ? 'Following' : 'Follow';">
-              Follow
+              onclick="event.stopPropagation(); this.classList.toggle('following'); this.textContent = this.classList.contains('following') ? '${_t('rightRail.following')}' : '${_t('rightRail.follow')}';">
+              ${_t('rightRail.follow')}
             </button>
           </div>
         `}
@@ -366,14 +370,14 @@ function loadTrendingTopics() {
     : [];
 
   if (!trendingTopics.length) {
-    container.innerHTML = '<span class="topic-chip">No trending topics yet</span>';
+    container.innerHTML = `<span class="topic-chip">${_t('rightRail.noTrendingTopics')}</span>`;
     return;
   }
 
   container.innerHTML = trendingTopics.map((topic) => `
     <span class="topic-chip${topic.active ? ' active' : ''}"
       onclick="selectTrendingTopic(JSON.parse(decodeURIComponent('${_payload(topic.name)}')))">
-      ${_esc(topic.name)}
+      ${_esc(window.IBlog?.I18n?.localizeTopic?.(topic.name) || topic.name)}
       <span style="font-size:10px;opacity:.6;margin-left:2px;">${topic.count}</span>
     </span>`).join('');
 }
@@ -445,7 +449,7 @@ async function loadRailCommunities() {
   if (!container) return;
 
   if (!window.IBlog?.COMMUNITIES) {
-    container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+    container.innerHTML = `<div class="rail-comm-empty">${_t('rightRail.noCommunitiesJoined')}</div>`;
     return;
   }
 
@@ -460,7 +464,7 @@ async function loadRailCommunities() {
   );
 
   if (!joinedComms.length) {
-    container.innerHTML = '<div class="rail-comm-empty">No communities joined yet.</div>';
+    container.innerHTML = `<div class="rail-comm-empty">${_t('rightRail.noCommunitiesJoined')}</div>`;
     return;
   }
 
@@ -472,9 +476,9 @@ async function loadRailCommunities() {
       </div>
       <div class="rail-comm-actions">
         <button class="rail-comm-btn rail-comm-btn-open"
-          onclick="IBlog.Communities?.openChat(${Number(community?.id || 0)})">Enter Chat</button>
+          onclick="IBlog.Communities?.openChat(${Number(community?.id || 0)})">${_t('rightRail.enterChat')}</button>
         <button class="rail-comm-btn rail-comm-btn-leave"
-          onclick="IBlog.Communities?.leave(${Number(community?.id || 0)}); setTimeout(loadRailCommunities, 120);">Leave</button>
+          onclick="IBlog.Communities?.leave(${Number(community?.id || 0)}); setTimeout(loadRailCommunities, 120);">${_t('rightRail.leave')}</button>
       </div>
     </div>`).join('');
 }
@@ -486,11 +490,11 @@ function subscribeToDigest() {
   if (!emailInput) return;
   const email = emailInput.value.trim();
   if (!email || !email.includes('@')) {
-    IBlog.utils?.toast('Please enter a valid email', 'error');
+    IBlog.utils?.toast(_t('rightRail.invalidEmail'), 'error');
     return;
   }
   emailInput.value = '';
-  IBlog.utils?.toast('Subscribed! Weekly digest incoming.', 'success');
+  IBlog.utils?.toast(_t('rightRail.subscribed'), 'success');
 }
 
 /* ── Auto-refresh ────────────────────────────────────────── */

@@ -1,0 +1,66 @@
+<svg width="760" height="160" viewBox="0 0 760 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="760" height="160" rx="32" fill="#F7FAFF"/>
+  <defs>
+    <linearGradient id="faceCoat" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4068E5"/>
+      <stop offset="100%" stop-color="#263A84"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(22 18)">
+    <g transform="translate(0 0)"><use href="#headHappy"/></g>
+    <g transform="translate(140 0)"><use href="#headThink"/></g>
+    <g transform="translate(280 0)"><use href="#headLaugh"/></g>
+    <g transform="translate(420 0)"><use href="#headCalm"/></g>
+    <g transform="translate(560 0)"><use href="#headSurprised"/></g>
+  </g>
+  <defs>
+    <g id="baseHead">
+      <path d="M49 16C27 16 9 34 9 56V75C9 96 26 113 47 113H55C76 113 93 96 93 75V56C93 34 75 16 53 16H49Z" fill="url(#faceCoat)"/>
+      <path d="M25 15L16 1L34 10" fill="url(#faceCoat)"/>
+      <path d="M77 15L86 1L68 10" fill="url(#faceCoat)"/>
+      <circle cx="51" cy="67" r="35" fill="#FFDDAF"/>
+      <rect x="7" y="24" width="20" height="54" rx="10" fill="#314764"/>
+      <rect x="76" y="24" width="20" height="54" rx="10" fill="#314764"/>
+      <rect x="21" y="18" width="61" height="16" rx="8" fill="#4A617D"/>
+      <circle cx="17" cy="50" r="6" fill="#82B8FF"/>
+      <circle cx="86" cy="50" r="6" fill="#82B8FF"/>
+      <circle cx="41" cy="60" r="9" fill="#FFF9EF"/>
+      <circle cx="61" cy="60" r="9" fill="#FFF9EF"/>
+    </g>
+    <g id="headHappy">
+      <use href="#baseHead"/>
+      <circle cx="43" cy="62" r="4.5" fill="#20356E"/>
+      <circle cx="63" cy="62" r="4.5" fill="#20356E"/>
+      <path d="M40 80C46 87 59 87 65 80" stroke="#A65D44" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <g id="headThink">
+      <use href="#baseHead"/>
+      <circle cx="43" cy="62" r="4.5" fill="#20356E"/>
+      <circle cx="63" cy="62" r="4.5" fill="#20356E"/>
+      <path d="M40 78C46 75 54 75 60 78" stroke="#A65D44" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="80" cy="18" r="14" fill="#FFF3B7"/>
+      <path d="M80 10V26M72 18H88" stroke="#E0AD3B" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g id="headLaugh">
+      <use href="#baseHead"/>
+      <path d="M36 61C40 56 46 56 49 61" stroke="#20356E" stroke-width="5" stroke-linecap="round"/>
+      <path d="M55 61C59 56 65 56 68 61" stroke="#20356E" stroke-width="5" stroke-linecap="round"/>
+      <path d="M39 77C46 90 61 90 67 77" stroke="#A65D44" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <g id="headCalm">
+      <use href="#baseHead"/>
+      <path d="M38 62H48" stroke="#20356E" stroke-width="5" stroke-linecap="round"/>
+      <path d="M58 62H68" stroke="#20356E" stroke-width="5" stroke-linecap="round"/>
+      <path d="M42 82C47 85 56 85 62 82" stroke="#A65D44" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="88" cy="25" r="10" fill="#DCEAFF"/>
+    </g>
+    <g id="headSurprised">
+      <use href="#baseHead"/>
+      <circle cx="43" cy="62" r="5.5" fill="#20356E"/>
+      <circle cx="63" cy="62" r="5.5" fill="#20356E"/>
+      <ellipse cx="53" cy="82" rx="7" ry="9" fill="#A65D44"/>
+      <circle cx="14" cy="26" r="12" fill="#FFF3B7"/>
+      <path d="M14 18V34M6 26H22" stroke="#E0AD3B" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </defs>
+</svg>

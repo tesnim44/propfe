@@ -1,0 +1,126 @@
+/* ══════════════════════════════════════════════════════════
+   IBlog — Bardy Guide
+   ══════════════════════════════════════════════════════════ */
+
+#bardy-guide {
+  position: fixed;
+  bottom: -400px;
+  right: 40px;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+  transition: bottom 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+#bardy-guide.show {
+  bottom: 40px;
+  pointer-events: auto;
+}
+
+.bardy-avatar {
+  width: 140px;
+  height: 140px;
+  background-image: url('../../../../images/bardy.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+  animation: floatBardy 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.bardy-bubble {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 20px 20px 20px 0;
+  padding: 16px 22px;
+  max-width: 300px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  margin-bottom: 30px;
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+  transform-origin: bottom left;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition-delay: 0.5s;
+}
+
+#bardy-guide.show .bardy-bubble {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.bardy-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0px;
+  width: 0;
+  height: 0;
+  border-top: 15px solid var(--surface);
+  border-right: 15px solid transparent;
+  filter: drop-shadow(-1px 1px 0 var(--border));
+}
+
+.bardy-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.bardy-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.bardy-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bardy-close:hover {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+@keyframes floatBardy {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@media (max-width: 768px) {
+  #bardy-guide {
+    right: 20px;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .bardy-bubble {
+    border-radius: 20px 20px 0 20px;
+    margin-bottom: -10px;
+    margin-right: 40px;
+    transform-origin: bottom right;
+  }
+  .bardy-bubble::before {
+    left: auto;
+    right: 0px;
+    border-right: none;
+    border-left: 15px solid transparent;
+    filter: drop-shadow(1px 1px 0 var(--border));
+  }
+}

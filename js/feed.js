@@ -21,6 +21,7 @@ IBlog.Feed = (() => {
 
   function iconHeart() { return I.heart; }
   function iconHeartFill() { return I.heartFill; }
+  function _t(key, vars = {}) { return IBlog.I18n?.t?.(key, vars) || key; }
 
   function _escapeHtml(value) {
     return String(value ?? '')
@@ -73,7 +74,7 @@ IBlog.Feed = (() => {
       container.innerHTML = `
         <div class="empty-state">
           <div class="emoji">📝</div>
-          <p>No articles to show yet.</p>
+          <p>${_t('feed.empty')}</p>
         </div>`;
       return;
     }
@@ -150,7 +151,7 @@ IBlog.Feed = (() => {
 
             <button class="pod-toggle-btn" onclick="IBlog.ArticleCard?.togglePodcast?.(${safeOpenReaderId},this)">
               <span class="pod-icon">${icons.mic || ''}</span>
-              <span id="pod-label-${article?.id}">Listen as Podcast</span>
+              <span id="pod-label-${article?.id}">${_t('feed.listenPodcast')}</span>
             </button>
             <div class="podcast-player-inline" id="pod-${article?.id}" style="display:none;margin-bottom:12px"></div>
 
@@ -197,12 +198,12 @@ IBlog.Feed = (() => {
               </button>
               <div class="share-wrapper">
                 <button class="interact-btn" onclick="IBlog.ArticleCard?.toggleShareMenu?.(${safeOpenReaderId})">
-                  ${icons.share || '↗'} Share
+                  ${icons.share || '↗'} ${_t('actions.share')}
                 </button>
                 <div class="share-menu" id="share-menu-${article?.id}">
                   <button onclick="IBlog.ArticleCard?.shareTo?.('twitter',${safeOpenReaderId})">X / Twitter</button>
                   <button onclick="IBlog.ArticleCard?.shareTo?.('linkedin',${safeOpenReaderId})">LinkedIn</button>
-                  <button onclick="IBlog.ArticleCard?.shareTo?.('copy',${safeOpenReaderId})">Copy link</button>
+                  <button onclick="IBlog.ArticleCard?.shareTo?.('copy',${safeOpenReaderId})">${_t('actions.share')} link</button>
                 </div>
               </div>
             </div>
@@ -218,6 +219,7 @@ IBlog.Feed = (() => {
   function openReader(id) {
     const article = (IBlog.state.articles||[]).find(a => a.id === id || String(a.id) === String(id));
     if(!article) return;
+    const displayArticle = IBlog.I18n?.localizeArticle?.(article) || article;
     const overlay = document.getElementById('article-reader-overlay');
     const content = document.getElementById('article-reader-content');
     if(!overlay||!content) return;
@@ -226,7 +228,7 @@ IBlog.Feed = (() => {
     const idx     = IBlog.state.articles.indexOf(article);
     const color   = AC ? AC.avatarColor(idx) : '#b8960c';
     AC?.hydrateSocialState?.(article);
-    const initial = (article.author||'A')[0].toUpperCase();
+    const initial = (displayArticle.author || article.author || 'A')[0].toUpperCase();
     const authorProfilePayload = encodeURIComponent(JSON.stringify({
       id: article.authorId ?? null,
       name: article.author || 'Anonymous',
@@ -250,7 +252,7 @@ IBlog.Feed = (() => {
                 id="reader-react-trigger-${id}"
                 onclick="IBlog.ArticleCard.toggleReaderPicker(${id})">
           ${activeReaction ? AC.SVG[activeReaction.svgKey] : AC.SVG.love}
-          <span>${activeReaction ? activeReaction.label : 'React'}</span>
+          <span>${activeReaction ? activeReaction.label : _t('reactions.react')}</span>
         </button>
         <div class="reaction-summary" id="reader-reaction-summary-${id}">${AC._summaryHTML(article)}</div>
         <div class="reaction-picker" id="reader-reaction-picker-${id}">
@@ -279,18 +281,18 @@ IBlog.Feed = (() => {
         <div class="reader-cover" style="background-image:url('${article.cover||article.img}')">
           <div class="reader-cover-overlay"></div>
           <div class="reader-cover-meta">
-            <div class="reader-cat-badge">${article.cat||article.category||'General'}</div>
-            <div class="reader-cover-title">${article.title}</div>
+            <div class="reader-cat-badge">${displayArticle.cat||displayArticle.category||article.cat||article.category||'General'}</div>
+            <div class="reader-cover-title">${displayArticle.title || article.title}</div>
             <div class="reader-cover-byline">
-              <span>${article.author||''}</span><span>·</span>
-              <span>${article.date||''}</span><span>·</span>
-              <span>${article.readTime||'5 min'} read</span>
+              <span>${displayArticle.author||article.author||''}</span><span>·</span>
+              <span>${displayArticle.date||article.date||''}</span><span>·</span>
+              <span>${displayArticle.readTime||article.readTime||_t('misc.read', { count: 5 })}</span>
             </div>
           </div>
         </div>` : `
         <div class="reader-header-no-cover">
-          <div class="reader-cat-badge">${article.cat||article.category||'General'}</div>
-          <div class="reader-cover-title">${article.title}</div>
+          <div class="reader-cat-badge">${displayArticle.cat||displayArticle.category||article.cat||article.category||'General'}</div>
+          <div class="reader-cover-title">${displayArticle.title || article.title}</div>
         </div>`}
 
         <div class="reader-body">
@@ -303,8 +305,8 @@ IBlog.Feed = (() => {
             <div class="reader-author-info" style="cursor:pointer"
                  data-profile="${authorProfilePayload.replace(/"/g, '&quot;')}"
                  onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">
-              <strong>${article.author||'Anonymous'}</strong>
-              <small>${article.date||''} · ${article.readTime||'5 min'} read</small>
+              <strong>${displayArticle.author||article.author||'Anonymous'}</strong>
+              <small>${displayArticle.date||article.date||''} · ${displayArticle.readTime||article.readTime||_t('misc.read', { count: 5 })}</small>
             </div>
             <div class="reader-actions">
               <button class="reader-action-btn ${article._liked?'active-like':''}"
@@ -317,11 +319,11 @@ IBlog.Feed = (() => {
                       id="reader-save-btn-${id}"
                       onclick="IBlog.ArticleCard.toggleBookmark(${id})">
                 ${article._bookmarked?I.saveFill:I.save}
-                <span>${article._bookmarked?'Saved':'Save'}</span>
+                <span>${article._bookmarked ? _t('actions.saved') : _t('actions.save')}</span>
               </button>
               ${reactionPickerHTML}
               <button class="reader-action-btn" onclick="IBlog.Feed.readerShare(${id})">
-                ${I.share} Share
+                ${I.share} ${_t('actions.share')}
               </button>
             </div>
           </div>
@@ -333,8 +335,8 @@ IBlog.Feed = (() => {
               ${I.play}
             </button>
             <div class="podcast-info">
-              <strong>${article.title}</strong>
-              <small>Web Speech API · ${article.readTime||'5 min'} · Real browser TTS</small>
+              <strong>${displayArticle.title || article.title}</strong>
+              <small>Web Speech API · ${displayArticle.readTime||article.readTime||_t('misc.read', { count: 5 })}</small>
             </div>
             <div class="podcast-voice-btns">
               <button class="voice-btn active" onclick="IBlog.Podcast.setVoice('default',this)">Default</button>
@@ -347,24 +349,24 @@ IBlog.Feed = (() => {
             const tplHTML = IBlog.Templates.renderForReader(article);
             if (tplHTML) return `<div class="reader-tpl-wrap">${tplHTML}</div>`;
             return `<div class="reader-text">
-            ${(article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(_renderReaderBodyBlock).join('')}</div>`;
+            ${(displayArticle.body||displayArticle.excerpt||article.body||article.excerpt||'').split('\n\n').filter(p=>p.trim()).map(_renderReaderBodyBlock).join('')}</div>`;
           })()}
 
           <!-- Tags -->
-          ${(article.tags||[]).length ? `
+          ${(displayArticle.tags||article.tags||[]).length ? `
           <div class="reader-tags">
-            ${article.tags.map(t=>`<span class="reader-tag" onclick="IBlog.Views.searchTopic('${t}')">${t}</span>`).join('')}
+            ${(displayArticle.tags||article.tags||[]).map(t=>`<span class="reader-tag" onclick="IBlog.Views.searchTopic('${t}')">${t}</span>`).join('')}
           </div>` : ''}
 
           <!-- Comments -->
           <div class="reader-comments">
             <div class="reader-comments-title">
-              Comments <span id="reader-comment-count-${id}">(${comments.length})</span>
+              ${_t('actions.comment')} <span id="reader-comment-count-${id}">(${comments.length})</span>
             </div>
             <div class="reader-comment-input-row">
               <textarea class="reader-comment-input"
                         id="reader-comment-input-${id}"
-                        placeholder="Share your thoughts…" rows="2"
+                        placeholder="${_t('comments.add')}" rows="2"
                         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();IBlog.Feed.postReaderComment(${id});}">
               </textarea>
               <button class="reader-comment-send" onclick="IBlog.Feed.postReaderComment(${id})">${I.send}</button>

@@ -10,7 +10,7 @@ IBlog.state = {
   currentUser: null,
   articles: [],
   savedArticles: [],
-  accentKey: 'gold',
+  accentKey: 'blue',
   darkMode: false,
   podStates: {},
   podTimers: {},
@@ -422,4 +422,3 @@ IBlog.state.articles = [];
 /* ============================================================
    Auth Component — signup, signin, premium gate, plan picker
    ============================================================ */
-

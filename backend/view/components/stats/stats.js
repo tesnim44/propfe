@@ -2,6 +2,7 @@ IBlog.Analytics = (() => {
   'use strict';
 
   const STATS_API = 'backend/view/components/auth/api-stats.php';
+  const _t = (key, vars = {}) => IBlog.I18n?.t?.(key, vars) || key;
 
   async function _post(action) {
     const response = await fetch(STATS_API, {
@@ -34,53 +35,53 @@ IBlog.Analytics = (() => {
     panel.innerHTML = `
       <div class="view-header an-header">
         <div>
-          <h1>My Analytics</h1>
-          <p>Your real content performance from the database.</p>
+          <h1>${_t('analytics.title')}</h1>
+          <p>${_t('analytics.subtitle')}</p>
         </div>
-        <div class="an-date-badge">Last 12 weeks</div>
+        <div class="an-date-badge">${_t('analytics.last12Weeks')}</div>
       </div>
 
       <div class="an-kpi-grid" id="an-kpi-grid">
-        ${_kpi('an-articles', 'Articles Published', 'AR')}
-        ${_kpi('an-views', 'Total Views', 'VW')}
-        ${_kpi('an-likes', 'Total Likes', 'LK')}
-        ${_kpi('an-comments', 'Comments Received', 'CM')}
-        ${_kpi('an-saved', 'Saved Articles', 'SV')}
+        ${_kpi('an-articles', _t('analytics.articlesPublished'), 'AR')}
+        ${_kpi('an-views', _t('analytics.totalViews'), 'VW')}
+        ${_kpi('an-likes', _t('analytics.totalLikes'), 'LK')}
+        ${_kpi('an-comments', _t('analytics.commentsReceived'), 'CM')}
+        ${_kpi('an-saved', _t('analytics.savedArticles'), 'SV')}
       </div>
 
       <div class="an-insights-grid">
         <section class="an-section-card">
           <div class="an-card-header">
             <div>
-              <strong>Audience Momentum</strong>
-              <div class="an-card-sub">Weekly views and likes across the last 12 weeks</div>
+              <strong>${_t('analytics.audienceMomentum')}</strong>
+              <div class="an-card-sub">${_t('analytics.audienceMomentumSub')}</div>
             </div>
-            <span class="an-card-chip">Weekly</span>
+            <span class="an-card-chip">${_t('analytics.weekly')}</span>
           </div>
           <div id="an-chart-bars" class="an-chart-shell">
-            <div class="an-empty">Loading chart...</div>
+            <div class="an-empty">${_t('analytics.loadingChart')}</div>
           </div>
         </section>
 
         <section class="an-section-card">
           <div class="an-card-header">
             <div>
-              <strong>Activity Pulse</strong>
-              <div class="an-card-sub">Publishing, comments, and saves over the last year</div>
+              <strong>${_t('analytics.activityPulse')}</strong>
+              <div class="an-card-sub">${_t('analytics.activityPulseSub')}</div>
             </div>
-            <span class="an-card-chip" id="an-activity-total">0 total</span>
+            <span class="an-card-chip" id="an-activity-total">0 ${_t('analytics.total')}</span>
           </div>
           <div id="an-activity-heatmap">
-            <div class="an-empty">Loading activity...</div>
+            <div class="an-empty">${_t('analytics.loadingActivity')}</div>
           </div>
           <div class="an-activity-legend">
-            <span>Less</span>
+            <span>${_t('analytics.less')}</span>
             <span class="an-legend-swatch is-0"></span>
             <span class="an-legend-swatch is-1"></span>
             <span class="an-legend-swatch is-2"></span>
             <span class="an-legend-swatch is-3"></span>
             <span class="an-legend-swatch is-4"></span>
-            <span>More</span>
+            <span>${_t('analytics.more')}</span>
           </div>
           <div id="an-activity-months" class="an-activity-months"></div>
           <div id="an-activity-recent" class="an-recent-list"></div>
@@ -90,12 +91,12 @@ IBlog.Analytics = (() => {
       <section class="an-section-card">
         <div class="an-card-header">
           <div>
-            <strong>Top Performing Articles</strong>
-            <div class="an-card-sub">Sorted by views first, then likes</div>
+            <strong>${_t('analytics.topPerforming')}</strong>
+            <div class="an-card-sub">${_t('analytics.topPerformingSub')}</div>
           </div>
         </div>
         <div id="an-top-articles">
-          <div class="an-empty">Loading articles...</div>
+          <div class="an-empty">${_t('analytics.loadingArticles')}</div>
         </div>
       </section>`;
   }
@@ -151,7 +152,7 @@ IBlog.Analytics = (() => {
     } catch (_) {}
 
     if (!weeks.length) {
-      container.innerHTML = '<div class="an-empty">No chart data yet.</div>';
+      container.innerHTML = `<div class="an-empty">${_t('analytics.noChartData')}</div>`;
       return;
     }
 
@@ -175,7 +176,7 @@ IBlog.Analytics = (() => {
               const viewsHeight = Math.max(6, Math.round((views / maxValue) * 150));
               const likesHeight = Math.max(likes > 0 ? 6 : 0, Math.round((likes / maxValue) * 120));
               return `
-                <div class="an-chart-col" title="${_escapeHTML(week.label || '')}: ${views} views, ${likes} likes">
+                <div class="an-chart-col" title="${_escapeHTML(week.label || '')}: ${views} ${_t('analytics.views')}, ${likes} ${_t('analytics.likes')}">
                   <div class="an-chart-bars-stack">
                     <div class="an-chart-bar an-chart-bar-views" style="height:${viewsHeight}px"></div>
                     <div class="an-chart-bar an-chart-bar-likes" style="height:${likesHeight}px"></div>
@@ -187,8 +188,8 @@ IBlog.Analytics = (() => {
         </div>
       </div>
       <div class="an-chart-legend">
-        <span><i class="an-chart-dot views"></i>Views</span>
-        <span><i class="an-chart-dot likes"></i>Likes</span>
+        <span><i class="an-chart-dot views"></i>${_t('analytics.views')}</span>
+        <span><i class="an-chart-dot likes"></i>${_t('analytics.likes')}</span>
       </div>`;
   }
 
@@ -203,7 +204,7 @@ IBlog.Analytics = (() => {
     } catch (_) {}
 
     if (!topArticles.length) {
-      el.innerHTML = '<div class="an-empty">No published articles yet.</div>';
+      el.innerHTML = `<div class="an-empty">${_t('analytics.noPublishedArticles')}</div>`;
       return;
     }
 
@@ -218,15 +219,15 @@ IBlog.Analytics = (() => {
                  onclick="IBlog.Feed?.openReader?.(${Number(article.id || 0)})">
           <div class="an-rank">${medals[index]}</div>
           <div class="an-article-info">
-            <div class="an-article-title">${_escapeHTML(article.title || 'Untitled article')}</div>
+            <div class="an-article-title">${_escapeHTML(article.title || _t('analytics.untitledArticle'))}</div>
             <div class="an-article-bar-wrap">
               <div class="an-article-bar" style="width:${Math.max(8, Math.round((views / maxViews) * 100))}%"></div>
             </div>
             <div class="an-article-meta">
-              <span>${_formatNumber(views)} views</span>
-              <span>${_formatNumber(likes)} likes</span>
-              <span>${_escapeHTML(article.readingTime || '5 min')}</span>
-              <span>${_escapeHTML(article.category || 'General')}</span>
+              <span>${_formatNumber(views)} ${_t('analytics.views')}</span>
+              <span>${_formatNumber(likes)} ${_t('analytics.likes')}</span>
+              <span>${_escapeHTML(IBlog.I18n?.localizeReadTime?.(article.readingTime || '5 min') || article.readingTime || '5 min')}</span>
+              <span>${_escapeHTML(article.category || _t('analytics.general'))}</span>
             </div>
           </div>
         </article>`;
@@ -252,15 +253,19 @@ IBlog.Analytics = (() => {
     const recentEl = document.getElementById('an-activity-recent');
 
     if (!container || !Array.isArray(days) || !days.length) {
-      if (container) container.innerHTML = '<div class="an-empty">No activity data yet.</div>';
+      if (container) container.innerHTML = `<div class="an-empty">${_t('analytics.noActivityData')}</div>`;
       if (monthsEl) monthsEl.innerHTML = '';
-      if (totalEl) totalEl.textContent = '0 total';
-      if (recentEl) recentEl.innerHTML = '<div class="an-empty">No recent activity yet.</div>';
+      if (totalEl) totalEl.textContent = `0 ${_t('analytics.total')}`;
+      if (recentEl) recentEl.innerHTML = `<div class="an-empty">${_t('analytics.noRecentActivity')}</div>`;
       return;
     }
 
     const total = days.reduce((sum, day) => sum + Number(day.count || 0), 0);
-    if (totalEl) totalEl.textContent = `${_formatNumber(total)} total`;
+    if (totalEl) totalEl.textContent = `${_formatNumber(total)} ${_t('analytics.total')}`;
+
+    const locale = IBlog.I18n?.meta?.().locale || 'en-US';
+    const weekdayFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    const monthFormatter = new Intl.DateTimeFormat(locale, { month: 'short' });
 
     const weeks = [];
     for (let i = 0; i < 53; i++) weeks.push([]);
@@ -272,7 +277,11 @@ IBlog.Analytics = (() => {
     container.innerHTML = `
       <div class="an-heatmap-wrap">
         <div class="an-heatmap-axis">
-          ${['', 'Mon', '', 'Wed', '', 'Fri', ''].map((label) => `<span>${label}</span>`).join('')}
+          ${['', 1, '', 3, '', 5, ''].map((label) => {
+            if (label === '') return '<span></span>';
+            const date = new Date(Date.UTC(2026, 0, 4 + Number(label)));
+            return `<span>${weekdayFormatter.format(date)}</span>`;
+          }).join('')}
         </div>
         <div class="an-heatmap-grid">
           ${weeks.filter((week) => week.length > 0).map((week) => `
@@ -280,8 +289,8 @@ IBlog.Analytics = (() => {
               ${week.map((day) => {
                 const count = Number(day.count || 0);
                 const level = count === 0 ? 0 : count === 1 ? 1 : count <= 3 ? 2 : count <= 6 ? 3 : 4;
-                const label = new Date(day.date).toLocaleDateString('en', { month: 'short', day: 'numeric' });
-                return `<div class="an-heatmap-cell is-${level}" title="${label}: ${count} activities"></div>`;
+                const label = new Date(day.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+                return `<div class="an-heatmap-cell is-${level}" title="${_escapeHTML(_t('analytics.activityCount', { date: label, count: _formatNumber(count) }))}"></div>`;
               }).join('')}
             </div>`).join('')}
         </div>
@@ -290,7 +299,7 @@ IBlog.Analytics = (() => {
     let lastMonth = '';
     const months = [];
     days.forEach((day, index) => {
-      const month = new Date(day.date).toLocaleString('en', { month: 'short' });
+      const month = monthFormatter.format(new Date(day.date));
       if (month !== lastMonth && index % 7 === 0) {
         months.push({ weekIdx: Math.floor(index / 7), label: month });
         lastMonth = month;
@@ -304,17 +313,17 @@ IBlog.Analytics = (() => {
       }).join('');
     }
 
-    if (recentEl) {
+      if (recentEl) {
       if (!recent.length) {
-        recentEl.innerHTML = '<div class="an-empty">No recent activity yet.</div>';
+        recentEl.innerHTML = `<div class="an-empty">${_t('analytics.noRecentActivity')}</div>`;
       } else {
         recentEl.innerHTML = `
-          <div class="an-recent-title">Recent highlights</div>
+          <div class="an-recent-title">${_t('analytics.recentHighlights')}</div>
           ${recent.slice(0, 5).map((item) => `
             <div class="an-recent-item">
-              <div class="an-recent-type">${_escapeHTML(item.label || 'Activity')}</div>
+              <div class="an-recent-type">${_escapeHTML(item.label || _t('analytics.activity'))}</div>
               <div class="an-recent-copy">
-                <strong>${_escapeHTML(item.title || 'Untitled')}</strong>
+                <strong>${_escapeHTML(item.title || _t('analytics.untitledArticle'))}</strong>
                 <span>${_formatDateTime(item.at)}</span>
               </div>
             </div>`).join('')}`;
@@ -324,15 +333,17 @@ IBlog.Analytics = (() => {
 
   function _formatNumber(value) {
     const n = Number(value || 0);
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-    return String(n);
+    const locale = IBlog.I18n?.meta?.().locale || 'en-US';
+    return new Intl.NumberFormat(locale, {
+      notation: n >= 1000 ? 'compact' : 'standard',
+      maximumFractionDigits: 1,
+    }).format(n);
   }
 
   function _formatDateTime(value) {
     const date = value ? new Date(value) : null;
-    if (!date || Number.isNaN(date.getTime())) return 'Just now';
-    return date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!date || Number.isNaN(date.getTime())) return _t('analytics.justNow');
+    return IBlog.I18n?.formatDate?.(date.toISOString()) || date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   function _escapeHTML(value) {

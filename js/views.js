@@ -765,8 +765,9 @@ function legacyPublishArticle() {
   function buildCategorySelect() {
     const sel = document.getElementById('article-cat');
     if (!sel) return;
-    sel.innerHTML = '<option>Select Category</option>' +
-      IBlog.CATEGORIES.map(c => `<option>${c}</option>`).join('');
+    const label = IBlog.I18n?.t?.('writer.selectCategory') || 'Select Category';
+    sel.innerHTML = `<option>${label}</option>` +
+      IBlog.CATEGORIES.map(c => `<option>${IBlog.I18n?.localizeCategory?.(c) || c}</option>`).join('');
   }
 
   /* ── Public API ──────────────────────────────────────── */

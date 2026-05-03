@@ -7,6 +7,18 @@
   let lastPayload = null;
   let searchTimer = null;
 
+  function _t(key, vars = {}) {
+    return window.IBlog?.I18n?.t?.(key, vars) || key;
+  }
+
+  function _category(value) {
+    return window.IBlog?.I18n?.localizeCategory?.(value) || value;
+  }
+
+  function _readTime(value) {
+    return window.IBlog?.I18n?.localizeReadTime?.(value) || value;
+  }
+
   function init() {
     const root = document.getElementById('search-root');
     if (!root) return;
@@ -18,29 +30,29 @@
     return `
       <div class="view-panel" id="view-search">
         <div class="view-header">
-          <h1>Search</h1>
-          <p>Find the best article and author matches from live platform content.</p>
+          <h1>${_t('search.title')}</h1>
+          <p>${_t('search.subtitle')}</p>
         </div>
 
         <div class="search-hero">
           <div class="search-bar-wrap">
             <input id="search-input" class="search-bar-input" type="text"
-                   placeholder="Search articles, categories, tags, or author names..."
+                   placeholder="${_t('search.placeholder')}"
                    autocomplete="off" />
-            <button id="search-btn" class="btn btn-primary">Search</button>
+            <button id="search-btn" class="btn btn-primary">${_t('search.button')}</button>
           </div>
 
           <div class="search-helper-row">
-            <span class="search-helper-pill">Live ranking</span>
-            <span class="search-helper-pill">Articles and people</span>
-            <span class="search-helper-copy">Type at least 2 letters to start.</span>
+            <span class="search-helper-pill">${_t('search.liveRanking')}</span>
+            <span class="search-helper-pill">${_t('search.articlesPeople')}</span>
+            <span class="search-helper-copy">${_t('search.minLetters')}</span>
           </div>
         </div>
 
         <div class="search-tabs" id="search-tabs">
-          <button class="search-tab active" data-mode="all">All</button>
-          <button class="search-tab" data-mode="articles">Articles</button>
-          <button class="search-tab" data-mode="people">People</button>
+          <button class="search-tab active" data-mode="all">${_t('search.all')}</button>
+          <button class="search-tab" data-mode="articles">${_t('search.articles')}</button>
+          <button class="search-tab" data-mode="people">${_t('search.people')}</button>
         </div>
 
         <div id="search-results"></div>
@@ -196,8 +208,8 @@
     if (!currentQuery) {
       el.innerHTML = `
         <div class="search-empty">
-          <strong>Start with a keyword</strong>
-          <p>Try an article title, a topic, or an author name.</p>
+          <strong>${_t('search.startTitle')}</strong>
+          <p>${_t('search.startBody')}</p>
         </div>
       `;
       return;
@@ -206,15 +218,15 @@
     if (!results.length) {
       el.innerHTML = `
         <div class="search-empty">
-          <strong>No results</strong>
-          <p>Try another keyword, category, or author name.</p>
+          <strong>${_t('search.emptyTitle')}</strong>
+          <p>${_t('search.emptyBody')}</p>
         </div>
       `;
       return;
     }
 
     el.innerHTML = `
-      <div class="search-count">${results.length} result${results.length === 1 ? '' : 's'} for "${esc(currentQuery)}"</div>
+      <div class="search-count">${_t(results.length === 1 ? 'search.resultFor' : 'search.resultsFor', { count: results.length, query: esc(currentQuery) })}</div>
       <div class="search-list">
         ${results.map(renderCard).join('')}
       </div>
@@ -252,22 +264,22 @@
               <div class="src-title">${esc(item.name)}</div>
               <span class="src-pill">${esc(match.label)}</span>
             </div>
-            <div class="src-snippet">${esc(resolved.bio || (resolved.isPremium ? 'Premium member publishing on IBlog.' : 'IBlog author profile.'))}</div>
+            <div class="src-snippet">${esc(resolved.bio || (resolved.isPremium ? _t('search.premiumSnippet') : _t('search.profileSnippet')))}</div>
             <div class="src-meta">
-              <span class="src-cat">Profile</span>
+              <span class="src-cat">${_t('search.profile')}</span>
               <span>${esc(match.detail)}</span>
-              <span>${esc(resolved.plan || 'free')} plan</span>
+              <span>${esc(_t('search.plan', { plan: _t(`search.${resolved.plan || 'free'}`) }))}</span>
             </div>
             <div class="src-actions">
               <button class="src-btn src-btn-ghost"
                       type="button"
                       data-search-action="open-profile"
-                      data-profile="${payload(profilePayload)}">View</button>
+                      data-profile="${payload(profilePayload)}">${_t('search.view')}</button>
               ${ownProfile ? '' : `
                 <button class="src-btn src-btn-primary"
                         type="button"
                         data-search-action="message-user"
-                        data-profile="${payload(profilePayload)}">Message</button>
+                        data-profile="${payload(profilePayload)}">${_t('search.message')}</button>
               `}
             </div>
           </div>
@@ -277,14 +289,14 @@
 
     const resolvedAuthor = resolveProfileRecord({
       id: item.authorId ?? null,
-      name: item.author || 'Unknown',
+      name: item.author || _t('search.unknown'),
       avatar: item.authorAvatar || '',
       plan: 'free',
       isPremium: false,
     });
     const authorProfilePayload = {
       id: item.authorId ?? null,
-      name: item.author || 'Unknown',
+      name: item.author || _t('search.unknown'),
       email: item.authorEmail || '',
       avatar: resolvedAuthor.avatar,
       cover: resolvedAuthor.cover,
@@ -307,31 +319,31 @@
         <div class="src-body">
           <div class="src-title-row">
             <div class="src-title">${esc(item.title)}</div>
-            <span class="src-pill">Article</span>
+            <span class="src-pill">${_t('search.article')}</span>
           </div>
-          <div class="src-snippet">By ${esc(item.author || 'Unknown')} in ${esc(item.cat || 'General')} / ${esc(item.readTime || '5 min')}</div>
+          <div class="src-snippet">${_t('search.byInRead', { author: esc(item.author || _t('search.unknown')), category: esc(_category(item.cat || _t('search.general'))), readTime: esc(_readTime(item.readTime || '5 min')) })}</div>
           <div class="src-meta">
-            <span class="src-cat">${esc(item.cat || 'General')}</span>
+            <span class="src-cat">${esc(_category(item.cat || _t('search.general')))}</span>
             <span>${esc(matchMeta(item).detail)}</span>
-            <span>Views ${Number(item.views || 0)}</span>
-            <span>Likes ${Number(item.likes || 0)}</span>
+            <span>${_t('search.views', { count: Number(item.views || 0) })}</span>
+            <span>${_t('search.likes', { count: Number(item.likes || 0) })}</span>
             ${item.tags ? `<span>${esc(String(item.tags).split(',').slice(0, 2).join(' / '))}</span>` : ''}
           </div>
           <div class="src-actions">
             <button class="src-btn src-btn-ghost"
                     type="button"
                     data-search-action="open-profile"
-                    data-profile="${payload(authorProfilePayload)}">Author</button>
+                    data-profile="${payload(authorProfilePayload)}">${_t('search.author')}</button>
             ${ownAuthorProfile ? `
               <button class="src-btn src-btn-primary"
                       type="button"
                       data-search-action="open-article"
-                      data-article-id="${Number(item.id ?? 0)}">Open</button>
+                      data-article-id="${Number(item.id ?? 0)}">${_t('search.open')}</button>
             ` : `
               <button class="src-btn src-btn-primary"
                       type="button"
                       data-search-action="message-user"
-                      data-profile="${payload(authorProfilePayload)}">Message</button>
+                      data-profile="${payload(authorProfilePayload)}">${_t('search.message')}</button>
             `}
           </div>
         </div>
@@ -378,19 +390,19 @@
   function matchMeta(item = {}) {
     const confidence = Number(item.confidence || 0);
     const tier = String(item.matchTier || '');
-    let label = 'Match';
+    let label = _t('search.match');
 
     if (tier === 'exact' || confidence >= 0.995) {
-      label = 'Exact Match';
+      label = _t('search.exactMatch');
     } else if (confidence >= 0.9) {
-      label = 'High Precision';
+      label = _t('search.highPrecision');
     } else if (confidence >= 0.8) {
-      label = 'Strong Match';
+      label = _t('search.strongMatch');
     }
 
     return {
       label,
-      detail: `Score ${confidence ? confidence.toFixed(2) : '0.00'}`,
+      detail: _t('search.score', { score: confidence ? confidence.toFixed(2) : '0.00' }),
     };
   }
 
@@ -482,7 +494,7 @@
         return {
           id: user?.id ?? null,
           type: 'user',
-          name: user?.name || 'Unknown',
+          name: user?.name || _t('search.unknown'),
           email: user?.email || '',
           plan: user?.plan || resolved.plan || 'free',
           isPremium: !!user?.isPremium || resolved.isPremium,
@@ -518,14 +530,14 @@
           id: article?.id ?? 0,
           type: 'article',
           authorId: article?.authorId ?? article?.userId ?? null,
-          author: article?.author || 'Unknown',
+          author: article?.author || _t('search.unknown'),
           authorEmail: article?.authorEmail || '',
           authorAvatar: article?.authorAvatar || '',
-          title: article?.title || 'Untitled article',
-          cat: article?.cat || article?.category || 'General',
+          title: article?.title || _t('search.untitledArticle'),
+          cat: article?.cat || article?.category || _t('search.general'),
           tags: Array.isArray(article?.tags) ? article.tags.join(', ') : (article?.tags || ''),
           img: article?.img || article?.cover || '',
-          readTime: article?.readTime || '5 min',
+          readTime: _readTime(article?.readTime || '5 min'),
           likes: Number(article?.likesCount ?? article?.likes ?? 0),
           views: Number(article?.views || 0),
           score: Math.round(confidence * 100),

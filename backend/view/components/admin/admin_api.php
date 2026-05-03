@@ -26,7 +26,6 @@ if ($backendPath === false || !file_exists($backendPath . '/config/database.php'
 }
 
 require_once $backendPath . '/config/database.php';
-require_once $backendPath . '/model/users.php';
 require_once $backendPath . '/controller/UserController.php';
 
 if (!isset($cnx) || !($cnx instanceof PDO)) {

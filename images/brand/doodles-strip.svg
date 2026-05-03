@@ -1,0 +1,56 @@
+<svg width="960" height="140" viewBox="0 0 960 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lineBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7AAEFF"/>
+      <stop offset="100%" stop-color="#345EC9"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="140" rx="32" fill="#F6FAFF"/>
+  <g stroke="url(#lineBlue)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(55 26)">
+      <path d="M30 12C17 12 7 22 7 35C7 46 14 55 24 58V72L37 63L45 72V58C56 55 63 46 63 35C63 22 53 12 40 12H30Z"/>
+      <circle cx="27" cy="38" r="4" fill="#345EC9" stroke="none"/>
+      <circle cx="44" cy="38" r="4" fill="#345EC9" stroke="none"/>
+    </g>
+    <g transform="translate(180 18)">
+      <path d="M35 18C19 18 7 31 7 47V64C7 79 18 92 33 92H38C53 92 64 79 64 64V47C64 31 52 18 35 18Z"/>
+      <path d="M20 18L15 8L28 15"/>
+      <path d="M50 18L55 8L42 15"/>
+      <circle cx="28" cy="48" r="5" fill="#345EC9" stroke="none"/>
+      <circle cx="43" cy="48" r="5" fill="#345EC9" stroke="none"/>
+      <path d="M28 65C33 69 38 69 43 65"/>
+      <path d="M18 3L33 8L47 3L45 17H20L18 3Z"/>
+    </g>
+    <g transform="translate(320 26)">
+      <path d="M7 18C7 8 15 0 25 0H84C94 0 102 8 102 18V48C102 58 94 66 84 66H58L40 84V66H25C15 66 7 58 7 48V18Z"/>
+      <path d="M28 23H79"/>
+      <path d="M28 37H89"/>
+      <path d="M28 51H67"/>
+    </g>
+    <g transform="translate(480 18)">
+      <path d="M23 95C58 70 76 43 77 17C55 25 33 42 22 70C18 80 18 89 23 95Z"/>
+      <path d="M24 91C36 78 52 55 69 24"/>
+      <path d="M37 69L25 58"/>
+      <path d="M49 51L36 39"/>
+    </g>
+    <g transform="translate(612 14)">
+      <path d="M14 31L43 8L72 31"/>
+      <path d="M21 29L24 58H62L65 29"/>
+      <path d="M24 20V5"/>
+      <path d="M43 11V0"/>
+      <path d="M62 20V5"/>
+      <circle cx="24" cy="5" r="3" fill="#7AAEFF" stroke="none"/>
+      <circle cx="43" cy="0" r="3" fill="#7AAEFF" stroke="none"/>
+      <circle cx="62" cy="5" r="3" fill="#7AAEFF" stroke="none"/>
+    </g>
+    <g transform="translate(760 18)">
+      <path d="M16 12H74L86 25V88C86 98 78 106 68 106H16C6 106 -2 98 -2 88V30C-2 20 6 12 16 12Z"/>
+      <path d="M74 12V25H86"/>
+      <path d="M20 36H63"/>
+      <path d="M20 52H67"/>
+      <path d="M20 68H58"/>
+      <path d="M98 78C116 66 126 48 126 28C110 33 95 48 90 66C88 72 90 77 98 78Z"/>
+      <path d="M97 75C107 66 113 53 121 34"/>
+    </g>
+  </g>
+</svg>

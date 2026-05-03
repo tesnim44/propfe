@@ -16,6 +16,10 @@ IBlog.ArticleCard = {
       .replace(/'/g, '&#39;');
   },
 
+  _t(key, vars = {}) {
+    return IBlog.I18n?.t?.(key, vars) || key;
+  },
+
   _reactionMeta(article) {
     if (!article?._userReaction) return null;
     return this.REACTIONS.find((reaction) => reaction.key === article._userReaction) || null;
@@ -85,17 +89,18 @@ IBlog.ArticleCard = {
      ══════════════════════════════════════════════════════ */
   render(article, index = 0, options = {}) {
     this.hydrateSocialState(article);
+    const display = IBlog.I18n?.localizeArticle?.(article) || article;
     const card = document.createElement('div');
     card.className = 'article-card' + (article.premium ? ' premium-card' : '');
     card.dataset.id = article.id;
 
     const color   = this.avatarColor(index);
     const initial = (article.author || 'A')[0].toUpperCase();
-    const safeAuthor = this._esc(article.author || 'Anonymous');
-    const safeDate = this._esc(article.date || '');
-    const safeCategory = this._esc(article.category || article.cat || 'General');
-    const safeTitle = this._esc(article.title || '');
-    const safeExcerpt = this._esc(article.excerpt || '');
+    const safeAuthor = this._esc(display.author || article.author || 'Anonymous');
+    const safeDate = this._esc(display.date || article.date || '');
+    const safeCategory = this._esc(display.category || display.cat || article.category || article.cat || 'General');
+    const safeTitle = this._esc(display.title || article.title || '');
+    const safeExcerpt = this._esc(display.excerpt || article.excerpt || '');
     const authorProfilePayload = encodeURIComponent(JSON.stringify({
       id: article.authorId ?? null,
       name: article.author || 'Anonymous',
@@ -109,19 +114,27 @@ IBlog.ArticleCard = {
       ? `background-image:url('${this._esc(article.authorAvatar)}');background-size:cover;background-position:center;background-color:transparent;cursor:pointer`
       : `background:${color};cursor:pointer`;
     const insightLabel = article.likes > 500
-      ? 'High momentum'
+      ? this._t('feed.highMomentum')
       : article.comments?.length
-      ? 'Discussion starter'
+      ? this._t('feed.discussionStarter')
       : article.reposts > 40
-      ? 'Widely shared'
-      : 'Curated feed';
+      ? this._t('feed.widelyShared')
+      : this._t('feed.curatedNote');
     const qualityBadge = (article.quality >= 80 || article.quality === 'high')
-      ? `<span class="quality-high">High quality</span>`
+      ? `<span class="quality-high">${this._t('feed.highQuality')}</span>`
       : (article.quality >= 60 || article.quality === 'med')
-      ? `<span class="quality-med">Good</span>` : '';
+      ? `<span class="quality-med">${this._t('feed.goodQuality')}</span>` : '';
+    const commentCount = Array.isArray(article.comments) ? article.comments.length : 0;
+    const localizedReadTime = this._esc(display.readTime || article.readTime || this._t('misc.read', { count: 3 }));
+    const localizedTags = Array.isArray(display.tags) ? display.tags : Array.isArray(article.tags) ? article.tags : [];
+    const socialSummary = this._t('feed.socialSummary', {
+      likes: IBlog.I18n?.formatNumber?.(article.likes || 0) || String(article.likes || 0),
+      comments: IBlog.I18n?.formatNumber?.(commentCount) || String(commentCount),
+      reposts: IBlog.I18n?.formatNumber?.(article.reposts || 0) || String(article.reposts || 0),
+    });
 
     card.innerHTML = `
-      ${article.premium ? '<div class="premium-card-banner">Premium Article</div>' : ''}
+      ${article.premium ? `<div class="premium-card-banner">${this._t('feed.premiumArticle')}</div>` : ''}
       ${article.cover || article.img ? `
         <div class="card-cover" style="background-image:url('${article.cover||article.img}')"
              onclick="IBlog.Feed.openReader(${article.id})">
@@ -136,13 +149,19 @@ IBlog.ArticleCard = {
                data-profile="${this._esc(authorProfilePayload)}"
                onclick="IBlog.Profile?.openUserProfileFromElement?.(this)">
             <div class="card-author">${safeAuthor}</div>
-            <div class="card-date">${safeDate}</div>
+            <div class="card-post-meta">
+              <span class="card-date">${safeDate}</span>
+              <span class="dot"></span>
+              <span>${localizedReadTime}</span>
+              <span class="dot"></span>
+              <span>${this._esc(insightLabel)}</span>
+            </div>
           </div>
           <span class="card-cat">${safeCategory}</span>
         </div>
         <div class="card-spotlight">
-          <span class="card-spotlight-pill">Curated for your feed</span>
-          <span class="card-spotlight-note">${insightLabel}</span>
+          <span class="card-spotlight-pill">${this._esc(this._t('feed.curated'))}</span>
+          <span class="card-spotlight-note">${this._esc(insightLabel)}</span>
         </div>
         <div class="card-story-grid">
           <div class="card-story-main">
@@ -151,15 +170,15 @@ IBlog.ArticleCard = {
           </div>
         </div>
         <div class="card-meta">
-          <span class="read-time">${article.readTime||'3 min'}</span>
+          <span class="read-time">${localizedReadTime}</span>
           ${qualityBadge}
-          ${(article.tags||[]).slice(0,2).map(t=>`<span class="topic-chip">${this._esc(t)}</span>`).join('')}
+          ${localizedTags.slice(0,3).map(t=>`<span class="topic-chip">${this._esc(t)}</span>`).join('')}
         </div>
 
         <!-- Podcast mini -->
         <button class="pod-toggle-btn" onclick="IBlog.ArticleCard.togglePodcast(${article.id},this)">
           <span class="pod-icon">${this.SVG.mic}</span>
-          <span id="pod-label-${article.id}">Listen as Podcast</span>
+          <span id="pod-label-${article.id}">${this._t('feed.listenPodcast')}</span>
         </button>
         <div class="podcast-player-inline" id="pod-${article.id}" style="display:none;margin-bottom:12px"></div>
 
@@ -175,11 +194,11 @@ IBlog.ArticleCard = {
                   id="bookmark-btn-${article.id}"
                   onclick="IBlog.ArticleCard.toggleBookmark(${article.id})">
             ${article._bookmarked?this.SVG.saveFill:this.SVG.save}
-            <span id="bookmark-label-${article.id}">${article._bookmarked?'Saved':'Save'}</span>
+            <span id="bookmark-label-${article.id}">${article._bookmarked ? this._t('actions.saved') : this._t('actions.save')}</span>
           </button>
           <button class="interact-btn" onclick="IBlog.ArticleCard.toggleComments(${article.id})">
             ${this.SVG.comment}
-            <span id="comment-count-${article.id}">${(article.comments||[]).length}</span>
+            <span id="comment-count-${article.id}">${commentCount}</span>
           </button>
           <button class="interact-btn ${article._reposted?'reposted':''}"
                   id="repost-btn-${article.id}"
@@ -189,15 +208,15 @@ IBlog.ArticleCard = {
           </button>
           <div class="share-wrapper">
             <button class="interact-btn" onclick="IBlog.ArticleCard.toggleShareMenu(${article.id})">
-              ${this.SVG.share} Share
+              ${this.SVG.share} ${this._t('actions.share')}
             </button>
             <div class="share-menu" id="share-menu-${article.id}">
               <button onclick="IBlog.ArticleCard.shareTo('twitter',${article.id})">X / Twitter</button>
               <button onclick="IBlog.ArticleCard.shareTo('linkedin',${article.id})">LinkedIn</button>
-              <button onclick="IBlog.ArticleCard.shareTo('copy',${article.id})">Copy link</button>
+              <button onclick="IBlog.ArticleCard.shareTo('copy',${article.id})">${this._t('actions.share')} link</button>
             </div>
           </div>
-          ${options.showEdit?`<button class="interact-btn edit-btn" onclick="IBlog.ArticleCard.editArticle(${article.id})">${this.SVG.edit} Edit</button>`:''}
+          ${options.showEdit?`<button class="interact-btn edit-btn" onclick="IBlog.ArticleCard.editArticle(${article.id})">${this.SVG.edit} ${this._t('actions.edit')}</button>`:''}
           ${options.showDelete?`<button class="interact-btn delete-btn" onclick="IBlog.ArticleCard.deleteArticle(${article.id})">${this.SVG.trash}</button>`:''}
         </div>
       </div>
@@ -206,7 +225,7 @@ IBlog.ArticleCard = {
       <div class="comment-section" id="comments-${article.id}">
         <div class="comment-input-row">
           <input class="comment-input" id="comment-input-${article.id}"
-                 placeholder="Add a comment…"
+                 placeholder="${this._t('comments.add')}"
                  onkeydown="if(event.key==='Enter') IBlog.ArticleCard.postComment(${article.id})"/>
           <button class="comment-send" onclick="IBlog.ArticleCard.postComment(${article.id})">${this.SVG.send}</button>
         </div>
@@ -248,14 +267,14 @@ IBlog.ArticleCard = {
     });
     const trigger=document.getElementById(`react-trigger-${id}`);
     const activeReaction = this._reactionMeta(article);
-    if(trigger){trigger.className=`interact-btn react-trigger ${article._userReaction?'reacted':''}`;trigger.innerHTML=(activeReaction ? this.SVG[activeReaction.svgKey] : this.SVG.love)+(activeReaction ? ` <span>${activeReaction.label}</span>` : ' <span>React</span>');}
+    if(trigger){trigger.className=`interact-btn react-trigger ${article._userReaction?'reacted':''}`;trigger.innerHTML=(activeReaction ? this.SVG[activeReaction.svgKey] : this.SVG.love)+(activeReaction ? ` <span>${activeReaction.label}</span>` : ` <span>${this._t('reactions.react')}</span>`);}
     const summary=document.getElementById(`reaction-summary-${id}`);
     if(summary) summary.innerHTML=this._summaryHTML(article);
     /* Sync reader */
     this._syncReader(id,article);
     document.getElementById(`reaction-picker-${id}`)?.classList.remove('open');
     const def=this.REACTIONS.find(r=>r.key===article._userReaction);
-    IBlog.utils.toast(def?def.label+'!':'Reaction removed');
+    IBlog.utils.toast(def ? def.label + '!' : this._t('reactions.react'));
   },
 
   _summaryHTML(article) {
@@ -278,7 +297,7 @@ IBlog.ArticleCard = {
     });
     const t=document.getElementById(`reader-react-trigger-${id}`);
     const activeReaction = this._reactionMeta(article);
-    if(t){t.className=`reader-action-btn react-trigger ${article._userReaction?'reacted':''}`;t.innerHTML=(activeReaction ? this.SVG[activeReaction.svgKey] : this.SVG.love)+(activeReaction ? ` <span>${activeReaction.label}</span>` : ' <span>React</span>');}
+    if(t){t.className=`reader-action-btn react-trigger ${article._userReaction?'reacted':''}`;t.innerHTML=(activeReaction ? this.SVG[activeReaction.svgKey] : this.SVG.love)+(activeReaction ? ` <span>${activeReaction.label}</span>` : ` <span>${this._t('reactions.react')}</span>`);}
     const s=document.getElementById(`reader-reaction-summary-${id}`);
     if(s) s.innerHTML=this._summaryHTML(article);
   },
@@ -295,9 +314,9 @@ IBlog.ArticleCard = {
     article._bookmarked = !!isSaved;
     article.bookmarked = !!isSaved;
     const btn=document.getElementById(`bookmark-btn-${id}`);
-    if(btn){btn.className=`interact-btn ${article._bookmarked?'bookmarked':''}`;btn.innerHTML=(article._bookmarked?this.SVG.saveFill:this.SVG.save)+`<span id="bookmark-label-${id}">${article._bookmarked?'Saved':'Save'}</span>`;}
+    if(btn){btn.className=`interact-btn ${article._bookmarked?'bookmarked':''}`;btn.innerHTML=(article._bookmarked?this.SVG.saveFill:this.SVG.save)+`<span id="bookmark-label-${id}">${article._bookmarked ? this._t('actions.saved') : this._t('actions.save')}</span>`;}
     const rbtn=document.getElementById(`reader-save-btn-${id}`);
-    if(rbtn){rbtn.className=`reader-action-btn ${article._bookmarked?'active-save':''}`;rbtn.innerHTML=(article._bookmarked?this.SVG.saveFill:this.SVG.save)+`<span>${article._bookmarked?'Saved':'Save'}</span>`;}
+    if(rbtn){rbtn.className=`reader-action-btn ${article._bookmarked?'active-save':''}`;rbtn.innerHTML=(article._bookmarked?this.SVG.saveFill:this.SVG.save)+`<span>${article._bookmarked ? this._t('actions.saved') : this._t('actions.save')}</span>`;}
   },
 
   async toggleBookmark(id) {
@@ -309,7 +328,7 @@ IBlog.ArticleCard = {
       try{
         const data=await window.IBlogSavedSync.toggle(Number(id), nextSaved);
         this._setBookmarkState(article, id, !!data.saved);
-        IBlog.utils.toast(data.saved ? 'Saved!' : 'Removed from bookmarks', data.saved ? 'success' : 'info');
+        IBlog.utils.toast(data.saved ? this._t('actions.saved') : this._t('actions.save'), data.saved ? 'success' : 'info');
       }catch(error){
         IBlog.utils.toast(error?.message || 'Could not update saved articles.', 'error');
       }
@@ -322,12 +341,12 @@ IBlog.ArticleCard = {
       if(!IBlog.state.savedArticles.find(a=>String(a.id)===String(id))) IBlog.state.savedArticles.push(article);
       IBlog.Views?.buildSaved?.();
       window.RightRail?.refreshStats?.();
-      IBlog.utils.toast('Saved!','success');
+      IBlog.utils.toast(this._t('actions.saved'),'success');
     } else {
       IBlog.state.savedArticles=IBlog.state.savedArticles.filter(a=>String(a.id)!==String(id));
       IBlog.Views?.buildSaved?.();
       window.RightRail?.refreshStats?.();
-      IBlog.utils.toast('Removed from bookmarks');
+      IBlog.utils.toast(this._t('actions.save'));
     }
   },
 
@@ -355,7 +374,7 @@ IBlog.ArticleCard = {
         : `You removed the share for <strong>${this._esc(article.title || 'this article')}</strong>.`,
       'share'
     );
-    IBlog.utils.toast(article._reposted?'Reposted!':'Repost removed');
+    IBlog.utils.toast(article._reposted ? this._t('actions.repost') : this._t('actions.repost'));
   },
 
   /* ── Share ───────────────────────────────────────────── */
@@ -374,7 +393,7 @@ IBlog.ArticleCard = {
     document.getElementById(`share-menu-${id}`)?.classList.remove('open');
     if(platform==='twitter') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,'_blank');
     else if(platform==='linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,'_blank');
-    else navigator.clipboard.writeText(url).then(()=>IBlog.utils.toast('Link copied!','success'));
+    else navigator.clipboard.writeText(url).then(()=>IBlog.utils.toast(this._t('actions.share'),'success'));
     IBlog.Notifications?.push?.(`You shared <strong>${this._esc(title)}</strong>.`, 'share');
   },
 
@@ -385,7 +404,7 @@ IBlog.ArticleCard = {
     if(!player) return;
     if(player.style.display!=='none'){
       player.style.display='none';
-      if(label) label.textContent='Listen as Podcast';
+      if(label) label.textContent=this._t('feed.listenPodcast');
       IBlog.Podcast.stop(); return;
     }
     const article=(IBlog.state.articles||[]).find(a=>a.id===id);
@@ -405,7 +424,7 @@ IBlog.ArticleCard = {
         </div>
       </div>`;
     player.style.display='block';
-    if(label) label.textContent='Close Podcast';
+    if(label) label.textContent=this._t('feed.closePodcast');
   },
 
   /* ── Comments ────────────────────────────────────────── */
@@ -462,7 +481,7 @@ IBlog.ArticleCard = {
     IBlog.Analytics?.init?.();
     IBlog.Activity?.init?.();
     IBlog.Notifications?.push?.(`New comment on <strong>${this._esc(article.title || 'your article')}</strong>.`, 'comment');
-    IBlog.utils.toast('Comment posted!','success');
+    IBlog.utils.toast(this._t('actions.comment'),'success');
   },
 
   _commentHTML(c) {

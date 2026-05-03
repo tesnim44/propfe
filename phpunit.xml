@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+  bootstrap="tests/bootstrap.php"
+  cacheDirectory="tests/.phpunit.cache"
+  colors="true"
+  executionOrder="default"
+  beStrictAboutOutputDuringTests="false"
+>
+  <coverage includeUncoveredFiles="false">
+    <report />
+  </coverage>
+  <source>
+    <include>
+      <file>config/config.php</file>
+      <file>src/Controller/ArticleController.php</file>
+      <file>src/Controller/CommunityController.php</file>
+      <file>src/Controller/SavedArticleController.php</file>
+      <file>src/Controller/UserController.php</file>
+      <file>src/Repository/ArticleRepository.php</file>
+      <file>src/Repository/SavedArticleRepository.php</file>
+      <file>src/Repository/UserRepository.php</file>
+      <file>backend/view/components/article/api-articles.php</file>
+      <file>backend/view/components/auth/search-index.php</file>
+    </include>
+    <exclude>
+      <directory>public/uploads</directory>
+      <directory>tests/runtime</directory>
+    </exclude>
+  </source>
+  <testsuites>
+    <testsuite name="Unit">
+      <directory>tests/Unit</directory>
+    </testsuite>
+    <testsuite name="Integration">
+      <directory>tests/Integration</directory>
+    </testsuite>
+    <testsuite name="Performance">
+      <directory>tests/Performance</directory>
+    </testsuite>
+    <testsuite name="Advanced">
+      <directory>tests/Advanced</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

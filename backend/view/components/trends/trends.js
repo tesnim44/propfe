@@ -4,6 +4,9 @@ IBlog.Trends = (() => {
   'use strict';
 
   const CONTENT_IDEAS = {};
+  const _t = (key, vars = {}) => IBlog.I18n?.t?.(key, vars) || key;
+  const _topic = (value) => IBlog.I18n?.localizeTopic?.(value) || value;
+  const _category = (value) => IBlog.I18n?.localizeCategory?.(value) || value;
 
   const DEFAULT_IDEAS = [
     'A Beginner\'s Guide to This Topic',
@@ -32,12 +35,12 @@ IBlog.Trends = (() => {
 
   function _getStatus(topic) {
     const pts = TREND_EVOLUTION[topic];
-    if (!pts || pts.length < 2) return { label: 'Emerging', cls: 'emerging' };
+    if (!pts || pts.length < 2) return { label: _t('trends.emerging'), cls: 'emerging' };
     const delta = pts[pts.length - 1] - pts[pts.length - 2];
-    if (delta > 10) return { label: 'Emerging', cls: 'emerging' };
-    if (delta > 0) return { label: 'Peaking', cls: 'peaking' };
-    if (delta > -10) return { label: 'Declining', cls: 'declining' };
-    return { label: 'Fading', cls: 'fading' };
+    if (delta > 10) return { label: _t('trends.emerging'), cls: 'emerging' };
+    if (delta > 0) return { label: _t('trends.peaking'), cls: 'peaking' };
+    if (delta > -10) return { label: _t('trends.declining'), cls: 'declining' };
+    return { label: _t('trends.fading'), cls: 'fading' };
   }
 
   function _getPersonalizedTrends() {
@@ -45,7 +48,7 @@ IBlog.Trends = (() => {
     if (!articles.length || !Array.isArray(IBlog.TRENDS) || !IBlog.TRENDS.length) return [];
 
     const catCount = {};
-    articles.forEach(article => {
+    articles.forEach((article) => {
       if (article.cat) catCount[article.cat] = (catCount[article.cat] || 0) + 1;
     });
 
@@ -57,7 +60,7 @@ IBlog.Trends = (() => {
       .map(([trendCat]) => trendCat);
 
     return IBlog.TRENDS
-      .filter(trend => matchingTrendCats.includes(trend.cat) || trend.cat === topCat)
+      .filter((trend) => matchingTrendCats.includes(trend.cat) || trend.cat === topCat)
       .slice(0, 3);
   }
 
@@ -72,22 +75,22 @@ IBlog.Trends = (() => {
     div.id = 'view-trends';
     div.innerHTML = `
       <div class="view-header">
-        <h1>Trend Radar</h1>
-        <p>Know what to write before everyone else</p>
+        <h1>${_t('trends.title')}</h1>
+        <p>${_t('trends.subtitle')}</p>
       </div>
 
       <div class="tr-section" id="tr-personal-wrap">
         <div class="tr-section-header">
-          <strong>Trending in Your Niche</strong>
-          <div class="ai-pill"><span class="ai-dot"></span>Personalized</div>
+          <strong>${_t('trends.nicheTitle')}</strong>
+          <div class="ai-pill"><span class="ai-dot"></span>${_t('trends.personalized')}</div>
         </div>
         <div id="tr-personal"></div>
       </div>
 
       <div class="tr-section">
         <div class="tr-section-header">
-          <strong>Emerging Now</strong>
-          <div class="ai-pill"><span class="ai-dot"></span>Live Analysis</div>
+          <strong>${_t('trends.emergingNow')}</strong>
+          <div class="ai-pill"><span class="ai-dot"></span>${_t('trends.liveAnalysis')}</div>
         </div>
         <div id="tr-trend-list"></div>
       </div>
@@ -101,11 +104,11 @@ IBlog.Trends = (() => {
           <button class="tr-close-btn" onclick="document.getElementById('tr-detail').style.display='none'">x</button>
         </div>
         <div class="tr-sparkline-wrap">
-          <div class="tr-sparkline-label">Trend evolution - last 7 weeks</div>
+          <div class="tr-sparkline-label">${_t('trends.trendEvolution')}</div>
           <canvas id="tr-sparkline" height="60"></canvas>
         </div>
         <div class="tr-ai-box" id="tr-ai-box"></div>
-        <div class="tr-ideas-header">Content Ideas for This Trend</div>
+        <div class="tr-ideas-header">${_t('trends.contentIdeas')}</div>
         <div class="tr-ideas-list" id="tr-ideas-list"></div>
       </div>
     `;
@@ -118,7 +121,7 @@ IBlog.Trends = (() => {
     if (!Array.isArray(IBlog.TRENDS) || !IBlog.TRENDS.length) {
       el.innerHTML = `
         <div class="section-card" style="padding:18px;color:var(--text2);">
-          Trend data will appear here once real activity is available.
+          ${_t('trends.noTrendData')}
         </div>`;
       return;
     }
@@ -131,8 +134,8 @@ IBlog.Trends = (() => {
           <span class="trend-num">#${trend.rank}</span>
           <span class="tr-topic-icon">${trend.icon}</span>
           <div class="trend-info">
-            <strong>${trend.topic}</strong>
-            <small>${trend.searches} searches · ${trend.cat}</small>
+            <strong>${_topic(trend.topic)}</strong>
+            <small>${_t('trends.searches', { count: trend.searches })} · ${_category(trend.cat)}</small>
           </div>
           <span class="tr-status-badge tr-${status.cls}">${status.label}</span>
           <span class="trend-spike">${trend.spike}</span>
@@ -154,14 +157,14 @@ IBlog.Trends = (() => {
 
     el.innerHTML = personal.map((trend, i) => {
       const status = _getStatus(trend.topic);
-      const idx = IBlog.TRENDS.findIndex(item => item.topic === trend.topic);
+      const idx = IBlog.TRENDS.findIndex((item) => item.topic === trend.topic);
       return `
         <div class="trend-row tr-personal-row tr-animated" style="animation-delay:${i * 0.05}s"
              onclick="IBlog.Trends.openDetail(${idx})">
           <span class="tr-topic-icon">${trend.icon}</span>
           <div class="trend-info">
-            <strong>${trend.topic}</strong>
-            <small>${trend.searches} searches · <span class="tr-niche-tag">In your niche</span></small>
+            <strong>${_topic(trend.topic)}</strong>
+            <small>${_t('trends.searches', { count: trend.searches })} · <span class="tr-niche-tag">${_t('trends.inYourNiche')}</span></small>
           </div>
           <span class="tr-status-badge tr-${status.cls}">${status.label}</span>
           <span class="trend-spike">${trend.spike}</span>
@@ -176,23 +179,23 @@ IBlog.Trends = (() => {
     const panel = document.getElementById('tr-detail');
     if (!panel) return;
 
-    document.getElementById('tr-detail-topic').textContent = `${trend.icon} ${trend.topic}`;
+    document.getElementById('tr-detail-topic').textContent = `${trend.icon} ${_topic(trend.topic)}`;
     document.getElementById('tr-detail-meta').innerHTML = `
       <span class="tr-status-badge tr-${status.cls}">${status.label}</span>
-      <span style="margin-left:8px;color:var(--text2);font-size:12px">${trend.searches} searches · ${trend.spike} growth · ${trend.cat}</span>`;
+      <span style="margin-left:8px;color:var(--text2);font-size:12px">${_t('trends.searches', { count: trend.searches })} · ${_t('trends.growth', { count: trend.spike })} · ${_category(trend.cat)}</span>`;
 
     document.getElementById('tr-ai-box').innerHTML = `
-      <div class="tr-ai-title">Recommendation</div>
-      <div class="tr-ai-row"><span>Write from a real reporting angle or creator perspective.</span></div>
-      <div class="tr-ai-row"><span>Compare recent developments, audience demand, and competition.</span></div>
-      <div class="tr-ai-row"><span>Move quickly while this topic is still gaining traction.</span></div>`;
+      <div class="tr-ai-title">${_t('trends.recommendation')}</div>
+      <div class="tr-ai-row"><span>${_t('trends.recommendation1')}</span></div>
+      <div class="tr-ai-row"><span>${_t('trends.recommendation2')}</span></div>
+      <div class="tr-ai-row"><span>${_t('trends.recommendation3')}</span></div>`;
 
     const ideas = CONTENT_IDEAS[trend.topic] || DEFAULT_IDEAS;
-    document.getElementById('tr-ideas-list').innerHTML = ideas.map(idea => `
+    document.getElementById('tr-ideas-list').innerHTML = ideas.map((idea) => `
       <div class="tr-idea-item" onclick="IBlog.Trends.useIdea('${idea.replace(/'/g, "\\'")}')">
-        <span class="tr-idea-icon">Write</span>
+        <span class="tr-idea-icon">${_t('trends.write')}</span>
         <span class="tr-idea-text">${idea}</span>
-        <span class="tr-idea-use">Use</span>
+        <span class="tr-idea-use">${_t('trends.use')}</span>
       </div>`).join('');
 
     panel.style.display = 'block';
@@ -229,7 +232,7 @@ IBlog.Trends = (() => {
     grad.addColorStop(1, accentColor + '00');
     ctx.beginPath();
     ctx.moveTo(points[0].x, H - pad);
-    points.forEach(point => ctx.lineTo(point.x, point.y));
+    points.forEach((point) => ctx.lineTo(point.x, point.y));
     ctx.lineTo(points[points.length - 1].x, H - pad);
     ctx.closePath();
     ctx.fillStyle = grad;
@@ -237,7 +240,7 @@ IBlog.Trends = (() => {
 
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
-    points.forEach(point => ctx.lineTo(point.x, point.y));
+    points.forEach((point) => ctx.lineTo(point.x, point.y));
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
@@ -270,7 +273,7 @@ IBlog.Trends = (() => {
         input.dispatchEvent(new Event('input'));
       }
     }, 200);
-    if (IBlog.utils?.toast) IBlog.utils.toast('Idea loaded in writer!', 'success');
+    if (IBlog.utils?.toast) IBlog.utils.toast(_t('trends.ideaLoaded'), 'success');
   }
 
   function init() {

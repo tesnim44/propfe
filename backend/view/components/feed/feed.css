@@ -4,13 +4,15 @@
 
 /* ── Center feed column ────────────────────────────────── */
 .center-feed {
-  overflow-y: auto;
-  height: 100vh;
-  max-height: 100vh;
+  overflow: visible;
+  height: auto;
+  min-height: 100vh;
+  max-height: none;
   padding: 24px 28px;
   background: var(--bg);
   min-width: 0;
-  overscroll-behavior: contain;
+  box-sizing: border-box;
+  overscroll-behavior: auto;
   scroll-behavior: smooth;
 }
 .center-feed::-webkit-scrollbar { width: 4px; }

@@ -14,6 +14,7 @@ IBlog.Communities = (() => {
   /* ── Helpers ─────────────────────────────────────────── */
   const _cu   = () => IBlog.state.currentUser;
   const _prem = u  => u && (u.plan === 'premium' || u.isPremium === true);
+  const _t    = (key, vars = {}) => IBlog.I18n?.t?.(key, vars) || key;
 
   function _authPayload() {
     const user = _cu() || {};
@@ -72,15 +73,15 @@ IBlog.Communities = (() => {
         <div class="view-header">
           <div class="comm-header-row">
             <div>
-              <h1>Community Spaces</h1>
-              <p>Topic-based communities for deep knowledge sharing</p>
+              <h1>${_t('communities.title')}</h1>
+              <p>${_t('communities.subtitle')}</p>
             </div>
             <button
               class="btn btn-primary comm-create-btn"
               id="create-community-btn"
               type="button"
             >
-              Create Community
+              ${_t('communities.create')}
             </button>
           </div>
         </div>
@@ -90,7 +91,7 @@ IBlog.Communities = (() => {
             id="comm-search"
             class="comm-search-input"
             type="search"
-            placeholder="Search communities, topics, or creators..."
+            placeholder="${_t('communities.searchPlaceholder')}"
             autocomplete="off"
           />
           <button
@@ -99,7 +100,7 @@ IBlog.Communities = (() => {
             type="button"
             onclick="IBlog.Communities.clearSearch()"
             style="display:none"
-            aria-label="Clear search"
+            aria-label="${_t('communities.clearAria')}"
           >
             ×
           </button>
@@ -186,7 +187,7 @@ IBlog.Communities = (() => {
     _checkCreateBtn();
 
     const grid = document.getElementById('comm-grid');
-    if (grid) grid.innerHTML = '<div class="comm-loading">Loading communities…</div>';
+    if (grid) grid.innerHTML = `<div class="comm-loading">${_t('communities.loading')}</div>`;
 
     await Promise.all([_fetchCommunities(), _fetchJoined()]);
     _buildCards();
@@ -223,7 +224,7 @@ IBlog.Communities = (() => {
     const ql = q ? q.toLowerCase() : '';
 
     if (!_communities.length) {
-      grid.innerHTML = `<div class="comm-empty"><p>No communities yet. Be the first to create one!</p></div>`;
+      grid.innerHTML = `<div class="comm-empty"><p>${_t('communities.empty')}</p></div>`;
       return;
     }
 
@@ -249,7 +250,7 @@ IBlog.Communities = (() => {
                   <span class="comm-card-name">${_esc(c.name)}</span>
                 </div>
                 <div class="comm-card-stats">
-                  <span id="mc-${c.id}">${c.memberCount} member${c.memberCount !== 1 ? 's' : ''}</span>
+                  <span id="mc-${c.id}">${c.memberCount} ${_t(c.memberCount !== 1 ? 'communities.members' : 'communities.member')}</span>
                 </div>
               </div>
             </div>
@@ -263,19 +264,19 @@ IBlog.Communities = (() => {
             <div class="comm-card-foot">
               <div class="comm-card-actions">
                 ${isJoined
-                  ? `<button class="comm-btn comm-btn-enter" onclick="IBlog.Communities.openChat(${c.id})">Open Chat</button>
-                     <button class="comm-btn comm-btn-leave" onclick="IBlog.Communities.leave(${c.id}, this)">Leave</button>`
-                  : `<button class="comm-btn comm-btn-join" id="join-btn-${c.id}" onclick="IBlog.Communities.join(${c.id}, this)">Join Community</button>`
+                  ? `<button class="comm-btn comm-btn-enter" onclick="IBlog.Communities.openChat(${c.id})">${_t('communities.openChat')}</button>
+                     <button class="comm-btn comm-btn-leave" onclick="IBlog.Communities.leave(${c.id}, this)">${_t('communities.leave')}</button>`
+                  : `<button class="comm-btn comm-btn-join" id="join-btn-${c.id}" onclick="IBlog.Communities.join(${c.id}, this)">${_t('communities.join')}</button>`
                 }
               </div>
-              ${c.creatorName ? `<span class="comm-card-creator">by <strong>${_esc(c.creatorName)}</strong></span>` : ''}
+              ${c.creatorName ? `<span class="comm-card-creator">${_t('communities.byCreator')} <strong>${_esc(c.creatorName)}</strong></span>` : ''}
             </div>
           </div>`;
       });
 
     grid.innerHTML = cards.length
       ? cards.join('')
-      : `<div class="comm-empty"><p>No communities match "<strong>${_esc(q)}</strong>"</p></div>`;
+      : `<div class="comm-empty"><p>${_t('communities.emptyMatch', { query: _esc(q) })}</p></div>`;
   }
 
   function _esc(str) {
@@ -309,9 +310,9 @@ IBlog.Communities = (() => {
   /* ── Join ────────────────────────────────────────────── */
   async function join(communityId, btnEl) {
     const u = _cu();
-    if (!u) { IBlog.utils?.toast('Sign in to join', 'info'); return; }
+    if (!u) { IBlog.utils?.toast(_t('communities.signInJoin'), 'info'); return; }
 
-    if (btnEl) { btnEl.textContent = 'Joining…'; btnEl.disabled = true; }
+    if (btnEl) { btnEl.textContent = _t('communities.joining'); btnEl.disabled = true; }
 
     try {
       const res  = await fetch(`${API}?action=join`, {
@@ -333,29 +334,29 @@ IBlog.Communities = (() => {
         if (comm && !data.alreadyMember) comm.memberCount++;
 
         const mcEl = document.getElementById(`mc-${communityId}`);
-        if (mcEl && comm) mcEl.textContent = `${comm.memberCount} member${comm.memberCount !== 1 ? 's' : ''}`;
+        if (mcEl && comm) mcEl.textContent = `${comm.memberCount} ${_t(comm.memberCount !== 1 ? 'communities.members' : 'communities.member')}`;
 
         const ibComm = window.IBlog.COMMUNITIES?.find(c => c.id == communityId);
         if (ibComm && comm) ibComm.memberCount = comm.memberCount;
 
-        IBlog.utils?.toast('Joined!', 'success');
+        IBlog.utils?.toast(_t('communities.joined'), 'success');
         _syncRail();
         _buildCards(_lastQuery);
         setTimeout(() => openChat(communityId), 200);
       } else {
-        if (btnEl) { btnEl.textContent = 'Join Community'; btnEl.disabled = false; }
-        IBlog.utils?.toast(data.error || 'Could not join', 'error');
+        if (btnEl) { btnEl.textContent = _t('communities.join'); btnEl.disabled = false; }
+        IBlog.utils?.toast(data.error || _t('communities.joinError'), 'error');
       }
     } catch (e) {
       console.error('[Communities] join error:', e);
-      if (btnEl) { btnEl.textContent = 'Join Community'; btnEl.disabled = false; }
-      IBlog.utils?.toast('Network error', 'error');
+      if (btnEl) { btnEl.textContent = _t('communities.join'); btnEl.disabled = false; }
+      IBlog.utils?.toast(_t('communities.networkError'), 'error');
     }
   }
 
   /* ── Leave ───────────────────────────────────────────── */
   async function leave(communityId, btnEl) {
-    if (btnEl) { btnEl.textContent = 'Leaving…'; btnEl.disabled = true; }
+    if (btnEl) { btnEl.textContent = _t('communities.leaving'); btnEl.disabled = true; }
 
     try {
       const res  = await fetch(`${API}?action=leave`, {
@@ -373,30 +374,31 @@ IBlog.Communities = (() => {
         _syncJoinedIndexesFromIds();
         const comm = _communities.find(c => c.id == communityId);
         if (comm) comm.memberCount = Math.max(0, comm.memberCount - 1);
-        IBlog.utils?.toast('Left community', 'info');
+        IBlog.utils?.toast(_t('communities.left'), 'info');
         _syncRail();
         _buildCards(_lastQuery);
       } else {
-        if (btnEl) { btnEl.textContent = 'Leave'; btnEl.disabled = false; }
-        IBlog.utils?.toast(data.error || 'Could not leave', 'error');
+        if (btnEl) { btnEl.textContent = _t('communities.leave'); btnEl.disabled = false; }
+        IBlog.utils?.toast(data.error || _t('communities.leaveError'), 'error');
       }
     } catch (e) {
       console.error('[Communities] leave error:', e);
-      if (btnEl) { btnEl.textContent = 'Leave'; btnEl.disabled = false; }
+      if (btnEl) { btnEl.textContent = _t('communities.leave'); btnEl.disabled = false; }
+      IBlog.utils?.toast(_t('communities.networkError'), 'error');
     }
   }
 
   /* ── Open Chat ───────────────────────────────────────── */
   function openChat(communityId) {
     const u = _cu();
-    if (!u) { IBlog.utils?.toast('Sign in first', 'info'); return; }
+    if (!u) { IBlog.utils?.toast(_t('communities.signInFirst'), 'info'); return; }
 
     const idx = window.IBlog.COMMUNITIES?.findIndex(c => c.id == communityId);
     if (idx === undefined || idx === -1) {
       console.error('[Communities] community not found in COMMUNITIES array:', communityId);
       return;
     }
-    if (!IBlog.Chat?.open) { IBlog.utils?.toast('Chat loading…', 'info'); return; }
+    if (!IBlog.Chat?.open) { IBlog.utils?.toast(_t('communities.chatLoading'), 'info'); return; }
     IBlog.Chat.open(idx);
   }
 
@@ -409,31 +411,31 @@ IBlog.Communities = (() => {
         <div class="modal comm-modal">
           <div class="comm-modal-hd">
             <div>
-              <h2 class="modal-title">New Community</h2>
-              <p class="modal-subtitle">Build a focused space for your audience</p>
+              <h2 class="modal-title">${_t('communities.modalTitle')}</h2>
+              <p class="modal-subtitle">${_t('communities.modalSubtitle')}</p>
             </div>
             <button class="comm-modal-x" onclick="IBlog.Communities.closeCreateModal()">✕</button>
           </div>
           <div class="comm-modal-bd">
             <div class="form-group">
-              <label class="comm-label">Community Name <span class="comm-req">*</span></label>
+              <label class="comm-label">${_t('communities.nameLabel')} <span class="comm-req">*</span></label>
               <input type="text" id="community-name" class="comm-input"
-                placeholder="e.g. AI Ethics Discussion" maxlength="50">
+                placeholder="${_t('communities.namePlaceholder')}" maxlength="50">
             </div>
             <div class="form-group">
-              <label class="comm-label">Description <span class="comm-req">*</span></label>
+              <label class="comm-label">${_t('communities.descriptionLabel')} <span class="comm-req">*</span></label>
               <textarea id="community-desc" class="comm-textarea" rows="3"
-                placeholder="What topics will this community cover?"></textarea>
+                placeholder="${_t('communities.descriptionPlaceholder')}"></textarea>
             </div>
             <div class="form-group">
-              <label class="comm-label">Topics / Tags <span class="comm-hint">(comma separated)</span></label>
+              <label class="comm-label">${_t('communities.topicsLabel')} <span class="comm-hint">(${_t('communities.topicsHint')})</span></label>
               <input type="text" id="community-tags" class="comm-input"
-                placeholder="e.g. AI, Ethics, Policy">
+                placeholder="${_t('communities.topicsPlaceholder')}">
             </div>
             <button class="btn btn-primary btn-full comm-submit-btn"
               id="comm-create-submit"
               onclick="IBlog.Communities.createCommunity()">
-              Create Community
+              ${_t('communities.create')}
             </button>
           </div>
         </div>
@@ -447,9 +449,9 @@ IBlog.Communities = (() => {
 
   function showCreateCommunityModal() {
     const u = _cu();
-    if (!u) { IBlog.utils?.toast('Please sign in', 'info'); return; }
+    if (!u) { IBlog.utils?.toast(_t('communities.signInCreate'), 'info'); return; }
     if (!_prem(u)) {
-      IBlog.utils?.toast('Premium feature', 'info');
+      IBlog.utils?.toast(_t('communities.premiumFeature'), 'info');
       typeof showPremium === 'function' && showPremium();
       return;
     }
@@ -472,11 +474,11 @@ IBlog.Communities = (() => {
     const desc = document.getElementById('community-desc')?.value.trim();
     const tags = document.getElementById('community-tags')?.value.trim();
 
-    if (!name) { IBlog.utils?.toast('Name is required', 'error'); return; }
-    if (!desc) { IBlog.utils?.toast('Description is required', 'error'); return; }
+    if (!name) { IBlog.utils?.toast(_t('communities.nameRequired'), 'error'); return; }
+    if (!desc) { IBlog.utils?.toast(_t('communities.descriptionRequired'), 'error'); return; }
 
     const btn = document.getElementById('comm-create-submit');
-    if (btn) { btn.textContent = 'Creating…'; btn.disabled = true; }
+    if (btn) { btn.textContent = _t('communities.creating'); btn.disabled = true; }
 
     try {
       const res  = await fetch(`${API}?action=create`, {
@@ -491,19 +493,19 @@ IBlog.Communities = (() => {
 
       if (data.success) {
         closeCreateModal();
-        IBlog.utils?.toast(`"${name}" created!`, 'success');
+        IBlog.utils?.toast(_t('communities.created', { name }), 'success');
         await _fetchCommunities();
         await _fetchJoined();
         _buildCards();
         _syncRail();
       } else {
-        IBlog.utils?.toast(data.error || 'Could not create community', 'error');
+        IBlog.utils?.toast(data.error || _t('communities.createError'), 'error');
       }
     } catch (e) {
       console.error('[Communities] create error:', e);
-      IBlog.utils?.toast('Network error', 'error');
+      IBlog.utils?.toast(_t('communities.networkError'), 'error');
     } finally {
-      if (btn) { btn.textContent = 'Create Community'; btn.disabled = false; }
+      if (btn) { btn.textContent = _t('communities.create'); btn.disabled = false; }
     }
   }
 

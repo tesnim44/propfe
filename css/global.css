@@ -83,7 +83,7 @@ body{font-family:'Manrope','DM Sans',sans-serif;background:var(--bg);color:var(-
 .btn-ghost{background:transparent;border:1.5px solid var(--border2);color:var(--text);}
 .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
 .btn-premium{background:linear-gradient(135deg,#d4a017,#c8922a);color:#fff;}
-.btn-premium:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,160,23,.4);}
+.btn-premium:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(var(--accent-r),var(--accent-g),var(--accent-b),.35);}
 .btn-full{width:100%;padding:13px;justify-content:center;}
 
 /* ── Badges ────────────────────────────────────────────────── */
@@ -184,5 +184,5 @@ body.dark #landing-page{
 .ob-edit-interests-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(184,150,12,.06);
+  background: rgba(var(--accent-r),var(--accent-g),var(--accent-b),.06);
 }

@@ -27,8 +27,8 @@
 .article-card:nth-child(4){animation-delay:.20s}
 .article-card:nth-child(n+5){animation-delay:.25s}
 
-.premium-card { border-color:var(--premium-border); box-shadow:0 2px 14px rgba(212,160,23,.12); }
-.premium-card:hover { box-shadow:0 8px 36px rgba(212,160,23,.20); border-color:var(--gold); }
+.premium-card { border-color:var(--premium-border); box-shadow:0 2px 14px rgba(var(--accent-r),var(--accent-g),var(--accent-b),.12); }
+.premium-card:hover { box-shadow:0 8px 36px rgba(var(--accent-r),var(--accent-g),var(--accent-b),.20); border-color:var(--accent); }
 .premium-card-banner {
   background:var(--premium-bg); color:var(--premium);
   font-size:10px; font-weight:700; letter-spacing:2px;
@@ -73,7 +73,7 @@
 
 /* Title & excerpt */
 .card-title {
-  font-family:'Playfair Display',serif; font-size:20px; font-weight:700;
+  font-family:'Manrope',sans-serif; font-size:17px; font-weight:800;
   margin-bottom:9px; line-height:1.35; cursor:pointer; color:var(--text); transition:color .2s;
 }
 .card-title:hover { color:var(--accent); }
@@ -122,7 +122,7 @@
   border:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:11px;
 }
 .quality-high { background:rgba(39,174,96,.12); color:#27ae60; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid rgba(39,174,96,.2); }
-.quality-med  { background:rgba(212,160,23,.12); color:#d4a017; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid rgba(212,160,23,.2); }
+.quality-med  { background:rgba(148,163,184,.16); color:#60738c; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid rgba(148,163,184,.26); }
 
 /* ══════════════════════════════════════════════════════════
    REACTION BAR
@@ -216,7 +216,7 @@
   justify-content:space-between;
   color:var(--text);
   border-color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),.18);
-  background:linear-gradient(135deg, rgba(var(--accent-r),var(--accent-g),var(--accent-b),.08), rgba(255,248,219,.85));
+  background:linear-gradient(135deg, rgba(var(--accent-r),var(--accent-g),var(--accent-b),.08), rgba(241,245,249,.92));
 }
 .pod-premium-pill{
   display:inline-flex;
@@ -224,8 +224,8 @@
   justify-content:center;
   padding:4px 10px;
   border-radius:999px;
-  background:#1d1a11;
-  color:#fff6cf;
+  background:#1f2d44;
+  color:#f8fbff;
   font-size:10px;
   font-weight:700;
   letter-spacing:.12em;

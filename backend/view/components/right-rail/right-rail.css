@@ -26,8 +26,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg2);
-  border: 1.5px solid var(--border);
+  background: #f3f4f6;
+  border: 1.5px solid #d9dee7;
   border-radius: 11px;
   padding: 8px 13px;
   margin-bottom: 20px;
@@ -43,7 +43,7 @@
   color: var(--text);
   min-width: 0;
 }
-.search-bar input::placeholder { color: var(--text3); }
+.search-bar input::placeholder { color: #7b8798; }
 
 /* ── Section wrapper ─────────────────────────────────────── */
 .rail-section { margin-bottom: 22px; }

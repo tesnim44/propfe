@@ -1,10 +1,4 @@
-/* ═══════════════════════════════════════════════
-   IBLOG — Footer Component
-   components/footer/footer.js
-═══════════════════════════════════════════════ */
-
 (function () {
-
   function init() {
     const root = document.getElementById('footer-root');
     if (!root) return;
@@ -13,12 +7,13 @@
       <footer class="site-footer">
         <div class="footer-inner">
           <div class="footer-logo">I<em>Blog</em></div>
+          <img src="images/brand/mascot-faces.svg" alt="IBlog mascot expressions" style="width:min(320px,100%);display:block;margin:18px auto 10px;">
           <div class="footer-links-row">
-            <a href="#">About</a>
-            <a href="#">Features</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#" onclick="showPremium(); return false;">Premium</a>
+            <a href="#">${IBlog.I18n?.t?.('misc.about') || 'About'}</a>
+            <a href="#features">${IBlog.I18n?.t?.('nav.features') || 'Features'}</a>
+            <a href="#">${IBlog.I18n?.t?.('misc.privacy') || 'Privacy'}</a>
+            <a href="#">${IBlog.I18n?.t?.('misc.terms') || 'Terms'}</a>
+            <a href="#" onclick="showPremium(); return false;">${IBlog.I18n?.t?.('nav.premium') || 'Premium'}</a>
           </div>
           <div class="footer-copy">© ${new Date().getFullYear()} IBlog</div>
         </div>
@@ -32,4 +27,5 @@
     init();
   }
 
+  IBlog.Footer = { init };
 })();

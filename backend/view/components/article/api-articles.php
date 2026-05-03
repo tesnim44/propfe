@@ -35,8 +35,46 @@ function articleJsonErr(string $message, int $code = 400): never
 function readArticleBody(): array
 {
     $raw = file_get_contents('php://input');
+    if (($raw === false || $raw === '') && PHP_SAPI === 'cli') {
+        $raw = (string) (getenv('IBLOG_TEST_REQUEST_BODY') ?: '');
+    }
     $decoded = json_decode($raw ?: '{}', true);
     return is_array($decoded) ? $decoded : [];
+}
+
+function requestedPage(array $body): int
+{
+    return max(1, (int) ($body['page'] ?? 1));
+}
+
+function requestedPageSize(array $body, int $default = 12): int
+{
+    $raw = (int) ($body['pageSize'] ?? $body['limit'] ?? $default);
+    return max(1, min($raw > 0 ? $raw : $default, 50));
+}
+
+function paginateItems(array $items, int $page, int $pageSize): array
+{
+    $totalItems = count($items);
+    $totalPages = $totalItems > 0 ? (int) ceil($totalItems / $pageSize) : 0;
+    $currentPage = $totalPages > 0 ? min($page, $totalPages) : 1;
+    $offset = ($currentPage - 1) * $pageSize;
+    $slice = array_slice($items, $offset, $pageSize);
+
+    return [
+        'items' => $slice,
+        'pagination' => [
+            'page' => $currentPage,
+            'requestedPage' => $page,
+            'pageSize' => $pageSize,
+            'count' => count($slice),
+            'totalItems' => $totalItems,
+            'totalPages' => $totalPages,
+            'hasPrevious' => $currentPage > 1,
+            'hasNext' => $totalPages > 0 && $currentPage < $totalPages,
+            'isEmpty' => $totalItems === 0,
+        ],
+    ];
 }
 
 function currentSessionUserId(): int
@@ -247,13 +285,7 @@ function loadSavedArticleIds(PDO $cnx, int $userId, array $articleIds = []): arr
 
 function articleTableExists(PDO $cnx, string $table): bool
 {
-    try {
-        $stmt = $cnx->prepare('SHOW TABLES LIKE :table');
-        $stmt->execute([':table' => $table]);
-        return (bool) $stmt->fetchColumn();
-    } catch (Throwable) {
-        return false;
-    }
+    return dbTableExists($cnx, $table);
 }
 
 function ensureArticleLikeTable(PDO $cnx): void
@@ -263,6 +295,19 @@ function ensureArticleLikeTable(PDO $cnx): void
     }
 
     try {
+        if (dbDriver($cnx) === 'sqlite') {
+            $cnx->exec(
+                "CREATE TABLE article_like (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    articleId INTEGER NOT NULL,
+                    userId INTEGER NOT NULL,
+                    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (articleId, userId)
+                )"
+            );
+            return;
+        }
+
         $cnx->exec(
             "CREATE TABLE article_like (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -330,7 +375,7 @@ function refreshArticleLikesCount(PDO $cnx, int $articleId): int
     return $count;
 }
 
-function serializeArticleForApp(Article $article, array $commentsMap = [], array $savedMap = [], array $likedMap = []): array
+function serializeArticleForApp(object $article, array $commentsMap = [], array $savedMap = [], array $likedMap = []): array
 {
     $author = (string) ($article->author_name ?? 'Anonymous');
     $body = (string) ($article->body ?? '');
@@ -434,7 +479,7 @@ function serializeSavedRowForApp(array $row, array $commentsMap = [], array $lik
 function serializeArticleList(array $articles, array $commentsMap = [], array $savedMap = [], array $likedMap = []): array
 {
     return array_map(
-        static fn(Article $article): array => serializeArticleForApp($article, $commentsMap, $savedMap, $likedMap),
+        static fn(object $article): array => serializeArticleForApp($article, $commentsMap, $savedMap, $likedMap),
         $articles
     );
 }
@@ -454,7 +499,7 @@ function mergedVisibleArticles(PDO $cnx): array
     }
 
     $articles = array_values($items);
-    usort($articles, static function (Article $a, Article $b): int {
+    usort($articles, static function (object $a, object $b): int {
         $ad = strtotime((string) ($a->createdAt ?? '')) ?: 0;
         $bd = strtotime((string) ($b->createdAt ?? '')) ?: 0;
         return $bd <=> $ad;
@@ -466,7 +511,7 @@ function mergedVisibleArticles(PDO $cnx): array
 function serializeVisibleArticles(PDO $cnx): array
 {
     $articles = mergedVisibleArticles($cnx);
-    $articleIds = array_map(static fn(Article $article): int => (int) $article->id, $articles);
+    $articleIds = array_map(static fn(object $article): int => (int) $article->id, $articles);
     $commentsMap = loadArticleComments($cnx, $articleIds);
     $savedMap = loadSavedArticleIds($cnx, currentSessionUserId(), $articleIds);
     $likedMap = loadLikedArticleIds($cnx, currentSessionUserId(), $articleIds);
@@ -523,12 +568,24 @@ $body = readArticleBody();
 $action = (string) ($body['action'] ?? 'list');
 
 if ($action === 'list') {
-    articleJsonOk(['articles' => serializeVisibleArticles($cnx)]);
+    $page = requestedPage($body);
+    $pageSize = requestedPageSize($body);
+    $paginated = paginateItems(serializeVisibleArticles($cnx), $page, $pageSize);
+    articleJsonOk([
+        'articles' => $paginated['items'],
+        'pagination' => $paginated['pagination'],
+    ]);
 }
 
 if ($action === 'saved_list') {
     $userId = ensureArticleAuth($body);
-    articleJsonOk(['articles' => serializeSavedArticlesForUser($cnx, $userId)]);
+    $page = requestedPage($body);
+    $pageSize = requestedPageSize($body);
+    $paginated = paginateItems(serializeSavedArticlesForUser($cnx, $userId), $page, $pageSize);
+    articleJsonOk([
+        'articles' => $paginated['items'],
+        'pagination' => $paginated['pagination'],
+    ]);
 }
 
 if ($action === 'saved_toggle') {
@@ -602,7 +659,7 @@ if ($action === 'like_toggle') {
     if ($shouldLike && $existingLikeId <= 0) {
         $insertStmt = $cnx->prepare(
             'INSERT INTO article_like (articleId, userId, createdAt)
-             VALUES (:articleId, :userId, NOW())'
+             VALUES (:articleId, :userId, CURRENT_TIMESTAMP)'
         );
         $insertStmt->execute([
             ':articleId' => $articleId,
@@ -639,7 +696,7 @@ if ($action === 'comment_add') {
 
     $stmt = $cnx->prepare(
         'INSERT INTO comment (articleId, userId, body, parentId, likesCount, isFlagged, createdAt)
-         VALUES (:articleId, :userId, :body, NULL, 0, 0, NOW())'
+         VALUES (:articleId, :userId, :body, NULL, 0, 0, CURRENT_TIMESTAMP)'
     );
     $ok = $stmt->execute([
         ':articleId' => $articleId,

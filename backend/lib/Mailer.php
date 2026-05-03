@@ -9,6 +9,10 @@ final class Mailer
     {
         loadEnvFile();
 
+        if (filter_var((string) env('MAIL_DISABLE', 'false'), FILTER_VALIDATE_BOOLEAN) || env('APP_ENV') === 'test') {
+            return;
+        }
+
         $host = env('MAIL_HOST');
         $port = (int) (env('MAIL_PORT', '587') ?? '587');
         $user = env('MAIL_USERNAME');

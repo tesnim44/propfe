@@ -208,7 +208,8 @@ IBlog.Dashboard = (() => {
     document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + view);
     if (el) el.classList.add('active');
-    document.getElementById('center-feed')?.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    IBlog.LeftRail?.resetScroll?.();
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const nav = document.querySelector(`.nav-item[data-view="${view}"]`);
     if (nav) nav.classList.add('active');
@@ -381,7 +382,9 @@ IBlog.Dashboard = (() => {
   function buildTicker() {
     const el = document.getElementById('ticker-inner');
     if (!el) return;
-    const topics = Array.isArray(IBlog.TOPICS) ? IBlog.TOPICS.filter(Boolean) : [];
+    const topics = Array.isArray(IBlog.TOPICS)
+      ? IBlog.TOPICS.filter(Boolean).map(topic => IBlog.I18n?.localizeTopic?.(topic) || topic)
+      : [];
     if (!topics.length) {
       el.innerHTML = '<div class="ticker-item"><span class="ticker-dot"></span>Live topics will appear here once content is published.</div>';
       return;

@@ -32,6 +32,9 @@ function jsonErr(string $message, int $code = 400): never
 function readJsonBody(): array
 {
     $raw = file_get_contents('php://input');
+    if (($raw === false || $raw === '') && PHP_SAPI === 'cli') {
+        $raw = (string) (getenv('IBLOG_TEST_REQUEST_BODY') ?: '');
+    }
     $decoded = json_decode($raw ?: '{}', true);
     return is_array($decoded) ? $decoded : [];
 }
@@ -63,24 +66,12 @@ function userPayload(array $user, bool $onboardingComplete = true): array
 
 function tableExists(PDO $cnx, string $table): bool
 {
-    try {
-        $stmt = $cnx->prepare('SHOW TABLES LIKE :table');
-        $stmt->execute([':table' => $table]);
-        return (bool) $stmt->fetchColumn();
-    } catch (Throwable) {
-        return false;
-    }
+    return dbTableExists($cnx, $table);
 }
 
 function columnExists(PDO $cnx, string $table, string $column): bool
 {
-    try {
-        $stmt = $cnx->prepare("SHOW COLUMNS FROM `$table` LIKE :column");
-        $stmt->execute([':column' => $column]);
-        return (bool) $stmt->fetchColumn();
-    } catch (Throwable) {
-        return false;
-    }
+    return dbColumnExists($cnx, $table, $column);
 }
 
 function ensureUserProfileColumns(PDO $cnx): void
@@ -115,6 +106,19 @@ function userTableSupportsProfileColumns(PDO $cnx): bool
 function ensureUserProfileTable(PDO $cnx): void
 {
     try {
+        if (dbDriver($cnx) === 'sqlite') {
+            $cnx->exec(
+                "CREATE TABLE IF NOT EXISTS user_profile (
+                    userId INTEGER NOT NULL PRIMARY KEY,
+                    bio TEXT NULL,
+                    avatar TEXT NULL,
+                    cover TEXT NULL,
+                    updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+                )"
+            );
+            return;
+        }
+
         $cnx->exec(
             "CREATE TABLE IF NOT EXISTS user_profile (
                 userId INT NOT NULL PRIMARY KEY,
@@ -255,12 +259,19 @@ function persistProfileData(PDO $cnx, int $userId, string $bio, string $avatar, 
     }
 
     $profileStmt = $cnx->prepare(
-        'INSERT INTO user_profile (userId, bio, avatar, cover)
-         VALUES (:userId, :bio, :avatar, :cover)
-         ON DUPLICATE KEY UPDATE
-            bio = VALUES(bio),
-            avatar = VALUES(avatar),
-            cover = VALUES(cover)'
+        dbDriver($cnx) === 'sqlite'
+            ? 'INSERT INTO user_profile (userId, bio, avatar, cover)
+               VALUES (:userId, :bio, :avatar, :cover)
+               ON CONFLICT(userId) DO UPDATE SET
+                   bio = excluded.bio,
+                   avatar = excluded.avatar,
+                   cover = excluded.cover'
+            : 'INSERT INTO user_profile (userId, bio, avatar, cover)
+               VALUES (:userId, :bio, :avatar, :cover)
+               ON DUPLICATE KEY UPDATE
+                  bio = VALUES(bio),
+                  avatar = VALUES(avatar),
+                  cover = VALUES(cover)'
     );
     $profileStmt->execute([
         ':userId' => $userId,
@@ -283,6 +294,20 @@ function loginUser(array $user): void
 
 function ensurePasswordResetTable(PDO $cnx): void
 {
+    if (dbDriver($cnx) === 'sqlite') {
+        $cnx->exec(
+            "CREATE TABLE IF NOT EXISTS password_resets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                token_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                used_at TEXT DEFAULT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )"
+        );
+        return;
+    }
+
     $cnx->exec(
         "CREATE TABLE IF NOT EXISTS password_resets (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -298,6 +323,20 @@ function ensurePasswordResetTable(PDO $cnx): void
 
 function ensurePrivateMessagesTable(PDO $cnx): void
 {
+    if (dbDriver($cnx) === 'sqlite') {
+        $cnx->exec(
+            "CREATE TABLE IF NOT EXISTS private_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                senderId INTEGER NOT NULL,
+                recipientId INTEGER NOT NULL,
+                body TEXT NOT NULL,
+                createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+                readAt TEXT DEFAULT NULL
+            )"
+        );
+        return;
+    }
+
     $cnx->exec(
         "CREATE TABLE IF NOT EXISTS private_messages (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -449,7 +488,7 @@ function getPrivateMessageHistory(PDO $cnx, int $userId, int $partnerId): array
 
     $cnx->prepare(
         "UPDATE private_messages
-         SET readAt = NOW()
+         SET readAt = CURRENT_TIMESTAMP
          WHERE senderId = :pid AND recipientId = :uid AND readAt IS NULL"
     )->execute([':pid' => $partnerId, ':uid' => $userId]);
 
@@ -484,7 +523,7 @@ function sendPrivateMessage(PDO $cnx, int $senderId, int $recipientId, string $b
     }
 
     $stmt = $cnx->prepare(
-        'INSERT INTO private_messages (senderId, recipientId, body, createdAt) VALUES (:senderId, :recipientId, :body, NOW())'
+        'INSERT INTO private_messages (senderId, recipientId, body, createdAt) VALUES (:senderId, :recipientId, :body, CURRENT_TIMESTAMP)'
     );
     $stmt->execute([
         ':senderId' => $senderId,
@@ -691,7 +730,7 @@ try {
             $hash = hash('sha256', $token);
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-            $cnx->prepare('UPDATE password_resets SET used_at = NOW() WHERE email = :email AND used_at IS NULL')
+            $cnx->prepare('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE email = :email AND used_at IS NULL')
                 ->execute([':email' => $email]);
             $cnx->prepare('INSERT INTO password_resets (email, token_hash, expires_at) VALUES (:email, :hash, :expires_at)')
                 ->execute([
@@ -736,7 +775,7 @@ try {
             'isAdmin' => $user['isAdmin'],
         ]);
 
-        $cnx->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = :id')->execute([':id' => $reset['id']]);
+        $cnx->prepare('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE id = :id')->execute([':id' => $reset['id']]);
         jsonOk(['message' => 'Password updated successfully.']);
     }
 

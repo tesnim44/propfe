@@ -20,30 +20,21 @@ function jsonErr(string $message, int $status = 400): never
 function readBody(): array
 {
     $raw = file_get_contents('php://input');
+    if (($raw === false || $raw === '') && PHP_SAPI === 'cli') {
+        $raw = (string) (getenv('IBLOG_TEST_REQUEST_BODY') ?: '');
+    }
     $decoded = json_decode($raw ?: '{}', true);
     return is_array($decoded) ? $decoded : [];
 }
 
 function tableExists(PDO $cnx, string $table): bool
 {
-    try {
-        $stmt = $cnx->prepare('SHOW TABLES LIKE :table');
-        $stmt->execute([':table' => $table]);
-        return (bool) $stmt->fetchColumn();
-    } catch (Throwable) {
-        return false;
-    }
+    return dbTableExists($cnx, $table);
 }
 
 function columnExists(PDO $cnx, string $table, string $column): bool
 {
-    try {
-        $stmt = $cnx->prepare("SHOW COLUMNS FROM `{$table}` LIKE :column");
-        $stmt->execute([':column' => $column]);
-        return (bool) $stmt->fetchColumn();
-    } catch (Throwable) {
-        return false;
-    }
+    return dbColumnExists($cnx, $table, $column);
 }
 
 function normalizeProfileAssetPath(string $path): string

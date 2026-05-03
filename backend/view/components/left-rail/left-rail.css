@@ -1,6 +1,6 @@
 /* ── Left Rail ───────────────────────────────────────────── */
-.left-rail-shell{height:100%;}
-.left-rail{position:sticky;top:0;height:100vh;max-height:100vh;overflow-y:auto;background:var(--surface);border-right:1.5px solid var(--border);padding:22px 16px;display:flex;flex-direction:column;}
+.left-rail-shell{position:sticky;top:0;align-self:start;height:100vh;}
+.left-rail{position:relative;height:100%;max-height:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--surface);border-right:1.5px solid var(--border);padding:22px 16px;display:flex;flex-direction:column;}
 .left-rail::-webkit-scrollbar{width:3px;}
 .mobile-rail-toggle,.left-rail-backdrop{display:none;}
 .iblog-brand{font-family:'Marcellus',serif;font-size:28px;font-weight:400;color:var(--accent);margin-bottom:20px;letter-spacing:.03em;}

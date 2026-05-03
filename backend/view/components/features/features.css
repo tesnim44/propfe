@@ -78,7 +78,7 @@
 
 .feat-card.premium-feat {
   background:
-    linear-gradient(180deg, rgba(255,248,226,.92), rgba(255,255,255,.98)),
+    linear-gradient(180deg, rgba(246,248,251,.94), rgba(255,255,255,.98)),
     radial-gradient(circle at 100% 0%, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .14), transparent 34%);
 }
 

@@ -1,8 +1,8 @@
 #view-trends {
   padding: 26px;
   background:
-    radial-gradient(circle at 8% 4%, rgba(255, 212, 82, .12), transparent 32%),
-    radial-gradient(circle at 95% 15%, rgba(184, 150, 12, .08), transparent 34%),
+    radial-gradient(circle at 8% 4%, rgba(148, 163, 184, .13), transparent 32%),
+    radial-gradient(circle at 95% 15%, rgba(191, 200, 214, .10), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, .45), transparent 300px);
 }
 
@@ -46,7 +46,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(115deg, transparent 20%, rgba(255, 226, 126, .15) 42%, transparent 60%);
+  background: linear-gradient(115deg, transparent 20%, rgba(226, 232, 240, .34) 42%, transparent 60%);
   opacity: 0;
   transition: .2s;
 }
@@ -62,8 +62,8 @@
 }
 
 .tr-personal-row {
-  border-left: 4px solid #efbe49;
-  background: linear-gradient(110deg, rgba(255, 220, 112, .12), var(--surface));
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(110deg, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .10), var(--surface));
 }
 
 .trend-num {
@@ -141,8 +141,8 @@
   border-radius: 12px;
   border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), .25);
   background:
-    radial-gradient(circle at 92% 8%, rgba(255, 220, 116, .22), transparent 40%),
-    linear-gradient(130deg, rgba(255, 214, 99, .12), rgba(255, 255, 255, .45));
+    radial-gradient(circle at 92% 8%, rgba(191, 200, 214, .26), transparent 40%),
+    linear-gradient(130deg, rgba(var(--accent-r), var(--accent-g), var(--accent-b), .10), rgba(255, 255, 255, .45));
   padding: 14px;
   margin: 10px 0 14px;
 }
