@@ -272,7 +272,7 @@ Functionality:
 - Reads DB settings from `iblogConfig()`
 - Supports DSN override when `DB_DSN` is provided
 - Falls back across possible hosts and database names
-- Supports both MySQL and SQLite
+- Uses MySQL only, with optional `DB_DSN` override support for connection testing
 - Exposes helper functions used by controllers to check schema differences safely
 
 Why it matters:
@@ -284,16 +284,16 @@ Why it matters:
 File: [src/Database/FakeDatabase.php](src/Database/FakeDatabase.php)
 
 Necessity:
-- Test helper for isolated SQLite-backed runs.
+- In-memory fake data helper used by tests that do not need a real database connection.
 
 Main lines:
-- `8-18`: `FakeDatabase::sqlite()`
+- Seeded user/article arrays plus simple lookup and creation helpers
 
 Functionality:
-- Creates a PDO SQLite connection with exceptions enabled and foreign keys turned on.
+- Stores predictable fake users and articles directly in PHP arrays for lightweight tests.
 
 Why it matters:
-- Makes tests faster and more portable than depending on a live MySQL server for every case.
+- Keeps lightweight tests decoupled from MySQL when persistence behavior is not under test.
 
 ## 8. `src/Service/`
 
@@ -1062,4 +1062,3 @@ If you want the structure to look even closer to a conventional modern PHP app, 
 2. standardize old repository class names such as `savedarticle` and `subscription`
 3. introduce a single front controller or router for API endpoints
 4. remove or archive legacy folders once the frontend no longer depends on them
-

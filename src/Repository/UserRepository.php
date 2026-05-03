@@ -54,10 +54,14 @@ final class UserRepository
                     COALESCE(status, 'active') AS status,
                     createdAt
              FROM users
-             WHERE name LIKE :search OR email LIKE :search
+             WHERE name LIKE :searchName OR email LIKE :searchEmail
              ORDER BY id DESC"
         );
-        $stmt->execute([':search' => '%' . $search . '%']);
+        $like = '%' . $search . '%';
+        $stmt->execute([
+            ':searchName' => $like,
+            ':searchEmail' => $like,
+        ]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -134,14 +138,11 @@ final class UserRepository
         $stmt->execute([':id' => $userId]);
 
         try {
-            $expiresAtExpr = \dbDriver($this->connection) === 'sqlite'
-                ? "DATETIME(CURRENT_TIMESTAMP, '+1 month')"
-                : 'DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 MONTH)';
             $subscription = $this->connection->prepare(
                 "INSERT INTO subscription
                     (userId, plan, amount, currency, status, method, startedAt, expiresAt)
                  VALUES
-                    (:userId, 'premium', :amount, 'TND', 'active', :method, CURRENT_TIMESTAMP, {$expiresAtExpr})"
+                    (:userId, 'premium', :amount, 'TND', 'active', :method, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 MONTH))"
             );
             $subscription->execute([
                 ':userId' => $userId,

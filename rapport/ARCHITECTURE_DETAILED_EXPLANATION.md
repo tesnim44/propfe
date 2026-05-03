@@ -117,7 +117,7 @@ This is the most important infrastructure file in the project.
 It is necessary because the rest of the application needs:
 
 - one reliable way to build PDO connections;
-- support for both MySQL and SQLite;
+- support for MySQL connections and DSN overrides;
 - compatibility with the older codebase that still expects `$cnx` and global helpers;
 - graceful database failure messages instead of silent crashes.
 
@@ -152,7 +152,7 @@ This method:
 - builds a MySQL DSN automatically if no explicit DSN is provided;
 - creates a PDO connection;
 - configures PDO error mode, fetch mode, non-emulated prepares, and timeout;
-- enables foreign keys when using SQLite.
+- applies a consistent PDO configuration for the active connection.
 
 This is critical because repositories depend on predictable PDO behavior.
 
@@ -177,7 +177,7 @@ It clears the singleton and fingerprint so the next `getInstance()` builds a fre
 ###### `driver()` at `64-67`
 
 This returns the normalized PDO driver name.  
-Many repositories use this indirectly through helper functions to switch behavior between SQLite and MySQL.
+Repositories use this together with helper functions to handle schema differences while staying on MySQL.
 
 #### Part B: global bootstrap and compatibility section
 
@@ -212,7 +212,7 @@ So this section preserves compatibility while still allowing the architecture to
 ###### `dbDriver(?PDO $pdo)` at `80-87`
 
 Returns the current driver name or `'unknown'` if there is no valid PDO object.  
-Repositories use it to generate SQL compatible with SQLite and MySQL.
+Repositories use it for defensive branching and diagnostics around the active PDO connection.
 
 ###### `dbTableExists(PDO $cnx, string $table)` at `89-104`
 
@@ -275,18 +275,17 @@ This allows controllers to detect connection failure and return a controlled JSO
 #### Why this file is necessary
 
 This file is necessary for isolated testing.  
-It gives tests a quick way to create an in-memory SQLite database without touching MySQL.
+It gives tests a lightweight in-memory fake data source without touching MySQL.
 
 #### What it does
 
-- creates a SQLite PDO;
-- enables exception mode;
-- enables associative-array fetch mode;
-- turns on foreign keys.
+- seeds predictable users and articles;
+- exposes simple lookup helpers;
+- allows tests to append fake records without external setup.
 
 #### Main lines
 
-- `7-18`: `FakeDatabase::sqlite()`
+- seeded arrays and lightweight user/article helper methods
 
 #### Why it matters
 
@@ -392,7 +391,7 @@ Main logic:
 
 - `131-134`: updates `isPremium` and `plan`
 - `136-151`: inserts a subscription entry
-- `137-139`: switches expiration SQL between SQLite and MySQL
+- `137-139`: uses MySQL `DATE_ADD(...)` for premium expiration
 - `151-152`: catches `PDOException` silently
 
 That catch is intentional.  
@@ -429,12 +428,8 @@ It is necessary because article operations are more complex than simple CRUD:
 
 ###### `create()` at `15-36`
 
-The method picks the correct timestamp expression depending on the DB driver:
-
-- SQLite uses `CURRENT_TIMESTAMP`
-- MySQL uses `NOW()`
-
-That makes tests and production compatible without duplicating repositories.
+The method uses MySQL `NOW()` directly for creation timestamps.  
+That keeps repository writes aligned with the production database.
 
 ###### `findAll()`, `findPublished()`, `search()` at `38-108`
 
@@ -722,10 +717,7 @@ This is the community chat persistence block:
 
 This is one of the most architecturally interesting methods.
 
-It creates thread-related tables lazily if they do not exist:
-
-- SQLite schema at `246-269`
-- MySQL schema at `272-300`
+It creates thread-related tables lazily if they do not exist using the MySQL schema path.
 
 This means thread functionality can work even in test environments that start from a minimal schema.
 
@@ -1353,7 +1345,7 @@ It allows tests to run even if Composer autoload is not the only loading mechani
 This is the central test infrastructure file.  
 It is necessary because it:
 
-- creates an isolated SQLite database;
+- creates isolated MySQL test databases;
 - resets schema and seed data before tests;
 - can create either a local or HTTP web client;
 - can auto-start a PHP built-in server when needed.
@@ -1361,9 +1353,9 @@ It is necessary because it:
 #### Most important parts
 
 - `18-31`: runtime directory management
-- `33-45`: temporary SQLite DB path and DSN
-- `57-69`: PDO creation
-- `71-78`: DB reset
+- `33-49`: database name and DSN helpers
+- `57-89`: admin/database PDO creation
+- `64-71`: DB reset
 - `80-132`: base URL and client creation
 - `134-157`: server readiness checks
 - `173-185`: test env bootstrapping

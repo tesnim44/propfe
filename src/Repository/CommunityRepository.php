@@ -243,32 +243,6 @@ final class CommunityRepository
 
     public function ensureThreadTables(): void
     {
-        if (\dbDriver($this->connection) === 'sqlite') {
-            $this->connection->exec(
-                'CREATE TABLE IF NOT EXISTS community_thread (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    communityId INTEGER NOT NULL,
-                    creatorId INTEGER NOT NULL,
-                    title TEXT NOT NULL,
-                    isDeleted INTEGER NOT NULL DEFAULT 0,
-                    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-                )'
-            );
-            $this->connection->exec(
-                'CREATE TABLE IF NOT EXISTS community_thread_message (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    communityId INTEGER NOT NULL,
-                    threadId INTEGER NOT NULL,
-                    userId INTEGER NOT NULL,
-                    message TEXT NOT NULL,
-                    isDeleted INTEGER NOT NULL DEFAULT 0,
-                    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-                )'
-            );
-            return;
-        }
-
         $this->connection->exec(
             'CREATE TABLE IF NOT EXISTS community_thread (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

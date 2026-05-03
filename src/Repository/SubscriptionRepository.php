@@ -14,10 +14,9 @@ final class SubscriptionRepository
 
     public function create(array $data): bool
     {
-        $startedAtExpression = \dbDriver($this->connection) === 'sqlite' ? 'CURRENT_TIMESTAMP' : 'NOW()';
         $stmt = $this->connection->prepare(
             'INSERT INTO subscription (userId, plan, amount, currency, status, promoCode, startedAt, expiresAt)
-             VALUES (:userId, :plan, :amount, :currency, :status, :promoCode, ' . $startedAtExpression . ', :expiresAt)'
+             VALUES (:userId, :plan, :amount, :currency, :status, :promoCode, NOW(), :expiresAt)'
         );
 
         return $stmt->execute([

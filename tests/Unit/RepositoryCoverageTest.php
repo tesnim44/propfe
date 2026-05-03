@@ -3,15 +3,20 @@ declare(strict_types=1);
 
 namespace IBlog\Tests\Unit;
 
-use IBlog\Database\FakeDatabase;
 use IBlog\Repository\ArticleRepository;
 use IBlog\Repository\SavedArticleRepository;
 use IBlog\Repository\UserRepository;
-use PHPUnit\Framework\TestCase;
+use IBlog\Tests\Support\TestApplication;
 use PDO;
+use PHPUnit\Framework\TestCase;
 
 final class RepositoryCoverageTest extends TestCase
 {
+    public static function setUpBeforeClass(): void
+    {
+        require_once dirname(__DIR__, 2) . '/src/Database/Database.php';
+    }
+
     public function testArticleRepositoryCoversMissingBranchesAndAlternateSchemas(): void
     {
         $pdoNoAvatar = $this->createArticleSchema(false, false);
@@ -41,19 +46,19 @@ final class RepositoryCoverageTest extends TestCase
 
     public function testUserRepositoryCoversMissingUserAndSubscriptionFallbackBranches(): void
     {
-        $pdo = FakeDatabase::sqlite();
+        $pdo = TestApplication::createIsolatedDatabase('user_repo_fallback');
         $pdo->exec(
             "CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                plan TEXT NOT NULL DEFAULT 'free',
-                isPremium INTEGER NOT NULL DEFAULT 0,
-                isAdmin INTEGER NOT NULL DEFAULT 0,
-                status TEXT NOT NULL DEFAULT 'active',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(160) NOT NULL,
+                email VARCHAR(190) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                plan VARCHAR(32) NOT NULL DEFAULT 'free',
+                isPremium TINYINT(1) NOT NULL DEFAULT 0,
+                isAdmin TINYINT(1) NOT NULL DEFAULT 0,
+                status VARCHAR(32) NOT NULL DEFAULT 'active',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
 
         $stmt = $pdo->prepare(
@@ -85,32 +90,32 @@ final class RepositoryCoverageTest extends TestCase
 
     public function testUserRepositoryCoversAllPublicMethodsDirectly(): void
     {
-        $pdo = FakeDatabase::sqlite();
+        $pdo = TestApplication::createIsolatedDatabase('user_repo_full');
         $pdo->exec(
             "CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                plan TEXT NOT NULL DEFAULT 'free',
-                isPremium INTEGER NOT NULL DEFAULT 0,
-                isAdmin INTEGER NOT NULL DEFAULT 0,
-                status TEXT NOT NULL DEFAULT 'active',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(160) NOT NULL,
+                email VARCHAR(190) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                plan VARCHAR(32) NOT NULL DEFAULT 'free',
+                isPremium TINYINT(1) NOT NULL DEFAULT 0,
+                isAdmin TINYINT(1) NOT NULL DEFAULT 0,
+                status VARCHAR(32) NOT NULL DEFAULT 'active',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
         $pdo->exec(
             "CREATE TABLE subscription (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                plan TEXT NOT NULL,
-                amount REAL NOT NULL,
-                currency TEXT NOT NULL,
-                status TEXT NOT NULL,
-                method TEXT NOT NULL,
-                startedAt TEXT NOT NULL,
-                expiresAt TEXT NOT NULL
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                plan VARCHAR(32) NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                currency VARCHAR(8) NOT NULL,
+                status VARCHAR(32) NOT NULL,
+                method VARCHAR(32) NOT NULL,
+                startedAt DATETIME NOT NULL,
+                expiresAt DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
 
         $repo = new UserRepository($pdo);
@@ -172,38 +177,34 @@ final class RepositoryCoverageTest extends TestCase
         $this->assertFalse($repo->findById($userId));
     }
 
-    public function testUserRepositoryCoversMysqlPremiumExpiryBranch(): void
+    public function testUserRepositoryCoversPremiumExpiryOnMysql(): void
     {
-        $pdo = new class () extends PDO {
-            public function __construct()
-            {
-                parent::__construct('sqlite::memory:');
-                $this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $this->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            }
-
-            public function getAttribute($attribute): mixed
-            {
-                if ($attribute === PDO::ATTR_DRIVER_NAME) {
-                    return 'mysql';
-                }
-
-                return parent::getAttribute($attribute);
-            }
-        };
-
+        $pdo = TestApplication::createIsolatedDatabase('user_repo_mysql');
         $pdo->exec(
             "CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                plan TEXT NOT NULL DEFAULT 'free',
-                isPremium INTEGER NOT NULL DEFAULT 0,
-                isAdmin INTEGER NOT NULL DEFAULT 0,
-                status TEXT NOT NULL DEFAULT 'active',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(160) NOT NULL,
+                email VARCHAR(190) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                plan VARCHAR(32) NOT NULL DEFAULT 'free',
+                isPremium TINYINT(1) NOT NULL DEFAULT 0,
+                isAdmin TINYINT(1) NOT NULL DEFAULT 0,
+                status VARCHAR(32) NOT NULL DEFAULT 'active',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+        $pdo->exec(
+            "CREATE TABLE subscription (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                plan VARCHAR(32) NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                currency VARCHAR(8) NOT NULL,
+                status VARCHAR(32) NOT NULL,
+                method VARCHAR(32) NOT NULL,
+                startedAt DATETIME NOT NULL,
+                expiresAt DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
 
         $repo = new UserRepository($pdo);
@@ -218,7 +219,6 @@ final class RepositoryCoverageTest extends TestCase
 
         $user = $repo->findByEmail('mysql-branch@example.com');
         $this->assertIsArray($user);
-
         $this->assertTrue($repo->upgradeToPremium((int) $user['id'], 'card', 9.0));
 
         $updated = $repo->findById((int) $user['id']);
@@ -229,30 +229,35 @@ final class RepositoryCoverageTest extends TestCase
 
     private function createArticleSchema(bool $withProfileTable, bool $withUserAvatar): PDO
     {
-        $pdo = FakeDatabase::sqlite();
+        $pdo = TestApplication::createIsolatedDatabase('article_repo');
         $userColumns = $withUserAvatar
-            ? 'id INTEGER PRIMARY KEY, name TEXT NOT NULL, avatar TEXT DEFAULT ""'
-            : 'id INTEGER PRIMARY KEY, name TEXT NOT NULL';
-        $pdo->exec("CREATE TABLE users ({$userColumns})");
+            ? 'id INT UNSIGNED PRIMARY KEY, name VARCHAR(160) NOT NULL, avatar VARCHAR(255) DEFAULT ""'
+            : 'id INT UNSIGNED PRIMARY KEY, name VARCHAR(160) NOT NULL';
+        $pdo->exec("CREATE TABLE users ({$userColumns}) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         $pdo->exec(
             "CREATE TABLE article (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                body TEXT NOT NULL,
-                category TEXT DEFAULT '',
-                tags TEXT DEFAULT '',
-                status TEXT NOT NULL DEFAULT 'published',
-                coverImage TEXT DEFAULT '',
-                readingTime TEXT DEFAULT '1 min',
-                likesCount INTEGER NOT NULL DEFAULT 0,
-                views INTEGER NOT NULL DEFAULT 0,
-                label TEXT NOT NULL DEFAULT 'none',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                body LONGTEXT NOT NULL,
+                category VARCHAR(120) DEFAULT '',
+                tags TEXT NULL,
+                status VARCHAR(32) NOT NULL DEFAULT 'published',
+                coverImage VARCHAR(255) DEFAULT '',
+                readingTime VARCHAR(32) DEFAULT '1 min',
+                likesCount INT NOT NULL DEFAULT 0,
+                views INT NOT NULL DEFAULT 0,
+                label VARCHAR(64) NOT NULL DEFAULT 'none',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
         if ($withProfileTable) {
-            $pdo->exec('CREATE TABLE user_profile (userId INTEGER PRIMARY KEY, avatar TEXT DEFAULT "")');
+            $pdo->exec(
+                "CREATE TABLE user_profile (
+                    userId INT UNSIGNED PRIMARY KEY,
+                    avatar VARCHAR(255) DEFAULT ''
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
             $pdo->exec("INSERT INTO user_profile (userId, avatar) VALUES (1, 'profile-avatar.png')");
         }
 
@@ -271,38 +276,43 @@ final class RepositoryCoverageTest extends TestCase
 
     private function createSavedArticleSchema(bool $withProfileTable, bool $withUserAvatar): PDO
     {
-        $pdo = FakeDatabase::sqlite();
+        $pdo = TestApplication::createIsolatedDatabase('saved_repo');
         $userColumns = $withUserAvatar
-            ? 'id INTEGER PRIMARY KEY, name TEXT NOT NULL, avatar TEXT DEFAULT ""'
-            : 'id INTEGER PRIMARY KEY, name TEXT NOT NULL';
-        $pdo->exec("CREATE TABLE users ({$userColumns})");
+            ? 'id INT UNSIGNED PRIMARY KEY, name VARCHAR(160) NOT NULL, avatar VARCHAR(255) DEFAULT ""'
+            : 'id INT UNSIGNED PRIMARY KEY, name VARCHAR(160) NOT NULL';
+        $pdo->exec("CREATE TABLE users ({$userColumns}) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         $pdo->exec(
             "CREATE TABLE article (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                body TEXT NOT NULL,
-                category TEXT DEFAULT '',
-                tags TEXT DEFAULT '',
-                status TEXT NOT NULL DEFAULT 'published',
-                coverImage TEXT DEFAULT '',
-                readingTime TEXT DEFAULT '1 min',
-                likesCount INTEGER NOT NULL DEFAULT 0,
-                views INTEGER NOT NULL DEFAULT 0,
-                label TEXT NOT NULL DEFAULT 'none',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                body LONGTEXT NOT NULL,
+                category VARCHAR(120) DEFAULT '',
+                tags TEXT NULL,
+                status VARCHAR(32) NOT NULL DEFAULT 'published',
+                coverImage VARCHAR(255) DEFAULT '',
+                readingTime VARCHAR(32) DEFAULT '1 min',
+                likesCount INT NOT NULL DEFAULT 0,
+                views INT NOT NULL DEFAULT 0,
+                label VARCHAR(64) NOT NULL DEFAULT 'none',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
         $pdo->exec(
             "CREATE TABLE savedarticle (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                articleId INTEGER NOT NULL,
-                savedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                articleId INT UNSIGNED NOT NULL,
+                savedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
         if ($withProfileTable) {
-            $pdo->exec('CREATE TABLE user_profile (userId INTEGER PRIMARY KEY, avatar TEXT DEFAULT "")');
+            $pdo->exec(
+                "CREATE TABLE user_profile (
+                    userId INT UNSIGNED PRIMARY KEY,
+                    avatar VARCHAR(255) DEFAULT ''
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
             $pdo->exec("INSERT INTO user_profile (userId, avatar) VALUES (1, 'profile-avatar.png')");
         }
 

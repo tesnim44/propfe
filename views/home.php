@@ -37,7 +37,7 @@ function assetUrl(string $path): string
     <link rel="stylesheet" href="backend/view/components/preloader/preloader.css" />
     <link rel="stylesheet" href="backend/view/components/auth/auth.css" />
     <link rel="stylesheet" href="backend/view/components/landing-nav/landing-nav.css" />
-    <link rel="stylesheet" href="css/writer.css"/>
+    <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('css/writer.css'), ENT_QUOTES) ?>"/>
     <link rel="stylesheet" href="backend/view/components/hero/hero.css" />
     <link rel="stylesheet" href="backend/view/components/ticker/ticker.css" />
     <link rel="stylesheet" href="backend/view/components/features/features.css" />
@@ -51,7 +51,7 @@ function assetUrl(string $path): string
       href="<?= htmlspecialchars(assetUrl('backend/view/components/dashboard-layout/dashboard-layout.css'), ENT_QUOTES) ?>"
     />
     <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('backend/view/components/left-rail/left-rail.css'), ENT_QUOTES) ?>" />
-    <link rel="stylesheet" href="backend/view/components/compose-box/compose-box.css" />
+    <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('backend/view/components/feed/feed.css'), ENT_QUOTES) ?>" />
     <link rel="stylesheet" href="backend/view/components/article-card/article-card.css" />
     <link
       rel="stylesheet"
@@ -61,8 +61,7 @@ function assetUrl(string $path): string
       rel="stylesheet"
       href="backend/view/components/article-reader/article-reader.css"
     />
-    <link rel="stylesheet" href="css/templates.css"/>
-    <link rel="stylesheet" href="css/writer.css"/>
+    <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('css/templates.css'), ENT_QUOTES) ?>"/>
 
    
     <link rel="stylesheet" href="<?= htmlspecialchars(assetUrl('backend/view/components/right-rail/right-rail.css'), ENT_QUOTES) ?>" />
@@ -548,7 +547,6 @@ function assetUrl(string $path): string
 <script src="<?= htmlspecialchars(assetUrl('js/templates.js'), ENT_QUOTES) ?>"></script>
 <script src="<?= htmlspecialchars(assetUrl('js/feed.js'), ENT_QUOTES) ?>"></script>
 <script src="<?= htmlspecialchars(assetUrl('js/views.js'), ENT_QUOTES) ?>"></script>
-<script src="<?= htmlspecialchars(assetUrl('js/map-enhancer.js'), ENT_QUOTES) ?>"></script>
 <script src="<?= htmlspecialchars(assetUrl('js/message-center.js'), ENT_QUOTES) ?>"></script>
 <script src="<?= htmlspecialchars(assetUrl('js/writer.js'), ENT_QUOTES) ?>"></script>
 <?php inlineComponentScript('backend/view/components/auth/auth.js'); ?>

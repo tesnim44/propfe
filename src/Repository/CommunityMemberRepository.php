@@ -14,10 +14,9 @@ final class CommunityMemberRepository
 
     public function create(array $data): bool
     {
-        $joinedAtExpression = \dbDriver($this->connection) === 'sqlite' ? 'CURRENT_TIMESTAMP' : 'NOW()';
         $stmt = $this->connection->prepare(
             'INSERT INTO communitymember (communityId, userId, role, isBanned, notificationsOn, joinedAt)
-             VALUES (:communityId, :userId, :role, :isBanned, :notificationsOn, ' . $joinedAtExpression . ')'
+             VALUES (:communityId, :userId, :role, :isBanned, :notificationsOn, NOW())'
         );
 
         return $stmt->execute([

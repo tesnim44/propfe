@@ -121,13 +121,34 @@ final class WebClient
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],
         ];
-        $environment = array_merge($_ENV, [
-            'DB_DSN' => getenv('DB_DSN') !== false ? (string) getenv('DB_DSN') : TestApplication::databaseDsn(),
+        $databaseConfig = [
+            'host' => getenv('DB_HOST') !== false ? (string) getenv('DB_HOST') : '127.0.0.1',
+            'port' => getenv('DB_PORT') !== false ? (string) getenv('DB_PORT') : '3306',
+            'user' => getenv('DB_USER') !== false ? (string) getenv('DB_USER') : 'root',
+            'pass' => getenv('DB_PASS') !== false ? (string) getenv('DB_PASS') : '',
+            'name' => getenv('DB_NAME') !== false ? (string) getenv('DB_NAME') : TestApplication::databaseName(),
+        ];
+        $dsnOverride = getenv('DB_DSN');
+        $baseEnvironment = getenv();
+        if (!is_array($baseEnvironment)) {
+            $baseEnvironment = [];
+        }
+        $environment = array_merge($baseEnvironment, $_ENV, [
+            'DB_HOST' => $databaseConfig['host'],
+            'DB_PORT' => $databaseConfig['port'],
+            'DB_USER' => $databaseConfig['user'],
+            'DB_PASS' => $databaseConfig['pass'],
+            'DB_NAME' => $databaseConfig['name'],
             'APP_ENV' => getenv('APP_ENV') !== false ? (string) getenv('APP_ENV') : 'test',
             'MAIL_DISABLE' => getenv('MAIL_DISABLE') !== false ? (string) getenv('MAIL_DISABLE') : '1',
             'IBLOG_TEST_SESSION_DIR' => TestApplication::sessionDirectory(),
             'IBLOG_TEST_COLLECT_COVERAGE' => PhpUnitCodeCoverageRunner::instance()->isActive() ? '1' : '0',
         ]);
+        if (is_string($dsnOverride) && $dsnOverride !== '') {
+            $environment['DB_DSN'] = $dsnOverride;
+        } else {
+            unset($environment['DB_DSN']);
+        }
 
         $process = proc_open([PHP_BINARY, $runner], $descriptors, $pipes, $this->localRootPath, $environment, ['bypass_shell' => true]);
         if (!is_resource($process)) {

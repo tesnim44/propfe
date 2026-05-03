@@ -201,17 +201,31 @@ function loadArticleMatches(PDO $cnx, string $query, array $tokens, int $limit):
     }
 
     $sql .= " AND (
-                a.title LIKE :query
-                OR u.name LIKE :query
-                " . ($hasCategory ? 'OR a.category LIKE :query ' : '') . "
-                " . ($hasTags ? 'OR a.tags LIKE :query ' : '') . "
-                " . ($hasBody ? 'OR a.body LIKE :query ' : '') . "
+                a.title LIKE :titleQuery
+                OR u.name LIKE :authorQuery
+                " . ($hasCategory ? 'OR a.category LIKE :categoryQuery ' : '') . "
+                " . ($hasTags ? 'OR a.tags LIKE :tagsQuery ' : '') . "
+                " . ($hasBody ? 'OR a.body LIKE :bodyQuery ' : '') . "
             )
             ORDER BY " . ($hasViews ? 'COALESCE(a.views, 0)' : '0') . " DESC, " . ($hasLikes ? 'COALESCE(a.likesCount, 0)' : '0') . " DESC, a.id DESC
             LIMIT {$limit}";
 
     $stmt = $cnx->prepare($sql);
-    $stmt->execute([':query' => '%' . $query . '%']);
+    $like = '%' . $query . '%';
+    $params = [
+        ':titleQuery' => $like,
+        ':authorQuery' => $like,
+    ];
+    if ($hasCategory) {
+        $params[':categoryQuery'] = $like;
+    }
+    if ($hasTags) {
+        $params[':tagsQuery'] = $like;
+    }
+    if ($hasBody) {
+        $params[':bodyQuery'] = $like;
+    }
+    $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
     $results = [];
@@ -285,15 +299,20 @@ function loadUserMatches(PDO $cnx, string $query, array $tokens, int $limit): ar
             " . ($hasUserProfile ? 'LEFT JOIN user_profile up ON up.userId = u.id' : '') . "
             WHERE COALESCE(u.isAdmin, 0) = 0
               AND (
-                  u.name LIKE :query
-                  OR u.email LIKE :query
-                  OR {$bioExpr} LIKE :query
+                  u.name LIKE :nameQuery
+                  OR u.email LIKE :emailQuery
+                  OR {$bioExpr} LIKE :bioQuery
               )
             ORDER BY COALESCE(u.isPremium, 0) DESC, u.name ASC
             LIMIT {$limit}";
 
     $stmt = $cnx->prepare($sql);
-    $stmt->execute([':query' => '%' . $query . '%']);
+    $like = '%' . $query . '%';
+    $stmt->execute([
+        ':nameQuery' => $like,
+        ':emailQuery' => $like,
+        ':bioQuery' => $like,
+    ]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
     $results = [];

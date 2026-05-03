@@ -98,13 +98,14 @@ final class AuthenticationTest extends EndpointTestCase
         $hash = hash('sha256', $token);
         $this->db()->exec(
             "CREATE TABLE IF NOT EXISTS password_resets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                token_hash TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                used_at TEXT DEFAULT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(190) NOT NULL,
+                token_hash CHAR(64) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_password_resets_email (email)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
         $stmt = $this->db()->prepare('INSERT INTO password_resets (email, token_hash, expires_at) VALUES (?, ?, ?)');
         $stmt->execute(['free@example.com', $hash, '2030-01-01 00:00:00']);
@@ -135,13 +136,14 @@ final class AuthenticationTest extends EndpointTestCase
         $hash = hash('sha256', $token);
         $this->db()->exec(
             "CREATE TABLE IF NOT EXISTS password_resets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                token_hash TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                used_at TEXT DEFAULT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )"
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(190) NOT NULL,
+                token_hash CHAR(64) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_password_resets_email (email)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
         $stmt = $this->db()->prepare('INSERT INTO password_resets (email, token_hash, expires_at) VALUES (?, ?, ?)');
         $stmt->execute(['free@example.com', $hash, '2020-01-01 00:00:00']);

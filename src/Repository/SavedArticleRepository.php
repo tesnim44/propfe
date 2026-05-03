@@ -25,10 +25,9 @@ final class SavedArticleRepository
             return ['success' => false, 'message' => 'Déjà sauvegardé'];
         }
 
-        $savedAtExpression = \dbDriver($this->connection) === 'sqlite' ? 'CURRENT_TIMESTAMP' : 'NOW()';
         $stmt = $this->connection->prepare(
             'INSERT INTO savedarticle (userId, articleId, savedAt)
-             VALUES (:userId, :articleId, ' . $savedAtExpression . ')'
+             VALUES (:userId, :articleId, NOW())'
         );
 
         $ok = $stmt->execute([

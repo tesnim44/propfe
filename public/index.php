@@ -1,4 +1,11 @@
 <?php
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/index.php';
+$target = '../index.php';
+$query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+if ($query !== '') {
+    $target .= '?' . $query;
+}
+
+header('Location: ' . $target, true, 302);
+exit;

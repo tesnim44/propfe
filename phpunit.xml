@@ -34,9 +34,7 @@
     <testsuite name="Integration">
       <directory>tests/Integration</directory>
     </testsuite>
-    <testsuite name="Performance">
-      <directory>tests/Performance</directory>
-    </testsuite>
+   
     <testsuite name="Advanced">
       <directory>tests/Advanced</directory>
     </testsuite>

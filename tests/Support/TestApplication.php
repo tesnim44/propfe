@@ -9,8 +9,11 @@ use RuntimeException;
 final class TestApplication
 {
     private static ?string $baseUrl = null;
-    private static ?string $databasePath = null;
     private static ?PDO $pdo = null;
+    private static ?PDO $adminPdo = null;
+    private static ?array $databaseConfig = null;
+    private static array $isolatedDatabases = [];
+    private static int $isolatedCounter = 0;
     private static $serverProcess = null;
     private static bool $ownsServer = false;
     private static bool $shutdownRegistered = false;
@@ -30,20 +33,6 @@ final class TestApplication
         return $path;
     }
 
-    public static function databasePath(): string
-    {
-        if (self::$databasePath === null) {
-            self::$databasePath = rtrim(sys_get_temp_dir(), '\\/') . DIRECTORY_SEPARATOR . 'iblog-functional-' . getmypid() . '.sqlite';
-        }
-
-        return self::$databasePath;
-    }
-
-    public static function databaseDsn(): string
-    {
-        return 'sqlite:' . str_replace('\\', '/', self::databasePath());
-    }
-
     public static function sessionDirectory(): string
     {
         $path = rtrim(sys_get_temp_dir(), '\\/') . DIRECTORY_SEPARATOR . 'iblog-functional-sessions-' . getmypid();
@@ -54,16 +43,31 @@ final class TestApplication
         return $path;
     }
 
+    public static function databaseName(): string
+    {
+        return (string) (self::databaseConfig()['name'] ?? ('ibloglv_test_' . getmypid()));
+    }
+
+    public static function databaseDsn(): string
+    {
+        $config = self::databaseConfig();
+
+        return sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            $config['host'],
+            $config['port'],
+            $config['name']
+        );
+    }
+
     public static function pdo(): PDO
     {
         if (self::$pdo instanceof PDO) {
             return self::$pdo;
         }
 
-        self::$pdo = new PDO(self::databaseDsn());
-        self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        self::$pdo->exec('PRAGMA foreign_keys = ON');
+        self::ensureTestDatabaseExists();
+        self::$pdo = self::connectToDatabase(self::databaseName());
 
         return self::$pdo;
     }
@@ -71,10 +75,30 @@ final class TestApplication
     public static function resetDatabase(): void
     {
         self::$pdo = null;
+
+        $admin = self::adminPdo();
+        $database = self::quoteIdentifier(self::databaseName());
+        $admin->exec("DROP DATABASE IF EXISTS {$database}");
+        $admin->exec("CREATE DATABASE {$database} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
         $pdo = self::pdo();
-        self::dropSchema($pdo);
         self::createSchema($pdo);
         self::seedBaseData($pdo);
+    }
+
+    public static function createIsolatedDatabase(string $label = 'isolated'): PDO
+    {
+        $sanitizedLabel = preg_replace('/[^a-z0-9_]+/i', '_', strtolower($label)) ?: 'isolated';
+        $name = sprintf('ibloglv_%s_%d_%d', $sanitizedLabel, getmypid(), ++self::$isolatedCounter);
+        $name = substr($name, 0, 60);
+
+        $admin = self::adminPdo();
+        $database = self::quoteIdentifier($name);
+        $admin->exec("DROP DATABASE IF EXISTS {$database}");
+        $admin->exec("CREATE DATABASE {$database} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        self::$isolatedDatabases[] = $name;
+
+        return self::connectToDatabase($name);
     }
 
     public static function baseUrl(): string
@@ -97,7 +121,7 @@ final class TestApplication
 
         if (!self::canAutoStartServer()) {
             throw new RuntimeException(
-                'Test server is not reachable. Start the suite with tests/run-test-suite.ps1 or provide IBLOG_TEST_BASE_URL.'
+                'Test server is not reachable. Start the suite with tests/run-functional-suite.ps1 or provide IBLOG_TEST_BASE_URL.'
             );
         }
 
@@ -129,6 +153,78 @@ final class TestApplication
         }
 
         return new WebClient(self::baseUrl());
+    }
+
+    private static function databaseConfig(): array
+    {
+        if (is_array(self::$databaseConfig)) {
+            return self::$databaseConfig;
+        }
+
+        if (!function_exists('iblogConfig')) {
+            require_once self::rootPath() . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
+        }
+
+        $appConfig = \iblogConfig()['database'];
+        self::$databaseConfig = [
+            'host' => (string) (getenv('IBLOG_TEST_DB_HOST') ?: getenv('DB_HOST') ?: $appConfig['host'] ?? '127.0.0.1'),
+            'port' => (string) (getenv('IBLOG_TEST_DB_PORT') ?: getenv('DB_PORT') ?: $appConfig['port'] ?? '3306'),
+            'user' => (string) (getenv('IBLOG_TEST_DB_USER') ?: getenv('DB_USER') ?: $appConfig['user'] ?? 'root'),
+            'pass' => (string) (getenv('IBLOG_TEST_DB_PASS') ?: getenv('DB_PASS') ?: $appConfig['pass'] ?? ''),
+            'name' => (string) (getenv('IBLOG_TEST_DB_NAME') ?: ('ibloglv_test_' . getmypid())),
+        ];
+
+        return self::$databaseConfig;
+    }
+
+    private static function adminPdo(): PDO
+    {
+        if (self::$adminPdo instanceof PDO) {
+            return self::$adminPdo;
+        }
+
+        $config = self::databaseConfig();
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;charset=utf8mb4',
+            $config['host'],
+            $config['port']
+        );
+
+        self::$adminPdo = new PDO($dsn, $config['user'], $config['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+
+        return self::$adminPdo;
+    }
+
+    private static function connectToDatabase(string $databaseName): PDO
+    {
+        $config = self::databaseConfig();
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            $config['host'],
+            $config['port'],
+            $databaseName
+        );
+
+        return new PDO($dsn, $config['user'], $config['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    }
+
+    private static function ensureTestDatabaseExists(): void
+    {
+        $database = self::quoteIdentifier(self::databaseName());
+        self::adminPdo()->exec("CREATE DATABASE IF NOT EXISTS {$database} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    }
+
+    private static function quoteIdentifier(string $value): string
+    {
+        return '`' . str_replace('`', '``', $value) . '`';
     }
 
     private static function waitForServer(string $url, float $timeoutSeconds = 5.0): bool
@@ -172,7 +268,14 @@ final class TestApplication
 
     private static function bootstrapEnvironment(): void
     {
-        self::setEnvValue('DB_DSN', self::databaseDsn());
+        $config = self::databaseConfig();
+
+        self::clearEnvValue('DB_DSN');
+        self::setEnvValue('DB_HOST', $config['host']);
+        self::setEnvValue('DB_PORT', $config['port']);
+        self::setEnvValue('DB_USER', $config['user']);
+        self::setEnvValue('DB_PASS', $config['pass']);
+        self::setEnvValue('DB_NAME', $config['name']);
         self::setEnvValue('APP_ENV', 'test');
         self::setEnvValue('MAIL_DISABLE', '1');
         self::setEnvValue('IBLOG_TEST_BASE_URL', (string) self::$baseUrl);
@@ -182,6 +285,12 @@ final class TestApplication
     {
         $_ENV[$name] = $value;
         putenv($name . '=' . $value);
+    }
+
+    private static function clearEnvValue(string $name): void
+    {
+        unset($_ENV[$name]);
+        putenv($name);
     }
 
     private static function spawnServer(): bool
@@ -223,12 +332,22 @@ final class TestApplication
                 2 => ['file', $stderr, 'a'],
             ];
 
-            $environment = array_merge($_ENV, [
-                'DB_DSN' => self::databaseDsn(),
+            $config = self::databaseConfig();
+            $baseEnvironment = getenv();
+            if (!is_array($baseEnvironment)) {
+                $baseEnvironment = [];
+            }
+            $environment = array_merge($baseEnvironment, $_ENV, [
+                'DB_HOST' => $config['host'],
+                'DB_PORT' => $config['port'],
+                'DB_USER' => $config['user'],
+                'DB_PASS' => $config['pass'],
+                'DB_NAME' => $config['name'],
                 'APP_ENV' => 'test',
                 'MAIL_DISABLE' => '1',
                 'IBLOG_TEST_BASE_URL' => $candidateBaseUrl,
             ]);
+            unset($environment['DB_DSN']);
 
             $process = @proc_open($command, $descriptors, $pipes, self::rootPath(), $environment, ['bypass_shell' => true]);
             if (!is_resource($process)) {
@@ -245,6 +364,7 @@ final class TestApplication
             if (self::waitForServer($candidateBaseUrl . '/backend/view/components/auth/api-auth.php', 3.0)) {
                 if (!self::$shutdownRegistered) {
                     register_shutdown_function(static function (): void {
+                        TestApplication::cleanupDatabases();
                         TestApplication::stopServer();
                     });
                     self::$shutdownRegistered = true;
@@ -303,115 +423,114 @@ final class TestApplication
         return 'Server log: ' . implode(' | ', $tail);
     }
 
+    private static function cleanupDatabases(): void
+    {
+        try {
+            $admin = self::adminPdo();
+            $admin->exec('DROP DATABASE IF EXISTS ' . self::quoteIdentifier(self::databaseName()));
+            foreach (self::$isolatedDatabases as $databaseName) {
+                $admin->exec('DROP DATABASE IF EXISTS ' . self::quoteIdentifier($databaseName));
+            }
+        } catch (\Throwable) {
+        }
+    }
+
     private static function createSchema(PDO $pdo): void
     {
         $statements = [
             "CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                plan TEXT NOT NULL DEFAULT 'free',
-                isPremium INTEGER NOT NULL DEFAULT 0,
-                isAdmin INTEGER NOT NULL DEFAULT 0,
-                status TEXT NOT NULL DEFAULT 'active',
-                bio TEXT DEFAULT '',
-                avatar TEXT DEFAULT '',
-                cover TEXT DEFAULT '',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )",
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(160) NOT NULL,
+                email VARCHAR(190) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                plan VARCHAR(32) NOT NULL DEFAULT 'free',
+                isPremium TINYINT(1) NOT NULL DEFAULT 0,
+                isAdmin TINYINT(1) NOT NULL DEFAULT 0,
+                status VARCHAR(32) NOT NULL DEFAULT 'active',
+                bio TEXT NULL,
+                avatar VARCHAR(255) DEFAULT '',
+                cover VARCHAR(255) DEFAULT '',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE article (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                body TEXT NOT NULL,
-                category TEXT DEFAULT 'General',
-                tags TEXT DEFAULT '',
-                status TEXT NOT NULL DEFAULT 'draft',
-                coverImage TEXT DEFAULT '',
-                readingTime TEXT DEFAULT '1 min',
-                likesCount INTEGER NOT NULL DEFAULT 0,
-                views INTEGER NOT NULL DEFAULT 0,
-                label TEXT NOT NULL DEFAULT 'none',
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )",
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                body LONGTEXT NOT NULL,
+                category VARCHAR(120) DEFAULT 'General',
+                tags TEXT NULL,
+                status VARCHAR(32) NOT NULL DEFAULT 'draft',
+                coverImage VARCHAR(255) DEFAULT '',
+                readingTime VARCHAR(32) DEFAULT '1 min',
+                likesCount INT NOT NULL DEFAULT 0,
+                views INT NOT NULL DEFAULT 0,
+                label VARCHAR(64) NOT NULL DEFAULT 'none',
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_article_user (userId),
+                INDEX idx_article_status (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE savedarticle (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                articleId INTEGER NOT NULL,
-                savedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (userId, articleId)
-            )",
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                articleId INT UNSIGNED NOT NULL,
+                savedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_saved_article (userId, articleId)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE comment (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                articleId INTEGER NOT NULL,
-                userId INTEGER NOT NULL,
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                articleId INT UNSIGNED NOT NULL,
+                userId INT UNSIGNED NOT NULL,
                 body TEXT NOT NULL,
-                parentId INTEGER DEFAULT NULL,
-                likesCount INTEGER NOT NULL DEFAULT 0,
-                isFlagged INTEGER NOT NULL DEFAULT 0,
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )",
+                parentId INT UNSIGNED DEFAULT NULL,
+                likesCount INT NOT NULL DEFAULT 0,
+                isFlagged TINYINT(1) NOT NULL DEFAULT 0,
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_comment_article (articleId)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE community (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                creatorId INTEGER NOT NULL,
-                name TEXT NOT NULL,
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                creatorId INT UNSIGNED NOT NULL,
+                name VARCHAR(180) NOT NULL,
                 description TEXT NOT NULL,
-                icon TEXT NOT NULL,
-                topics TEXT DEFAULT NULL,
-                memberCount INTEGER NOT NULL DEFAULT 0,
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )",
+                icon VARCHAR(32) NOT NULL,
+                topics TEXT NULL,
+                memberCount INT NOT NULL DEFAULT 0,
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE communitymember (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                communityId INTEGER NOT NULL,
-                userId INTEGER NOT NULL,
-                role TEXT NOT NULL DEFAULT 'member',
-                joinedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                isBanned INTEGER NOT NULL DEFAULT 0,
-                UNIQUE (communityId, userId)
-            )",
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                communityId INT UNSIGNED NOT NULL,
+                userId INT UNSIGNED NOT NULL,
+                role VARCHAR(32) NOT NULL DEFAULT 'member',
+                joinedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                isBanned TINYINT(1) NOT NULL DEFAULT 0,
+                notificationsOn TINYINT(1) NOT NULL DEFAULT 1,
+                UNIQUE KEY uniq_community_member (communityId, userId)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE community_message (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                communityId INTEGER NOT NULL,
-                userId INTEGER NOT NULL,
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                communityId INT UNSIGNED NOT NULL,
+                userId INT UNSIGNED NOT NULL,
                 message TEXT NOT NULL,
-                isDeleted INTEGER NOT NULL DEFAULT 0,
-                createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )",
+                isDeleted TINYINT(1) NOT NULL DEFAULT 0,
+                createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
             "CREATE TABLE subscription (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                plan TEXT NOT NULL,
-                amount REAL NOT NULL,
-                currency TEXT NOT NULL DEFAULT 'TND',
-                status TEXT NOT NULL DEFAULT 'active',
-                method TEXT NOT NULL DEFAULT 'card',
-                startedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                expiresAt TEXT DEFAULT NULL
-            )",
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                userId INT UNSIGNED NOT NULL,
+                plan VARCHAR(32) NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                currency VARCHAR(8) NOT NULL DEFAULT 'TND',
+                status VARCHAR(32) NOT NULL DEFAULT 'active',
+                method VARCHAR(32) NOT NULL DEFAULT 'card',
+                startedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expiresAt DATETIME DEFAULT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
         ];
 
         foreach ($statements as $statement) {
             $pdo->exec($statement);
         }
-    }
-
-    private static function dropSchema(PDO $pdo): void
-    {
-        $pdo->exec('PRAGMA foreign_keys = OFF');
-        $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
-            ?->fetchAll(PDO::FETCH_COLUMN) ?: [];
-
-        foreach ($tables as $table) {
-            if (!is_string($table) || $table === '') {
-                continue;
-            }
-
-            $pdo->exec('DROP TABLE IF EXISTS "' . str_replace('"', '""', $table) . '"');
-        }
-
-        $pdo->exec('PRAGMA foreign_keys = ON');
     }
 
     private static function seedBaseData(PDO $pdo): void
@@ -512,10 +631,10 @@ final class TestApplication
         ]);
 
         $communityMemberStmt = $pdo->prepare(
-            'INSERT INTO communitymember (communityId, userId, role, joinedAt, isBanned)
-             VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO communitymember (communityId, userId, role, joinedAt, isBanned, notificationsOn)
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $communityMemberStmt->execute([1, 3, 'creator', '2026-01-15 08:05:00', 0]);
+        $communityMemberStmt->execute([1, 3, 'creator', '2026-01-15 08:05:00', 0, 1]);
 
         $subscriptionStmt = $pdo->prepare(
             'INSERT INTO subscription (userId, plan, amount, currency, status, method, startedAt, expiresAt)

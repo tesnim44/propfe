@@ -14,12 +14,11 @@ final class ArticleRepository
 
     public function create(array $data): bool
     {
-        $createdAtExpression = \dbDriver($this->connection) === 'sqlite' ? 'CURRENT_TIMESTAMP' : 'NOW()';
         $stmt = $this->connection->prepare(
             'INSERT INTO article
                 (userId, title, body, category, tags, status, coverImage, readingTime, likesCount, views, label, createdAt)
              VALUES
-                (:userId, :title, :body, :category, :tags, :status, :coverImage, :readingTime, 0, 0, :label, ' . $createdAtExpression . ')'
+                (:userId, :title, :body, :category, :tags, :status, :coverImage, :readingTime, 0, 0, :label, NOW())'
         );
 
         return $stmt->execute([
@@ -99,10 +98,19 @@ final class ArticleRepository
              FROM article a
              ' . $this->authorJoin() . '
              WHERE a.status != "deleted"
-               AND (a.title LIKE :search OR a.body LIKE :search OR a.category LIKE :search)
+               AND (
+                    a.title LIKE :searchTitle
+                    OR a.body LIKE :searchBody
+                    OR a.category LIKE :searchCategory
+               )
              ORDER BY a.createdAt DESC'
         );
-        $stmt->execute([':search' => '%' . $search . '%']);
+        $like = '%' . $search . '%';
+        $stmt->execute([
+            ':searchTitle' => $like,
+            ':searchBody' => $like,
+            ':searchCategory' => $like,
+        ]);
 
         return array_map(fn(array $row): object => $this->hydrate($row), $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }

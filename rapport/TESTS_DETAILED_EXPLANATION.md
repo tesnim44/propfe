@@ -337,7 +337,7 @@ This test targets the MySQL-specific date expression branch in `upgradeToPremium
 
 **Why it matters**
 
-Without this test, SQLite-only execution would never cover the MySQL-specific expiration expression.
+Without this test, the MySQL-specific expiration expression would not be covered directly.
 
 ---
 
@@ -713,4 +713,3 @@ If you need to present the suite academically, the clean explanation is:
 2. `Integration` tests validate end-to-end feature workflows across multiple layers.
 3. `Advanced` tests validate edge cases, regressions, invalid input, and serialization behavior.
 4. The current executed suite contains **84 tests**, not 76.
-

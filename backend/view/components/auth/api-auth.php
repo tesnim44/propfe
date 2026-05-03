@@ -106,19 +106,6 @@ function userTableSupportsProfileColumns(PDO $cnx): bool
 function ensureUserProfileTable(PDO $cnx): void
 {
     try {
-        if (dbDriver($cnx) === 'sqlite') {
-            $cnx->exec(
-                "CREATE TABLE IF NOT EXISTS user_profile (
-                    userId INTEGER NOT NULL PRIMARY KEY,
-                    bio TEXT NULL,
-                    avatar TEXT NULL,
-                    cover TEXT NULL,
-                    updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
-                )"
-            );
-            return;
-        }
-
         $cnx->exec(
             "CREATE TABLE IF NOT EXISTS user_profile (
                 userId INT NOT NULL PRIMARY KEY,
@@ -259,19 +246,12 @@ function persistProfileData(PDO $cnx, int $userId, string $bio, string $avatar, 
     }
 
     $profileStmt = $cnx->prepare(
-        dbDriver($cnx) === 'sqlite'
-            ? 'INSERT INTO user_profile (userId, bio, avatar, cover)
-               VALUES (:userId, :bio, :avatar, :cover)
-               ON CONFLICT(userId) DO UPDATE SET
-                   bio = excluded.bio,
-                   avatar = excluded.avatar,
-                   cover = excluded.cover'
-            : 'INSERT INTO user_profile (userId, bio, avatar, cover)
-               VALUES (:userId, :bio, :avatar, :cover)
-               ON DUPLICATE KEY UPDATE
-                  bio = VALUES(bio),
-                  avatar = VALUES(avatar),
-                  cover = VALUES(cover)'
+        'INSERT INTO user_profile (userId, bio, avatar, cover)
+         VALUES (:userId, :bio, :avatar, :cover)
+         ON DUPLICATE KEY UPDATE
+            bio = VALUES(bio),
+            avatar = VALUES(avatar),
+            cover = VALUES(cover)'
     );
     $profileStmt->execute([
         ':userId' => $userId,
@@ -294,20 +274,6 @@ function loginUser(array $user): void
 
 function ensurePasswordResetTable(PDO $cnx): void
 {
-    if (dbDriver($cnx) === 'sqlite') {
-        $cnx->exec(
-            "CREATE TABLE IF NOT EXISTS password_resets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                token_hash TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                used_at TEXT DEFAULT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )"
-        );
-        return;
-    }
-
     $cnx->exec(
         "CREATE TABLE IF NOT EXISTS password_resets (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -323,20 +289,6 @@ function ensurePasswordResetTable(PDO $cnx): void
 
 function ensurePrivateMessagesTable(PDO $cnx): void
 {
-    if (dbDriver($cnx) === 'sqlite') {
-        $cnx->exec(
-            "CREATE TABLE IF NOT EXISTS private_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                senderId INTEGER NOT NULL,
-                recipientId INTEGER NOT NULL,
-                body TEXT NOT NULL,
-                createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
-                readAt TEXT DEFAULT NULL
-            )"
-        );
-        return;
-    }
-
     $cnx->exec(
         "CREATE TABLE IF NOT EXISTS private_messages (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -570,9 +522,27 @@ function deletePrivateMessageThread(PDO $cnx, int $userId, int $partnerId): int
     return (int) $stmt->rowCount();
 }
 
+function appBaseUrl(): string
+{
+    $configured = trim((string) env('APP_URL', ''));
+    if ($configured !== '') {
+        return rtrim($configured, '/');
+    }
+
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    $https = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
+    $scheme = $https ? 'https' : 'http';
+    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $derivedPath = preg_replace('#/backend/view/components/auth/api-auth\.php$#', '', $scriptName);
+    $fallbackPath = '/' . trim(basename(dirname(__DIR__, 4)), '/');
+    $basePath = is_string($derivedPath) && $derivedPath !== '' ? rtrim($derivedPath, '/') : $fallbackPath;
+
+    return sprintf('%s://%s%s', $scheme, $host, $basePath);
+}
+
 function sendPasswordResetEmail(string $email, string $name, string $token): void
 {
-    $baseUrl = rtrim(env('APP_URL', 'http://localhost/iblog3'), '/');
+    $baseUrl = appBaseUrl();
     $url = $baseUrl . '/reset-password.php?token=' . urlencode($token) . '&email=' . urlencode($email);
 
     $subject = 'Reset your IBlog password';

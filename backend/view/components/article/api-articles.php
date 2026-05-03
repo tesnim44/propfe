@@ -128,8 +128,13 @@ function articleDateLabel(?string $createdAt): string
         return 'Just now';
     }
 
-    $timestamp = strtotime($createdAt);
-    if ($timestamp === false) {
+    $normalized = trim($createdAt);
+    if ($normalized === '' || str_starts_with($normalized, '0000-00-00')) {
+        return 'Just now';
+    }
+
+    $timestamp = strtotime($normalized);
+    if ($timestamp === false || $timestamp <= 0) {
         return 'Just now';
     }
 
@@ -295,19 +300,6 @@ function ensureArticleLikeTable(PDO $cnx): void
     }
 
     try {
-        if (dbDriver($cnx) === 'sqlite') {
-            $cnx->exec(
-                "CREATE TABLE article_like (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    articleId INTEGER NOT NULL,
-                    userId INTEGER NOT NULL,
-                    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE (articleId, userId)
-                )"
-            );
-            return;
-        }
-
         $cnx->exec(
             "CREATE TABLE article_like (
                 id INT AUTO_INCREMENT PRIMARY KEY,

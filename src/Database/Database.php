@@ -40,9 +40,6 @@ namespace IBlog\Database {
                 ]
             );
 
-            if ($this->driver() === 'sqlite') {
-                $this->connection->exec('PRAGMA foreign_keys = ON');
-            }
         }
 
         public static function getInstance(array $config): self
@@ -98,13 +95,13 @@ namespace {
     function dbTableExists(PDO $cnx, string $table): bool
     {
         try {
-            if (dbDriver($cnx) === 'sqlite') {
-                $stmt = $cnx->prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = :table");
-                $stmt->execute([':table' => $table]);
-                return (bool) $stmt->fetchColumn();
-            }
-
-            $stmt = $cnx->prepare('SHOW TABLES LIKE :table');
+            $stmt = $cnx->prepare(
+                'SELECT 1
+                 FROM information_schema.tables
+                 WHERE table_schema = DATABASE()
+                   AND table_name = :table
+                 LIMIT 1'
+            );
             $stmt->execute([':table' => $table]);
             return (bool) $stmt->fetchColumn();
         } catch (Throwable) {
@@ -115,20 +112,18 @@ namespace {
     function dbColumnExists(PDO $cnx, string $table, string $column): bool
     {
         try {
-            if (dbDriver($cnx) === 'sqlite') {
-                $stmt = $cnx->query("PRAGMA table_info(\"{$table}\")");
-                $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
-                foreach ($rows as $row) {
-                    if ((string) ($row['name'] ?? '') === $column) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            $stmt = $cnx->prepare("SHOW COLUMNS FROM `{$table}` LIKE :column");
-            $stmt->execute([':column' => $column]);
+            $stmt = $cnx->prepare(
+                'SELECT 1
+                 FROM information_schema.columns
+                 WHERE table_schema = DATABASE()
+                   AND table_name = :table
+                   AND column_name = :column
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':table' => $table,
+                ':column' => $column,
+            ]);
             return (bool) $stmt->fetchColumn();
         } catch (Throwable) {
             return false;

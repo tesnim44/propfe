@@ -6,7 +6,14 @@ if (-not (Test-Path $runtime)) {
   New-Item -ItemType Directory -Path $runtime | Out-Null
 }
 
-$env:DB_DSN = 'sqlite:' + ((Join-Path $runtime 'iblog-functional.sqlite') -replace '\\', '/')
+$env:DB_HOST = if ($env:IBLOG_TEST_DB_HOST) { $env:IBLOG_TEST_DB_HOST } else { '127.0.0.1' }
+$env:DB_PORT = if ($env:IBLOG_TEST_DB_PORT) { $env:IBLOG_TEST_DB_PORT } else { '3306' }
+$env:DB_USER = if ($env:IBLOG_TEST_DB_USER) { $env:IBLOG_TEST_DB_USER } else { 'root' }
+$env:DB_PASS = if ($env:IBLOG_TEST_DB_PASS) { $env:IBLOG_TEST_DB_PASS } else { '' }
+$env:DB_NAME = if ($env:IBLOG_TEST_DB_NAME) { $env:IBLOG_TEST_DB_NAME } else { 'ibloglv_test_' + $PID }
+if (Test-Path Env:DB_DSN) {
+  Remove-Item Env:DB_DSN
+}
 $env:APP_ENV = 'test'
 $env:MAIL_DISABLE = '1'
 $env:IBLOG_TEST_BASE_URL = 'http://127.0.0.1:18080'
