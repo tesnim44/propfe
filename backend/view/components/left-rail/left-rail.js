@@ -54,11 +54,6 @@ IBlog.LeftRail = (() => {
             </select>
           </div>
 
-          <div class="rail-visual">
-            <img src="images/brand/mascot-faces.svg" alt="IBlog mascot expressions" />
-            <p>${t('leftRail.mascotNote')}</p>
-          </div>
-
           <div class="dark-toggle">
             <label class="toggle-switch"><input type="checkbox" id="dark-toggle-input" onchange="IBlog.Dashboard.toggleDark()" /><div class="toggle-track"></div></label>
             <span class="toggle-label" id="dark-toggle-label">${t('leftRail.light')}</span>
@@ -69,6 +64,9 @@ IBlog.LeftRail = (() => {
     document.querySelectorAll('.iblog-language-select').forEach((select) => {
       select.value = IBlog.I18n?.getLocale?.() || 'en';
     });
+    window.dispatchEvent(new CustomEvent('iblog:locale-changed', {
+      detail: { locale: IBlog.I18n?.getLocale?.() || 'en' },
+    }));
     resetScroll();
   }
 

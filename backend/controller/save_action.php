@@ -1,7 +1,7 @@
 <?php
 session_start();
-include("../config/database.php");
-include("../controller/savedArticleController.php");
+require_once dirname(__DIR__) . '/config/database.php';
+require_once __DIR__ . '/SavedArticleController.php';
 
 header('Content-Type: application/json');
 

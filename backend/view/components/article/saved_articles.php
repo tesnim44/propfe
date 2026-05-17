@@ -1,7 +1,7 @@
 <?php
 session_start();
-include("../config/database.php");
-include("../controller/savedArticleController.php");
+require_once dirname(__DIR__, 3) . '/config/database.php';
+require_once dirname(__DIR__, 3) . '/controller/SavedArticleController.php';
 
 // Rediriger si non connecté
 if (!isset($_SESSION['user_id'])) {

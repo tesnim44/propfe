@@ -100,6 +100,21 @@
     resetModal(id);
   }
 
+  function launchOnboardingIfNeeded(user) {
+    if (!user || user.onboardingComplete !== false) return false;
+    if (!window.IBlogOnboarding?.start) return false;
+
+    closeModal('modal-checkout');
+    window.IBlogOnboarding.start(user, {
+      onComplete: () => {
+        document.getElementById('landing-page')?.style.setProperty('display', 'none');
+        document.getElementById('dashboard')?.style.setProperty('display', 'block');
+        window.IBlog?.Dashboard?.enter?.();
+      },
+    });
+    return true;
+  }
+
   function resetModal(id) {
     const el = $(id); if (!el) return;
     el.querySelectorAll('input').forEach(f => {
@@ -550,6 +565,12 @@
       const success  = $('checkout-success');
       if (formWrap) formWrap.style.display = 'none';
       if (success)  success.classList.add('show');
+
+      if (updatedUser.onboardingComplete === false) {
+        window.setTimeout(() => {
+          launchOnboardingIfNeeded(updatedUser);
+        }, 900);
+      }
 
     } catch (err) {
       if (btn) { btn.disabled = false; btn.textContent = 'Confirm order'; }

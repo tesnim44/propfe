@@ -2,8 +2,8 @@
 // TOUJOURS en premier — avant tout include
 session_start();
 
-include("../config/database.php");
-include("../controller/ArticleController.php");
+require_once dirname(__DIR__) . '/config/database.php';
+require_once __DIR__ . '/ArticleController.php';
 
 // Vérifier connexion
 if (!isset($_SESSION['email'])) {

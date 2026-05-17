@@ -7,7 +7,6 @@
       <footer class="site-footer">
         <div class="footer-inner">
           <div class="footer-logo">I<em>Blog</em></div>
-          <img src="images/brand/mascot-faces.svg" alt="IBlog mascot expressions" style="width:min(320px,100%);display:block;margin:18px auto 10px;">
           <div class="footer-links-row">
             <a href="#">${IBlog.I18n?.t?.('misc.about') || 'About'}</a>
             <a href="#features">${IBlog.I18n?.t?.('nav.features') || 'Features'}</a>

@@ -47,8 +47,15 @@ function passwordStrongEnough(string $password): bool
         && preg_match('/[^A-Za-z0-9]/', $password) === 1;
 }
 
-function userPayload(array $user, bool $onboardingComplete = true): array
+function userPayload(array $user, ?bool $onboardingComplete = null): array
 {
+    $resolvedOnboarding = $onboardingComplete;
+    if ($resolvedOnboarding === null) {
+        $resolvedOnboarding = array_key_exists('onboardingComplete', $user)
+            ? (bool) $user['onboardingComplete']
+            : true;
+    }
+
     return [
         'id' => (int) ($user['id'] ?? 0),
         'name' => $user['name'],
@@ -60,7 +67,13 @@ function userPayload(array $user, bool $onboardingComplete = true): array
         'bio' => (string) ($user['bio'] ?? ''),
         'avatar' => normalizeProfileImagePath((string) ($user['avatar'] ?? '')),
         'cover' => normalizeProfileImagePath((string) ($user['cover'] ?? '')),
-        'onboardingComplete' => $onboardingComplete,
+        'pseudo' => (string) ($user['pseudo'] ?? ''),
+        'fieldIds' => is_array($user['fieldIds'] ?? null) ? $user['fieldIds'] : [],
+        'subjectIds' => is_array($user['subjectIds'] ?? null) ? $user['subjectIds'] : [],
+        'interestIds' => is_array($user['interestIds'] ?? null) ? $user['interestIds'] : [],
+        'fields' => is_array($user['fields'] ?? null) ? $user['fields'] : [],
+        'subjects' => is_array($user['subjects'] ?? null) ? $user['subjects'] : [],
+        'onboardingComplete' => (bool) $resolvedOnboarding,
     ];
 }
 
@@ -96,6 +109,32 @@ function ensureUserProfileColumns(PDO $cnx): void
     }
 }
 
+function ensureUserProfileMetaColumns(PDO $cnx): void
+{
+    if (!tableExists($cnx, 'user_profile')) {
+        return;
+    }
+
+    $columns = [
+        'pseudo' => 'ALTER TABLE user_profile ADD COLUMN pseudo VARCHAR(64) NULL',
+        'fieldIds' => 'ALTER TABLE user_profile ADD COLUMN fieldIds TEXT NULL',
+        'subjectIds' => 'ALTER TABLE user_profile ADD COLUMN subjectIds TEXT NULL',
+        'interestIds' => 'ALTER TABLE user_profile ADD COLUMN interestIds TEXT NULL',
+        'fields' => 'ALTER TABLE user_profile ADD COLUMN fields TEXT NULL',
+        'subjects' => 'ALTER TABLE user_profile ADD COLUMN subjects TEXT NULL',
+        'onboardingComplete' => 'ALTER TABLE user_profile ADD COLUMN onboardingComplete TINYINT(1) NOT NULL DEFAULT 0',
+    ];
+
+    foreach ($columns as $column => $sql) {
+        if (!columnExists($cnx, 'user_profile', $column)) {
+            try {
+                $cnx->exec($sql);
+            } catch (Throwable) {
+            }
+        }
+    }
+}
+
 function userTableSupportsProfileColumns(PDO $cnx): bool
 {
     return columnExists($cnx, 'users', 'bio')
@@ -112,11 +151,58 @@ function ensureUserProfileTable(PDO $cnx): void
                 bio TEXT NULL,
                 avatar VARCHAR(255) NULL,
                 cover VARCHAR(255) NULL,
+                pseudo VARCHAR(64) NULL,
+                fieldIds TEXT NULL,
+                subjectIds TEXT NULL,
+                interestIds TEXT NULL,
+                fields TEXT NULL,
+                subjects TEXT NULL,
+                onboardingComplete TINYINT(1) NOT NULL DEFAULT 0,
                 updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
     } catch (Throwable) {
     }
+
+    ensureUserProfileMetaColumns($cnx);
+}
+
+function normalizeStringArray(mixed $value): array
+{
+    if (!is_array($value)) {
+        return [];
+    }
+
+    $clean = [];
+    foreach ($value as $item) {
+        $text = trim((string) $item);
+        if ($text === '') {
+            continue;
+        }
+        $clean[] = $text;
+    }
+
+    return array_values(array_unique($clean));
+}
+
+function decodeProfileArray(mixed $value): array
+{
+    if (is_array($value)) {
+        return normalizeStringArray($value);
+    }
+
+    $text = trim((string) $value);
+    if ($text === '') {
+        return [];
+    }
+
+    $decoded = json_decode($text, true);
+    return normalizeStringArray($decoded);
+}
+
+function encodeProfileArray(array $value): string
+{
+    return json_encode(normalizeStringArray($value), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
 }
 
 function profileUploadDir(string $type): string
@@ -196,11 +282,17 @@ function mergeProfileData(PDO $cnx, array $user): array
         'bio' => (string) ($user['bio'] ?? ''),
         'avatar' => normalizeProfileImagePath((string) ($user['avatar'] ?? '')),
         'cover' => normalizeProfileImagePath((string) ($user['cover'] ?? '')),
+        'pseudo' => (string) ($user['pseudo'] ?? ''),
+        'fieldIds' => normalizeStringArray($user['fieldIds'] ?? []),
+        'subjectIds' => normalizeStringArray($user['subjectIds'] ?? []),
+        'interestIds' => normalizeStringArray($user['interestIds'] ?? []),
+        'fields' => normalizeStringArray($user['fields'] ?? []),
+        'subjects' => normalizeStringArray($user['subjects'] ?? []),
     ];
 
     try {
         $stmt = $cnx->prepare(
-            'SELECT bio, avatar, cover
+            'SELECT bio, avatar, cover, pseudo, fieldIds, subjectIds, interestIds, fields, subjects, onboardingComplete
              FROM user_profile
              WHERE userId = :userId
              LIMIT 1'
@@ -208,15 +300,25 @@ function mergeProfileData(PDO $cnx, array $user): array
         $stmt->execute([':userId' => (int) ($user['id'] ?? 0)]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        foreach (['bio', 'avatar', 'cover'] as $field) {
-            $fallbackValue = normalizeProfileImagePath((string) ($row[$field] ?? ''));
-            if ($field === 'bio') {
-                $fallbackValue = (string) ($row[$field] ?? '');
-            }
+        foreach (['bio', 'avatar', 'cover', 'pseudo'] as $field) {
+            $fallbackValue = in_array($field, ['avatar', 'cover'], true)
+                ? normalizeProfileImagePath((string) ($row[$field] ?? ''))
+                : trim((string) ($row[$field] ?? ''));
 
             if ($profile[$field] === '' && $fallbackValue !== '') {
                 $profile[$field] = $fallbackValue;
             }
+        }
+
+        foreach (['fieldIds', 'subjectIds', 'interestIds', 'fields', 'subjects'] as $field) {
+            if (!empty($profile[$field])) {
+                continue;
+            }
+            $profile[$field] = decodeProfileArray($row[$field] ?? '');
+        }
+
+        if (array_key_exists('onboardingComplete', $row)) {
+            $profile['onboardingComplete'] = (bool) $row['onboardingComplete'];
         }
     } catch (Throwable) {
     }
@@ -224,10 +326,18 @@ function mergeProfileData(PDO $cnx, array $user): array
     return array_merge($user, $profile);
 }
 
-function persistProfileData(PDO $cnx, int $userId, string $bio, string $avatar, string $cover): void
+function persistProfileData(PDO $cnx, int $userId, string $bio, string $avatar, string $cover, array $meta = []): void
 {
     ensureUserProfileColumns($cnx);
     ensureUserProfileTable($cnx);
+
+    $pseudo = trim((string) ($meta['pseudo'] ?? ''));
+    $fieldIds = normalizeStringArray($meta['fieldIds'] ?? []);
+    $subjectIds = normalizeStringArray($meta['subjectIds'] ?? []);
+    $interestIds = normalizeStringArray($meta['interestIds'] ?? []);
+    $fields = normalizeStringArray($meta['fields'] ?? []);
+    $subjects = normalizeStringArray($meta['subjects'] ?? []);
+    $onboardingComplete = (bool) ($meta['onboardingComplete'] ?? false);
 
     if (userTableSupportsProfileColumns($cnx)) {
         $stmt = $cnx->prepare(
@@ -246,18 +356,32 @@ function persistProfileData(PDO $cnx, int $userId, string $bio, string $avatar, 
     }
 
     $profileStmt = $cnx->prepare(
-        'INSERT INTO user_profile (userId, bio, avatar, cover)
-         VALUES (:userId, :bio, :avatar, :cover)
+        'INSERT INTO user_profile (userId, bio, avatar, cover, pseudo, fieldIds, subjectIds, interestIds, fields, subjects, onboardingComplete)
+         VALUES (:userId, :bio, :avatar, :cover, :pseudo, :fieldIds, :subjectIds, :interestIds, :fields, :subjects, :onboardingComplete)
          ON DUPLICATE KEY UPDATE
             bio = VALUES(bio),
             avatar = VALUES(avatar),
-            cover = VALUES(cover)'
+            cover = VALUES(cover),
+            pseudo = VALUES(pseudo),
+            fieldIds = VALUES(fieldIds),
+            subjectIds = VALUES(subjectIds),
+            interestIds = VALUES(interestIds),
+            fields = VALUES(fields),
+            subjects = VALUES(subjects),
+            onboardingComplete = VALUES(onboardingComplete)'
     );
     $profileStmt->execute([
         ':userId' => $userId,
         ':bio' => $bio,
         ':avatar' => $avatar,
         ':cover' => $cover,
+        ':pseudo' => $pseudo,
+        ':fieldIds' => encodeProfileArray($fieldIds),
+        ':subjectIds' => encodeProfileArray($subjectIds),
+        ':interestIds' => encodeProfileArray($interestIds),
+        ':fields' => encodeProfileArray($fields),
+        ':subjects' => encodeProfileArray($subjects),
+        ':onboardingComplete' => $onboardingComplete ? 1 : 0,
     ]);
 }
 
@@ -607,6 +731,14 @@ try {
         if ($user === false) jsonErr('Account created but user could not be loaded.', 500);
 
         loginUser($user);
+        persistProfileData(
+            $cnx,
+            (int) $user['id'],
+            '',
+            '',
+            '',
+            ['onboardingComplete' => false]
+        );
         try {
             sendWelcomeEmail($user);
         } catch (Throwable) {
@@ -653,6 +785,15 @@ try {
         $bio = trim((string) ($body['bio'] ?? ($user['bio'] ?? '')));
         $avatarInput = trim((string) ($body['avatar'] ?? ''));
         $coverInput = trim((string) ($body['cover'] ?? ''));
+        $pseudo = trim((string) ($body['pseudo'] ?? ($user['pseudo'] ?? '')));
+        $fieldIds = normalizeStringArray($body['fieldIds'] ?? ($user['fieldIds'] ?? []));
+        $subjectIds = normalizeStringArray($body['subjectIds'] ?? ($user['subjectIds'] ?? []));
+        $interestIds = normalizeStringArray($body['interestIds'] ?? ($user['interestIds'] ?? []));
+        $fields = normalizeStringArray($body['fields'] ?? ($user['fields'] ?? []));
+        $subjects = normalizeStringArray($body['subjects'] ?? ($user['subjects'] ?? []));
+        $onboardingComplete = array_key_exists('onboardingComplete', $body)
+            ? (bool) $body['onboardingComplete']
+            : (bool) ($user['onboardingComplete'] ?? true);
 
         if (mb_strlen($name) < 2) jsonErr('Name must contain at least 2 characters.');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonErr('Please enter a valid email address.');
@@ -677,7 +818,15 @@ try {
         $cover = $coverInput !== '' ? saveProfileImage($coverInput, 'cover') : (string) ($user['cover'] ?? '');
 
         try {
-            persistProfileData($cnx, (int) $_SESSION['user_id'], $bio, $avatar, $cover);
+            persistProfileData($cnx, (int) $_SESSION['user_id'], $bio, $avatar, $cover, [
+                'pseudo' => $pseudo,
+                'fieldIds' => $fieldIds,
+                'subjectIds' => $subjectIds,
+                'interestIds' => $interestIds,
+                'fields' => $fields,
+                'subjects' => $subjects,
+                'onboardingComplete' => $onboardingComplete,
+            ]);
         } catch (Throwable $e) {
             jsonErr('Could not save profile media: ' . $e->getMessage(), 500);
         }
@@ -777,6 +926,22 @@ try {
 
         if ($existing === false) jsonErr('Premium user could not be loaded.', 500);
         loginUser($existing);
+        persistProfileData(
+            $cnx,
+            (int) $existing['id'],
+            (string) ($existing['bio'] ?? ''),
+            normalizeProfileImagePath((string) ($existing['avatar'] ?? '')),
+            normalizeProfileImagePath((string) ($existing['cover'] ?? '')),
+            [
+                'pseudo' => (string) ($existing['pseudo'] ?? ''),
+                'fieldIds' => $existing['fieldIds'] ?? [],
+                'subjectIds' => $existing['subjectIds'] ?? [],
+                'interestIds' => $existing['interestIds'] ?? [],
+                'fields' => $existing['fields'] ?? [],
+                'subjects' => $existing['subjects'] ?? [],
+                'onboardingComplete' => false,
+            ]
+        );
         if (!upgradeToPremium($cnx, (int) $existing['id'], $method, $amount)) {
             jsonErr('Unable to activate premium access.', 500);
         }

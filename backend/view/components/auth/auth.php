@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-include __DIR__ . "/../config/database.php";
-include __DIR__ . "/../controller/UserController.php";
+require_once dirname(__DIR__, 3) . '/config/database.php';
+require_once dirname(__DIR__, 3) . '/controller/UserController.php';
 
 session_start();
 

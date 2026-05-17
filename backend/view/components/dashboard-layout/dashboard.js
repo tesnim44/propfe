@@ -140,7 +140,12 @@ IBlog.Dashboard = (() => {
     const nameEl = document.getElementById('dash-name');
     if (nameEl) nameEl.textContent = u.name || '';
     const planEl = document.getElementById('dash-plan-label');
-    if (planEl) planEl.textContent = isPrem ? 'Premium Member' : 'Free Member';
+    if (planEl) {
+      const t = IBlog.I18n?.t?.bind(IBlog.I18n);
+      planEl.textContent = isPrem
+        ? (t ? t('leftRail.premiumMember') : 'Premium Member')
+        : (t ? t('leftRail.freeMember') : 'Free Member');
+    }
     const ca = document.getElementById('compose-avatar');
     if (ca) _applyAvatar(ca, u.avatar, initial);
     const upgBtn = document.getElementById('upgrade-nav-btn');
@@ -156,12 +161,20 @@ IBlog.Dashboard = (() => {
     const sBtn = document.getElementById('premium-settings-btn');
     const sTxt = document.getElementById('premium-status-text');
     if (sBtn) {
-      sBtn.textContent = isPrem ? 'Active' : 'Upgrade';
+      const t = IBlog.I18n?.t?.bind(IBlog.I18n);
+      sBtn.textContent = isPrem
+        ? (t ? t('actions.active') : 'Active')
+        : (t ? t('actions.upgrade') : 'Upgrade');
       sBtn.onclick = isPrem
         ? () => IBlog.utils?.toast('You already have Premium!', 'success')
         : () => showPremium();
     }
-    if (sTxt) sTxt.textContent = isPrem ? 'You are on the Premium plan.' : 'You are on the Free plan.';
+    if (sTxt) {
+      const t = IBlog.I18n?.t?.bind(IBlog.I18n);
+      sTxt.textContent = isPrem
+        ? (t ? t('settings.premiumPlanActive') : 'You are on the Premium plan.')
+        : (t ? t('settings.freePlan') : 'You are on the Free plan.');
+    }
     if (IBlog.Profile?.buildProfile) IBlog.Profile.buildProfile();
   }
 
@@ -422,9 +435,12 @@ IBlog.Dashboard = (() => {
   }
 
   function toggleLandingDark() {
+    if (typeof window.toggleDark === 'function') {
+      window.toggleDark();
+      return;
+    }
+    document.documentElement.classList.toggle('dark');
     document.body.classList.toggle('dark');
-    const pill = document.getElementById('landing-dark-pill');
-    if (pill) pill.textContent = document.body.classList.contains('dark') ? 'Sun' : 'Moon';
   }
 
   return {

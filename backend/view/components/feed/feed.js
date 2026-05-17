@@ -28,6 +28,7 @@ IBlog.Feed = (() => {
   let _speaking  = false;
   let _ttsId     = null;
   let _voicePref = 'default'; /* 'default' | 'female' | 'male' */
+  let _readerArticle = null;
 
   function _getVoices(gender) {
     const voices = window.speechSynthesis.getVoices();
@@ -48,8 +49,16 @@ IBlog.Feed = (() => {
     return `${article.title}. By ${article.author||'the author'}. ${(article.body||article.excerpt||'').replace(/<[^>]*>/g,'')}`;
   }
 
+  function _resolveArticle(ref) {
+    if (ref && typeof ref === 'object') return ref;
+    const fromState = (IBlog.state.articles || []).find(article => String(article?.id) === String(ref));
+    if (fromState) return fromState;
+    if (_readerArticle && String(_readerArticle.id) === String(ref)) return _readerArticle;
+    return null;
+  }
+
   function _startTTS(id, playBtnId) {
-    const article = (IBlog.state.articles||[]).find(a => a.id === id);
+    const article = _resolveArticle(id);
     if (!article) return;
     if (!window.speechSynthesis) {
       IBlog.utils.toast('Text-to-speech not supported in this browser');
@@ -152,9 +161,11 @@ IBlog.Feed = (() => {
   /* ══════════════════════════════════════════════════════
      openReader
      ══════════════════════════════════════════════════════ */
-  function openReader(id) {
-    const article = (IBlog.state.articles||[]).find(a=>a.id===id);
+  function openReader(ref) {
+    const article = _resolveArticle(ref);
     if (!article) return;
+    const id = article.id;
+    _readerArticle = article;
     window.IBlogTracker?.log('view_article', {
       entityType: 'article',
       entityId: id,
@@ -166,7 +177,7 @@ IBlog.Feed = (() => {
     const content = document.getElementById('article-reader-content');
     if (!overlay||!content) return;
 
-    const idx     = IBlog.state.articles.indexOf(article);
+    const idx     = Math.max(0, IBlog.state.articles.indexOf(article));
     const color   = IBlog.ArticleCard ? IBlog.ArticleCard.avatarColor(idx) : '#b8960c';
     const initial = (article.author||'A')[0].toUpperCase();
     const hasCover = !!(article.cover||article.img);
@@ -298,6 +309,7 @@ IBlog.Feed = (() => {
     const overlay = document.getElementById('article-reader-overlay');
     if (overlay) { overlay.classList.remove('open'); overlay.onscroll = null; }
     document.body.style.overflow = '';
+    _readerArticle = null;
     stopTTS();
   }
 
@@ -305,11 +317,11 @@ IBlog.Feed = (() => {
      READER ACTIONS — synced with feed cards
      ══════════════════════════════════════════════════════ */
   async function readerLike(id) {
-    const article = (IBlog.state.articles||[]).find(a=>a.id===id);
+    const article = _resolveArticle(id);
     if (!article) return;
     const nextLiked = !article._liked;
 
-    if (/^\d+$/.test(String(id))) {
+    if (/^\d+$/.test(String(id)) && !article._landingPreview) {
       try {
         const currentUser = window.IBlogSession?.getUser?.() || null;
         const response = await fetch('backend/view/components/article/api-articles.php', {
@@ -369,7 +381,7 @@ IBlog.Feed = (() => {
   }
 
   function readerSave(id) {
-    const article = (IBlog.state.articles||[]).find(a=>a.id===id);
+    const article = _resolveArticle(id);
     if (article) {
       window.IBlogTracker?.log('save_article', {
         entityType: 'article',
@@ -379,12 +391,23 @@ IBlog.Feed = (() => {
         value: 1,
       });
     }
+    if (article?._landingPreview) {
+      article._bookmarked = !article._bookmarked;
+      const btn = document.getElementById(`reader-save-btn-${id}`);
+      if (btn) {
+        btn.className = `reader-action-btn ${article._bookmarked ? 'active-save' : ''}`;
+        btn.innerHTML = (article._bookmarked ? I.saveFill : I.save)
+          + `<span id="reader-save-label-${id}">${article._bookmarked ? 'Saved' : 'Save'}</span>`;
+      }
+      IBlog.utils.toast(article._bookmarked ? 'Saved' : 'Save');
+      return;
+    }
     /* Delegate to ArticleCard so both are always in sync */
     IBlog.ArticleCard.toggleBookmark(id);
   }
 
   function readerShare(id) {
-    const a = (IBlog.state.articles||[]).find(x=>x.id===id);
+    const a = _resolveArticle(id);
     const title = a ? a.title : 'IBlog Article';
     if (navigator.share) navigator.share({title, url:window.location.href});
     else navigator.clipboard.writeText(window.location.href)
@@ -404,7 +427,7 @@ IBlog.Feed = (() => {
     const user    = IBlog.state.currentUser||{name:'You'};
     const comment = {author:user.name, text};
 
-    const article = (IBlog.state.articles||[]).find(a=>a.id===id);
+    const article = _resolveArticle(id);
     if (article) {
       article.comments = article.comments||[];
       article.comments.push(comment);

@@ -1,8 +1,8 @@
 <?php
 session_start();
-include("../config/database.php");
-include("../controller/ArticleController.php");
-include("../controller/savedArticleController.php");
+require_once dirname(__DIR__, 3) . '/config/database.php';
+require_once dirname(__DIR__, 3) . '/controller/ArticleController.php';
+require_once dirname(__DIR__, 3) . '/controller/SavedArticleController.php';
 
 if (!isset($_GET['id'])) {
     header("Location: articles_list.php");

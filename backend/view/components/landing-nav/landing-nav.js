@@ -11,10 +11,7 @@ IBlog.LandingNav = (() => {
 
     el.innerHTML = `
       <nav id="landing-nav">
-        <div class="l-logo">
-          <strong>IBlog</strong>
-          <img class="brand-strip" src="images/brand/doodles-strip.svg" alt="IBlog doodle icons" />
-        </div>
+        <div class="l-logo">IBlog</div>
 
         <ul class="l-nav-links">
           <li><a href="#hero">${t('nav.home')}</a></li>
@@ -26,21 +23,12 @@ IBlog.LandingNav = (() => {
         </ul>
 
         <div class="l-nav-btns">
-          <div class="l-nav-meta">
-            <select class="language-switcher iblog-language-select" aria-label="${t('leftRail.language')}">
-              ${IBlog.I18n?.languageOptionsMarkup?.() || ''}
-            </select>
-          </div>
-          <div class="nav-dark-pill" id="landing-dark-pill" onclick="toggleDark()" title="${t('nav.theme')}">◐</div>
+          <button class="nav-dark-pill" id="landing-dark-pill" onclick="IBlog.Dashboard.toggleLandingDark()" title="${t('nav.theme')}">◐</button>
           <button class="nav-ghost-btn" onclick="showSignin()">${t('nav.signIn')}</button>
           <button class="nav-cta-btn" onclick="showSignup()">${t('nav.getStarted')}</button>
         </div>
       </nav>
     `;
-
-    document.querySelectorAll('.iblog-language-select').forEach((select) => {
-      select.value = IBlog.I18n?.getLocale?.() || 'en';
-    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

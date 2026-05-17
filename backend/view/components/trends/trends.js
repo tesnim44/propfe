@@ -44,7 +44,7 @@ IBlog.Trends = (() => {
   }
 
   function _getPersonalizedTrends() {
-    const articles = IBlog.state?.articles || IBlog.SEED_ARTICLES || [];
+    const articles = Array.isArray(IBlog.state?.articles) ? IBlog.state.articles : [];
     if (!articles.length || !Array.isArray(IBlog.TRENDS) || !IBlog.TRENDS.length) return [];
 
     const catCount = {};

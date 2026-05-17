@@ -1,30 +1,41 @@
-// NO auto-apply on load — light is always the default
-
-function syncDarkUI(isDark) {
-  document.querySelectorAll('#landing-dark-pill, #dash-dark-pill').forEach(pill => {
-    pill.textContent = isDark ? '☀️' : '🌙';
-  });
-  const cb = document.getElementById('dark-toggle-input');
-  if (cb) cb.checked = isDark;
-  const lbl = document.getElementById('dark-toggle-label');
-  if (lbl) lbl.textContent = isDark ? '🌙 Dark' : '☀️ Light';
+function themeLabel(isDark) {
+  const translate = window.IBlog?.I18n?.t?.bind(window.IBlog.I18n);
+  const light = translate ? translate('leftRail.light') : 'Light';
+  const dark = translate ? translate('leftRail.dark') : 'Dark';
+  return isDark ? dark : light;
 }
 
-// Landing pill onclick="toggleDark()"
-window.toggleDark = function () {
-  const isDark = document.documentElement.classList.toggle('dark');
-  syncDarkUI(isDark);
-};
+function syncDarkUI(isDark) {
+  document.querySelectorAll('#landing-dark-pill, #dash-dark-pill').forEach((pill) => {
+    pill.textContent = isDark ? '☀️' : '🌙';
+  });
 
-// Dashboard checkbox onchange="IBlog.Dashboard.toggleDark()"
-window._dashToggleDark = function () {
-  const cb = document.getElementById('dark-toggle-input');
-  const isDark = !!cb?.checked;
+  const checkbox = document.getElementById('dark-toggle-input');
+  if (checkbox) checkbox.checked = isDark;
+
+  const label = document.getElementById('dark-toggle-label');
+  if (label) label.textContent = themeLabel(isDark);
+}
+
+function applyDarkState(isDark) {
   document.documentElement.classList.toggle('dark', isDark);
+  document.body.classList.toggle('dark', isDark);
   syncDarkUI(isDark);
+}
+
+window.toggleDark = function () {
+  applyDarkState(!document.documentElement.classList.contains('dark'));
 };
 
-// Sync UI controls on load (always starts light)
+window._dashToggleDark = function () {
+  const checkbox = document.getElementById('dark-toggle-input');
+  applyDarkState(!!checkbox?.checked);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-  syncDarkUI(false);
+  applyDarkState(false);
+});
+
+window.addEventListener('iblog:locale-changed', () => {
+  syncDarkUI(document.documentElement.classList.contains('dark'));
 });

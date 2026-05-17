@@ -81,12 +81,15 @@ IBlog.Views = (() => {
   }
 
   function openArticleFromLanding(index) {
-    const source = Array.isArray(IBlog.state?.articles) && IBlog.state.articles.length
-      ? IBlog.state.articles
-      : (IBlog.SEED_ARTICLES || []);
-    const article = source.find(item => String(item?.id) === String(index))
-      || source[index]
-      || source[0];
+    const runtimeSource = Array.isArray(IBlog.state?.articles) ? IBlog.state.articles : [];
+    const seedSource = Array.isArray(IBlog.SEED_ARTICLES) ? IBlog.SEED_ARTICLES : [];
+    const runtimeArticle = runtimeSource.find(item => String(item?.id) === String(index))
+      || runtimeSource[index]
+      || null;
+    const seedArticle = seedSource.find(item => String(item?.id) === String(index))
+      || seedSource[index]
+      || null;
+    const article = runtimeArticle || (seedArticle ? { ...seedArticle, _landingPreview: true } : null) || runtimeSource[0] || seedSource[0];
 
     if (!article) return;
 
@@ -101,7 +104,7 @@ IBlog.Views = (() => {
     if (!document.getElementById('view-home')?.classList.contains('active')) {
       IBlog.Dashboard?.enter?.();
     }
-    setTimeout(() => IBlog.Feed?.openReader?.(article.id), 180);
+    setTimeout(() => IBlog.Feed?.openReader?.(article), 180);
   }
 
   function _buildCountryFeed(country) {

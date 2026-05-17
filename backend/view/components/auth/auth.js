@@ -387,8 +387,14 @@
     document.getElementById('dashboard')?.style.setProperty('display', 'block');
     if (typeof IBlog?.Dashboard?.enter === 'function') {
       IBlog.Dashboard.enter();
-      if (pendingId && typeof IBlog?.Feed?.openReader === 'function') {
-        setTimeout(() => IBlog.Feed.openReader(pendingId), 250);
+      if (pendingId) {
+        setTimeout(() => {
+          if (typeof window.openArticleFromLanding === 'function') {
+            window.openArticleFromLanding(pendingId);
+            return;
+          }
+          IBlog?.Feed?.openReader?.(pendingId);
+        }, 250);
       }
       return;
     }

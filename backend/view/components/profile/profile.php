@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 session_start();
 
-require_once __DIR__ . '/../../backend/config/database.php';
-require_once __DIR__ . '/../../backend/controller/UserController.php';
+require_once dirname(__DIR__, 3) . '/config/database.php';
+require_once dirname(__DIR__, 3) . '/controller/UserController.php';
 
 if (!isset($_SESSION['email'])) {
     header('Location: ../auth/auth.php?mode=signin');

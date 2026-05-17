@@ -392,7 +392,14 @@ window.IBlogOnboarding = (() => {
           email: currentUser?.email || "",
           bio: profile.bio || "",
           avatar: profile.avatar || currentUser?.avatar || "",
-          cover: currentUser?.cover || ""
+          cover: currentUser?.cover || "",
+          pseudo: profile.pseudo,
+          fieldIds: profile.fieldIds,
+          subjectIds: profile.subjectIds,
+          interestIds: profile.interestIds,
+          fields: profile.fields,
+          subjects: profile.subjects,
+          onboardingComplete: true
         })
       });
       const text = await response.text();

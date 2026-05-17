@@ -37,14 +37,6 @@ window.IBlogSession = (() => {
     return `email:${String(user.email || '').trim().toLowerCase()}`;
   }
 
-  function _cloneSeedArticles() {
-    try {
-      return JSON.parse(JSON.stringify(Array.isArray(IBlog.SEED_ARTICLES) ? IBlog.SEED_ARTICLES : []));
-    } catch (_) {
-      return [];
-    }
-  }
-
   function _broadcastSessionChange(user, previousUser = null) {
     try {
       window.dispatchEvent(new CustomEvent('iblog:session-changed', {
@@ -60,7 +52,7 @@ window.IBlogSession = (() => {
 
   function _resetRuntimeState(user = null) {
     IBlog.state.currentUser = user;
-    IBlog.state.articles = _cloneSeedArticles();
+    IBlog.state.articles = [];
     IBlog.state.savedArticles = [];
     IBlog.state.profileView = { mode: 'self' };
     IBlog.state.joinedCommunities = new Set();
@@ -316,7 +308,7 @@ window.IBlogArticleSync = (() => {
   function mergeArticles(remoteArticles = [], options = {}) {
     const replace = !!options.replace;
     const baseArticles = replace
-      ? (Array.isArray(IBlog.SEED_ARTICLES) ? JSON.parse(JSON.stringify(IBlog.SEED_ARTICLES)) : [])
+      ? []
       : (Array.isArray(IBlog.state.articles) ? [...IBlog.state.articles] : []);
 
     const keyed = new Map();
@@ -345,9 +337,7 @@ window.IBlogArticleSync = (() => {
 
   async function load() {
     if (!window.IBlogSession.getUser()) {
-      IBlog.state.articles = Array.isArray(IBlog.SEED_ARTICLES)
-        ? JSON.parse(JSON.stringify(IBlog.SEED_ARTICLES))
-        : [];
+      IBlog.state.articles = [];
       refreshUI();
       return IBlog.state.articles;
     }

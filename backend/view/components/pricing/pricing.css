@@ -21,7 +21,7 @@
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--accent, #c9a227);
+  color: var(--accent, #1f4fae);
   margin-bottom: 18px;
 }
 
@@ -37,13 +37,13 @@
 
 .pricing-headline em {
   font-style: italic;
-  color: var(--accent, #c9a227);
+  color: var(--accent, #1f4fae);
 }
 
 .pricing-divider {
   width: 44px;
   height: 2px;
-  background: var(--accent, #c9a227);
+  background: var(--accent, #1f4fae);
   margin: 0 auto 44px;
 }
 
@@ -87,8 +87,8 @@
 }
 
 .pricing-save-badge {
-  background: var(--accent, #c9a227);
-  color: #000;
+  background: var(--accent, #1f4fae);
+  color: #fff;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
@@ -106,8 +106,8 @@
 
 /* ── Card ── */
 .pricing-card {
-  background: #e8e7e3;
-  border: 1px solid rgba(0,0,0,0.07);
+  background: #efeff1;
+  border: 1px solid rgba(31, 44, 67, 0.10);
   border-radius: 14px;
   padding: 32px 28px 28px;
   position: relative;
@@ -122,8 +122,8 @@
 }
 
 .pricing-card.featured {
-  background: #e0ddd6;
-  border-color: rgba(201,162,39,0.3);
+  background: #e6e8ec;
+  border-color: rgba(44, 99, 214, 0.28);
   transform: translateY(-6px);
 }
 
@@ -137,8 +137,8 @@
   top: -17px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--accent, #c9a227);
-  color: #000;
+  background: var(--accent, #1f4fae);
+  color: #fff;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -225,8 +225,8 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1.5px solid #4caf82;
-  color: #4caf82;
+  border: 1.5px solid var(--accent, #1f4fae);
+  color: var(--accent, #1f4fae);
   font-size: 10px;
   display: flex;
   align-items: center;
@@ -252,31 +252,31 @@
   border: none;
   transition: all 0.22s;
   letter-spacing: 0.01em;
-  background: #d4a92a;
-  color: #000;
+  background: var(--accent, #1f4fae);
+  color: #fff;
   margin-top: auto; /* always at bottom */
 }
 
 .pricing-btn:hover {
-  background: #e0b52e;
+  background: #214fb6;
   transform: scale(1.02);
 }
 
 /* Keep outline variant only as a fallback override if needed */
 .pricing-btn.btn-outline {
-  background: #d4a92a;
-  color: #000;
+  background: var(--accent, #1f4fae);
+  color: #fff;
   border: none;
 }
 
 .pricing-btn.btn-gold {
-  background: #d4a92a;
-  color: #000;
+  background: var(--accent, #1f4fae);
+  color: #fff;
 }
 
 .pricing-btn.btn-gold:hover,
 .pricing-btn.btn-outline:hover {
-  background: #e0b52e;
+  background: #214fb6;
   transform: scale(1.02);
 }
 
@@ -340,7 +340,7 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent, #c9a227);
+  color: var(--accent, #1f4fae);
   margin-bottom: 10px;
 }
 
@@ -398,7 +398,7 @@
 .pricing-form-group input:focus,
 .pricing-form-group select:focus,
 .pricing-form-group textarea:focus {
-  border-color: var(--accent, #c9a227);
+  border-color: var(--accent, #1f4fae);
 }
 
 .pricing-form-group select option { background: #ffffff; }
@@ -412,8 +412,8 @@
 
 /* Payment info box */
 .pricing-payment-info {
-  background: rgba(201,162,39,0.1);
-  border: 1px solid rgba(201,162,39,0.22);
+  background: rgba(44, 99, 214, 0.08);
+  border: 1px solid rgba(44, 99, 214, 0.18);
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 20px;
@@ -422,7 +422,7 @@
 .pricing-payment-info-title {
   font-size: 12px;
   font-weight: 700;
-  color: var(--accent, #c9a227);
+  color: var(--accent, #1f4fae);
   margin-bottom: 6px;
   display: flex;
   align-items: center;
@@ -436,7 +436,7 @@
 }
 
 .pricing-payment-info a {
-  color: var(--accent, #c9a227);
+  color: var(--accent, #1f4fae);
   text-decoration: none;
 }
 
@@ -461,7 +461,7 @@
 .pricing-trial-perk-icon {
   width: 26px;
   height: 26px;
-  background: rgba(201,162,39,0.12);
+  background: rgba(44, 99, 214, 0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -480,14 +480,14 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  background: #d4a92a;
-  color: #000;
+  background: var(--accent, #1f4fae);
+  color: #fff;
   transition: all 0.2s;
   margin-top: 4px;
 }
 
 .pricing-modal-submit:hover {
-  background: #e0b52e;
+  background: #214fb6;
   transform: scale(1.01);
 }
 
@@ -677,10 +677,10 @@
   height: 16px;
   margin-top: 2px;
   flex-shrink: 0;
-  accent-color: #c9a227;
+  accent-color: var(--accent, #1f4fae);
 }
 .terms-link {
-  color: #c9a227;
+  color: var(--accent, #1f4fae);
   text-decoration: none;
 }
 .terms-link:hover { text-decoration: underline; }
